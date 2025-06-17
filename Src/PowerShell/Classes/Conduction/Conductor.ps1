@@ -4,6 +4,16 @@
 #  Authors: Shadow PhanTom 🤖/☠️🧁👾️ • Neural Alchemist ⚗️☣️🐲 • Version: 2025.5.4.8
 # =============================================================================
 
+function New-Conductor {
+    param (
+        [Parameter(Mandatory = $false)][Conductor]$HostConductor,
+        [Parameter(Mandatory = $false)]$ConductionSignal
+    )
+
+    $opSignal = [Conductor]::Start($HostConductor, $ConductionSignal) | Select-Object -Last 1
+    return $opSignal
+}
+
 class Conductor {
     [Signal]$Signal  # 🧠 Sovereign memory vessel for this Conductor
 
@@ -17,7 +27,8 @@ class Conductor {
         $conductor = [Conductor]::new()
         $conductor.Signal = [Signal]::Start("Conductor") | Select-Object -Last 1
 
-        $jacketSignal = Resolve-PathFromDictionary -Dictionary $conductionSignal -Path "@.%" | Select-Object -Last 1
+        $opSignal.SetResult($conductor)
+        $jacketSignal = $conductionSignal#Resolve-PathFromDictionary -Dictionary $conductionSignal -Path "%" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure(@($jacketSignal))) { return $opSignal }
 
         $conductor.Signal.SetJacket($jacketSignal)

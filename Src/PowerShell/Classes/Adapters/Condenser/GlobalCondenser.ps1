@@ -63,7 +63,7 @@ class GlobalCondenser {
     }
 
     [void] AddOrReplaceOutput($Feedback, $ResultOutput) {
-        $item = $Feedback.WireOutputDictionary | Where-Dictionary { $_.Key -eq $ResultOutput.Key }
+        $item = $Feedback.WireOutputDictionary | Where-Object { $_.Key -eq $ResultOutput.Key }
 
         if (-not $item) {
             $Feedback.WireOutputDictionary += $ResultOutput
@@ -76,9 +76,9 @@ class GlobalCondenser {
         $signal = [Signal]::Start() | Select-Object -Last 1
 
         if ($Wire.LeadWireIdentifier) {
-            $signal.Result = ($Proposal.GetWires() | Where-Dictionary { $_.Identifier -eq $Wire.LeadWireIdentifier -and $_.CatalogService -eq $Wire.CatalogService })[0]
+            $signal.Result = ($Proposal.GetWires() | Where-Object { $_.Identifier -eq $Wire.LeadWireIdentifier -and $_.CatalogService -eq $Wire.CatalogService })[0]
             if (-not $signal.Result) {
-                $signal.Result = ($Proposal.GetWires() | Where-Dictionary { $_.Identifier -eq $Wire.LeadWireIdentifier })[0]
+                $signal.Result = ($Proposal.GetWires() | Where-Object { $_.Identifier -eq $Wire.LeadWireIdentifier })[0]
             }
 
             if (-not $signal.Result) {
@@ -95,9 +95,9 @@ class GlobalCondenser {
         $signal = [Signal]::Start() | Select-Object -Last 1
 
         if ($Wire.MergeJacket -and $Wire.JacketIdentifier) {
-            $signal.Result = ($Proposal.GetWires() | Where-Dictionary { $_.Identifier -eq $Wire.JacketIdentifier -and $_.CatalogService -eq $Wire.CatalogService })[0]
+            $signal.Result = ($Proposal.GetWires() | Where-Object { $_.Identifier -eq $Wire.JacketIdentifier -and $_.CatalogService -eq $Wire.CatalogService })[0]
             if (-not $signal.Result) {
-                $signal.Result = ($Proposal.GetWires() | Where-Dictionary { $_.Identifier -eq $Wire.JacketIdentifier })[0]
+                $signal.Result = ($Proposal.GetWires() | Where-Object { $_.Identifier -eq $Wire.JacketIdentifier })[0]
             }
 
             if (-not $signal.Result) {
@@ -114,9 +114,9 @@ class GlobalCondenser {
         $signal = [Signal]::Start() | Select-Object -Last 1
 
         if ($Wire.GroundWireIdentifier) {
-            $signal.Result = ($Proposal.GetWires() | Where-Dictionary { ($_.Version -eq $Wire.GroundWireIdentifier -or $_.Identifier -eq $Wire.GroundWireIdentifier) -and $_.CatalogService -eq $Wire.CatalogService })[0]
+            $signal.Result = ($Proposal.GetWires() | Where-Object { ($_.Version -eq $Wire.GroundWireIdentifier -or $_.Identifier -eq $Wire.GroundWireIdentifier) -and $_.CatalogService -eq $Wire.CatalogService })[0]
             if (-not $signal.Result) {
-                $signal.Result = ($Proposal.GetWires() | Where-Dictionary { $_.Identifier -eq $Wire.GroundWireIdentifier -or $_.Version -eq $Wire.GroundWireIdentifier })[0]
+                $signal.Result = ($Proposal.GetWires() | Where-Object { $_.Identifier -eq $Wire.GroundWireIdentifier -or $_.Version -eq $Wire.GroundWireIdentifier })[0]
             }
 
             if (-not $signal.Result) {
@@ -133,7 +133,7 @@ class GlobalCondenser {
         $signal = [Signal]::Start() | Select-Object -Last 1
 
         if ($Wire.CrossWireIdentifier) {
-            $signal.Result = ($Proposal.GetWires() | Where-Dictionary { $_.Identifier -eq $Wire.CrossWireIdentifier })[0]
+            $signal.Result = ($Proposal.GetWires() | Where-Object { $_.Identifier -eq $Wire.CrossWireIdentifier })[0]
 
             if ($signal.Result) {
                 $signal.MergeSignal($this.LoadItem($Proposal, $Feedback, $signal.Result, $Reload))

@@ -31,7 +31,7 @@ function Get-VirtualValueFromJson {
     $matchProperty = $segments[1]
 
     # Find the object in the array where name matches
-    $match = $rootObject | Where-Dictionary { $_.name -eq $matchName }
+    $match = $rootObject | Where-Object { $_.name -eq $matchName }
     if (-not $match) {
         throw "No item found with name '$matchName' in $RootPath"
     }

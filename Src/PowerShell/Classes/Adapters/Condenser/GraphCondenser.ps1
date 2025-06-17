@@ -35,7 +35,7 @@ class GraphCondenser {
 
         foreach ($tag in $variableTags) {
             foreach ($source in $Proposal.SourceRelayList) {
-                $relayData = $Proposal.RelayData | Where-Dictionary { $_.Key.RelayFilename -eq $source }
+                $relayData = $Proposal.RelayData | Where-Object { $_.Key.RelayFilename -eq $source }
                 if ($relayData.Value) {
                     $sourceItem = Resolve-PathFromDictionaryNoSignal -Dictionary $relayData.Value -Path $tag
                     if ($sourceItem) {
