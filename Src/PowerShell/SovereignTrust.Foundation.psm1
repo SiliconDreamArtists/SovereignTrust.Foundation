@@ -63,6 +63,8 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Conduction/Resolve-RelativePathFromWirePath-na.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Start-Conduction.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Start-SovereignTrust.ps1"
+. "$PSScriptRoot/Utilities/Conduction/Start-BondingConduction.ps1"
+. "$PSScriptRoot/Utilities/Conduction/Start-BondingConductor.ps1"
 . "$PSScriptRoot/Utilities/Graph/Convert-GraphToJson.ps1"
 . "$PSScriptRoot/Utilities/Graph/Convert-JsonToGraph.ps1"
 . "$PSScriptRoot/Utilities/Graph/Resolve-PathFormulaGraph.ps1"
@@ -120,6 +122,8 @@ Export-ModuleMember -Function Get-AgentForConductor
 Export-ModuleMember -Function Invoke-Conduction
 Export-ModuleMember -Function Resolve-RelativePathFromWirePath-na
 Export-ModuleMember -Function Start-Conduction
+Export-ModuleMember -Function Start-BondingConduction
+Export-ModuleMember -Function Start-BondingConductor
 Export-ModuleMember -Function Start-SovereignTrust
 Export-ModuleMember -Function Convert-GraphToJson
 Export-ModuleMember -Function Convert-JsonToGraph

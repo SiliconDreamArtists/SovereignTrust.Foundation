@@ -4,7 +4,7 @@ class FormulaGraphCondenser {
     [Signal]$Signal  # Sovereign control signal
 
     FormulaGraphCondenser() {
-        # Empty constructor, to enforce use of .Start()
+        # Empty constructor, to enforce use of .Start()472
     }
 
     static [FormulaGraphCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
@@ -16,22 +16,28 @@ class FormulaGraphCondenser {
     }
 
     [Signal] Invoke() {
+        $opSignal = [Signal]::Start("FormulaGraphLauncher.Invoke", $this.Signal) | Select-Object -Last 1
+
         $sourceSignal = Resolve-PathFromDictionary -Dictionary $this.Conductor -Path "%.FlatFormulaSource" | Select-Object -Last 1
-        if ($this.Signal.MergeSignalAndVerifyFailure($sourceSignal)) {
-            return $this.Signal.LogCritical("❌ Failed to resolve FlatFormulaSource.")
+        $opSignal.MergeSignal($sourceSignal) | Out-Null
+
+        if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal)) {
+            $opSignal.LogCritical("❌ Failed to resolve FlatFormulaSource.")
+            return $opSignal
         }
 
         $sourceData = $sourceSignal.GetResult()
 
         # Construct signal to feed into the FormulaGraphCondenser
-        $feedSignal = [Signal]::Start("FormulaGraphCondenser.Feed", $this.Signal, $null, $sourceData) | Select-Object -Last 1
+        $feedSignal = [Signal]::Start("FormulaGraphCondenser.Feed", $opSignal, $null, $sourceData) | Select-Object -Last 1
         Add-PathToDictionary -Dictionary $feedSignal -Path "$.%.GraphPlans" -Value $sourceData.GraphPlans | Out-Null
 
         # Call our declarative plan processor
         $resultSignal = Invoke-FormulaGraphCondenser -ConductionSignal $feedSignal | Select-Object -Last 1
-        $this.Signal.MergeSignal($resultSignal)
+        $opSignal.MergeSignal($resultSignal) | Out-Null
 
-        return $resultSignal
+        $opSignal.SetResult($resultSignal.GetResult())
+        return $opSignal
     }
 
     [Signal] InvokeFromPlanPath([string]$PlanWirePath, [object]$jacketObject) {
@@ -52,12 +58,13 @@ class FormulaGraphCondenser {
         # Extract graph plans using WirePath
         $planSignal = Resolve-PathFromDictionary -Dictionary $condenserSignal -Path $PlanWirePath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($planSignal)) {
-            return $opSignal.LogCritical("❌ Failed to resolve GraphPlans from path: $PlanWirePath")
+            $opSignal.LogCritical("❌ Failed to resolve GraphPlans from path: $PlanWirePath")
+            return $opSignal
         }
 
         # Inject plans into %.GraphPlans for downstream Condenser
         $graphPlans = $planSignal.GetResult()
-        Add-PathToDictionary -Dictionary $condenserSignal -Path "%.%.@.GraphPlans" -Value $graphPlans | Out-Null
+        Add-PathToDictionary -Dictionary $condenserSignal -Path "%.%.%.@.GraphPlans" -Value $graphPlans | Out-Null
 
         # 🔁 Invoke the FormulaGraphCondenser
         $resultSignal = Invoke-FormulaGraphCondenser -Signal $condenserSignal | Select-Object -Last 1
@@ -79,7 +86,8 @@ class FormulaGraphCondenser {
         # Extract the graph plan array from the wire path
         $planSignal = Resolve-PathFromDictionary -Dictionary $condenserSignal -Path $PlanWirePath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($planSignal)) {
-            return $opSignal.LogCritical("❌ Failed to resolve GraphPlans from path: $PlanWirePath")
+            $opSignal.LogCritical("❌ Failed to resolve GraphPlans from path: $PlanWirePath")
+            return $opSignal
         }
 
         # Attach plans into expected %.GraphPlans

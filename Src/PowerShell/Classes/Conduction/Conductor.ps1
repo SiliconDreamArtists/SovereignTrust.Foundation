@@ -81,7 +81,7 @@ class Conductor {
 
         # ░▒▓█ REGISTER ADAPTERS INTO ADAPTERS GRID █▓▒░
         foreach ($entry in $adaptersToRegister) {
-            $path = "*.#.Adapters.*.$($entry.Name)"
+            $path = "*.#.Adapters.*.$( $entry.Name)"
             $regSignal = Add-PathToDictionary -Dictionary $this.Signal -Path $path -Value $entry.Instance | Select-Object -Last 1
             if ($regSignal.Failure()) {
                 $opSignal.LogWarning("⚠️ Failed to register adapter '$($entry.Name)'")
@@ -112,7 +112,7 @@ class Conductor {
             $condenser = $condenserGraphSignal.GetResult()
 
             # ░▒▓█ Launch Agent graph formula processing █▓▒░
-            $graphPlanSignal = $condenser.InvokeFromPlanPath("%.%.@.GraphFormulas.Agents", $this.Signal) | Select-Object -Last 1
+            $graphPlanSignal = $condenser.InvokeFromPlanPath("%.%.%.@.GraphFormulas.Agents", $this.Signal) | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure($graphPlanSignal)) {
                 return $opSignal.LogCritical("❌ Failed to invoke Agent Graph plan from jacket.")
             }
@@ -146,13 +146,7 @@ class Conductor {
             return $opSignal.LogCritical("❌ Failed to create MappedCondenserAdapter.")
         }
 
-        # 🧬 Return adapter pair without mutating memory
-        $adapterPair = @{
-            Name     = "MappedCondenser"
-            Instance = $condenserSignal
-        }
-
-        $opSignal.SetResult($adapterPair)
+        $opSignal.SetResult($condenserSignal.GetResult())
         $opSignal.LogInformation("🧬 MappedCondenserAdapter created and returned as pair. Not registered.")
         return $opSignal
     }
