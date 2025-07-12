@@ -118,15 +118,14 @@ class Conductor {
             }
 
             # ░▒▓█ Store result Graphs into Pointer Graph at *.#.Agents █▓▒░
-            $pointerGraphSignal = Resolve-PathFromDictionary -Dictionary $this -Path "$.*" | Select-Object -Last 1
+            $pointerGraphSignal = Resolve-PathFromDictionary -Dictionary $this -Path "$.*.#" | Select-Object -Last 1
             $graph = $pointerGraphSignal.GetResult()
 
-            $agentGraphs = $graphPlanSignal.GetResult().Graphs.Agents
+            $agentGraphs = $graph.Agents
             if ($null -eq $agentGraphs) {
                 return $opSignal.LogCritical("❌ No agent graphs returned in expected location: .Graphs.Agents")
             }
 
-            $graph.RegisterResultAsSignal("Agents", $agentGraphs) | Out-Null
             $opSignal.LogInformation("✅ Agent graphs injected into pointer graph under 'Agents'.")
 
         }

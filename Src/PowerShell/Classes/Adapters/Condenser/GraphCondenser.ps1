@@ -1,99 +1,118 @@
 # =============================================================================
-# 🧩 GraphCondenser (Tag Replacement + Textual Mini-Condenser)
+# 🧪 FormulaGraphCondenser (Declarative Multi-Plan Graph Launcher)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
-#  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Updated: 05/20/2025
+#  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 06/25/2025
 # =============================================================================
-# This component performs lightweight string-based condensation using tag scanning
-# and source overlay. Designed for proposal-to-template synthesis, where symbolic
-# tags such as @@TAG or ##TAG are replaced using sovereign memory maps.
+# The FormulaGraphCondenser is a memory-driven execution class that consumes
+# declarative GraphPlans from sovereign memory, processes them via the SDA
+# graph condenser pipeline, and injects the resulting graph signals into 
+# structured runtime memory.
 #
-# Memory-safe, signal-tracked, and designed for ceremonial use in Condenser layers.
-# =============================================================================
+# It is designed for recursive, multi-agent, or adapter-based plan hydration,
+# and supports both default (%.*.FlatFormulaSource) and direct wire path 
+# triggering (e.g., %.%.%.@.GraphFormulas.Agents).
+#
+# Structure:
+#   - Conductor: the executing memory host (contains signal + pointer memory)
+#   - MappedCondenserAdapter: source of hydration condensers and plan logic
+#   - Signal: sovereign control and lineage vessel
+#
+# Core Methods:
+#   - Invoke(): Launches a top-level plan hydration from FlatFormulaSource
+#   - InvokeFromPlanPath(): Runs a graph plan directly from a given path
+#   - InvokeFromPlanPathOld(): Legacy path-based version for compatibility
+#
+# Behavior:
+#   - All plans must resolve to an array of declarative GraphFormulaPlan objects
+#   - All mutation is symbolic and sovereign (via Add-PathToDictionary)
+#   - All results are signalized (wrapped in Result, Jacket, or Pointer)
+#
+# Outputs:
+#   - Returns a Signal containing the resulting hydrated graph (or graphs)
+#   - Logs and signal merges capture all transformation phases
+#
+# Use Case:
+#   - Agent/Role/Adapter GSG construction
+#   - Plan injection and execution via MappedCondenserAdapter
+#   - Declarative runtime orchestration of multi-phase graph systems
+
 
 class GraphCondenser {
     [Conductor]$Conductor
     [MappedCondenserAdapter]$MappedCondenserAdapter
     [Signal]$Signal  # Sovereign control signal
 
-    GraphCondenser() {
-        # Constructor intentionally empty; use Start() method.
+    FormulaGraphCondenser() {
+        # Empty constructor, to enforce use of .Start()472
     }
 
     static [GraphCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
         $instance = [GraphCondenser]::new()
         $instance.MappedCondenserAdapter = $mappedAdapter
         $instance.Conductor = $conductor
-        $instance.Signal = [Signal]::Start("GraphCondenser.Control") | Select-Object -Last 1
+        $instance.Signal = [Signal]::Start("GraphCondenser")
         return $instance
     }
 
-    [Signal] CondenseMini([object]$Proposal, [object]$CancellationToken, [string]$OverrideTemplatePath = $null) {
-        $opSignal = [Signal]::Start("CondenseMini") | Select-Object -Last 1
-        $opSignal.Result = [PSCustomObject]@{ Content = "" }
+    [Signal] Invoke() {
+        $opSignal = [Signal]::Start("GraphLauncher.Invoke", $this.
+        Signal) | Select-Object -Last 1
 
-        $variableTags = $this.GetVariableTags($Proposal.Content, $Proposal.ReplacementType)
+        $sourceSignal = Resolve-PathFromDictionary -Dictionary $this.Conductor -Path "%.FlatFormulaSource" | Select-Object -Last 1
+        $opSignal.MergeSignal($sourceSignal) | Out-Null
 
-        foreach ($tag in $variableTags) {
-            foreach ($source in $Proposal.SourceRelayList) {
-                $relayData = $Proposal.RelayData | Where-Object { $_.Key.RelayFilename -eq $source }
-                if ($relayData.Value) {
-                    $sourceItem = Resolve-PathFromDictionaryNoSignal -Dictionary $relayData.Value -Path $tag
-                    if ($sourceItem) {
-                        $Proposal.Content = $this.UpdateStringValues($Proposal.Content, $sourceItem.ToString(), $tag, $Proposal.MappingType, $Proposal.ReplacementType)
-                    }
-                }
-            }
+        if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal)) {
+            $opSignal.LogCritical("❌ Failed to resolve FlatFormulaSource.")
+            return $opSignal
         }
 
-        $opSignal.Result.Content = $Proposal.Content
+        $sourceData = $sourceSignal.GetResult()
+
+        # Construct signal to feed into the FormulaGraphCondenser
+        $feedSignal = [Signal]::Start("GraphCondenser.Feed", $opSignal, $null, $sourceData) | Select-Object -Last 1
+        Add-PathToDictionary -Dictionary $feedSignal -Path "$.%.FormulaGraphPlans" -Value $sourceData.GraphPlans | Out-Null
+
+        # Call our declarative plan processor
+        $resultSignal = Invoke-FormulaGraphCondenser -ConductionSignal $feedSignal | Select-Object -Last 1
+        $opSignal.MergeSignal($resultSignal) | Out-Null
+
+        $opSignal.SetResult($resultSignal.GetResult())
         return $opSignal
     }
 
-    [string] UpdateStringValues([string]$InputValue, [string]$AugmentedValue, [string]$LookupTag, [string]$MappingType, [string]$ReplacementType) {
-        if ($null -eq $InputValue) { return $null }
+    [Signal] InvokeFromPlanPath([string]$PlanWirePath, [object]$jacketObject) {
+        $opSignal = [Signal]::Start("GraphCondenser.InvokeFromPlanPath") | Select-Object -Last 1
 
-        switch ($MappingType) {
-            'Set' {
-                return $AugmentedValue
-            }
-            default {
-                $replacements = $this.GetReplacementStrings($LookupTag, $ReplacementType)
-                foreach ($r in $replacements) {
-                    $InputValue = $InputValue.Replace($r, $AugmentedValue)
-                }
-                return $InputValue
-            }
+        # Determine base memory to evolve (from existing Result or jacket)
+        $initialMemory = if ($this.Signal -and $this.Signal.HasResult()) {
+            $this.Signal.GetResult()
+        }
+        else {
+            $jacketObject
         }
 
-        return $null
-    }
+        # Start a new signal for Condenser with memory + jacket
+        $condenserSignal = [Signal]::Start("GraphCondenser", $jacketObject) | Select-Object -Last 1
+        $condenserSignal.SetJacket($jacketObject) | Out-Null
 
-    [string[]] GetReplacementStrings([string]$LookupTag, [string]$ReplacementType) {
-        $list = @()
-        switch ($ReplacementType) {
-            'XmlTag' { $list += "&lt;$LookupTag /&gt;"; $list += "<$LookupTag />" }
-            'AtAttag' { $list += "@@$LookupTag" }
-            'HashHashtag' { $list += "##$LookupTag" }
-            default { }
-        }
-        return $list
-    }
-
-    [string[]] GetVariableTags([string]$InputValue, [string]$ReplacementType) {
-        if ($null -eq $InputValue) { return @() }
-
-        switch ($ReplacementType) {
-            'AtAttag' {
-                return [regex]::Matches($InputValue, "@@[a-zA-Z0-9-]+") | ForEach-Object { $_.Value.Substring(2) }
-            }
-            'HashHashtag' {
-                return [regex]::Matches($InputValue, "##[a-zA-Z0-9_.-]+") | ForEach-Object { $_.Value.Substring(2) }
-            }
-            default {
-                return @()
-            }
+        # Extract graph plans using WirePath
+        $planSignal = Resolve-PathFromDictionary -Dictionary $condenserSignal -Path $PlanWirePath | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($planSignal)) {
+            $opSignal.LogCritical("❌ Failed to resolve GraphPlans from path: $PlanWirePath")
+            return $opSignal
         }
 
-        return $null
+        # Inject plans into %.GraphPlans for downstream Condenser
+        $graphPlans = $planSignal.GetResult()
+        Add-PathToDictionary -Dictionary $condenserSignal -Path "%.%.%.@.FormulaGraphPlans" -Value $graphPlans | Out-Null
+
+        # 🔁 Invoke the FormulaGraphCondenser
+        $resultSignal = Invoke-GraphCondenser -Signal $condenserSignal | Select-Object -Last 1
+
+        # Merge final state back to opSignal for continuity
+        $opSignal.SetResult($resultSignal.GetResult())
+        $opSignal.MergeSignal($resultSignal)
+
+        return $opSignal
     }
 }

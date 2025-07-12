@@ -18,6 +18,10 @@ function Start-BondingConductor {
         $opSignal.LogInformation("✅ BondingConductor initialized from ConductionSignal.")
 
         # ░▒▓█ CONVERT AND ATTACH AGENT ADAPTERS █▓▒░
+
+        # ░▒▓█ CONVERT AND ATTACH AGENT ADAPTERS █▓▒░
+
+        <#
         $adapterSignal = Convert-AgentAdaptersToConductor -Conductor $bondingConductor | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
             $opSignal.LogCritical("❌ Adapter conversion failed during bonding process.")
@@ -46,6 +50,7 @@ function Start-BondingConductor {
         # ░▒▓█ RETURN CONDUCTOR █▓▒░
         $opSignal.SetResult($bondingConductor)
         $opSignal.LogInformation("🎯 BondingConductor started and ConductionPlan graph resolved.")
+#>
     }
     catch {
         $opSignal.LogCritical("🔥 Exception during Start-BondingConductor: $($_.Exception.Message)")

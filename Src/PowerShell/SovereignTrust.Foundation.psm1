@@ -5,6 +5,11 @@ if (-not (Get-Module -Name $sgModuleName)) {
     Import-Module (Resolve-Path $sgPath).ProviderPath -Force
 }
 
+    # Import shared functions for Map Condensers
+    $mapSharedPath = Join-Path $PSScriptRoot "Utilities/Adapters/Condenser/Map/MapCondenser.Shared.psm1"
+    Import-Module (Resolve-Path $mapSharedPath).ProviderPath -Force
+
+
 # Load all files (functions + classes)
 . "$PSScriptRoot/Classes/Adapters/MappedStorageAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedAdapterTemplate.ps1"
@@ -40,9 +45,10 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Adapters/Resolve-ConductorAdapters.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Resolve-DependencyModuleFromGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Test-ModuleLoaded.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Invoke-GraphCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-GraphCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/FormulaGraph/Invoke-FormulaGraphCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-ConductionCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/FormulaGraph/Invoke-FormulaGraph.ps1"
+#. "$PSScriptRoot/Utilities/Adapters/Condenser/FormulaGraph/Invoke-FormulaGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Apply-HydrationToGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Convert-VirtualPathToWirePath.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Ensure-HydrationIntentInSignal.ps1"
@@ -54,6 +60,7 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-MemoryCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-PathHydration.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Merge/Merge-CondenserCore.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Token/Invoke-HydrateTokenCondenser.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Complete-Conduction.ps1"
 . "$PSScriptRoot/Utilities/Conduction/ConductionCoreFunctions.ps1"
 . "$PSScriptRoot/Utilities/Conduction/ConductionPhaseFunctions.ps1"
@@ -101,6 +108,7 @@ Export-ModuleMember -Function Resolve-ConductorAdapters
 Export-ModuleMember -Function Resolve-DependencyModuleFromGraph
 Export-ModuleMember -Function Test-ModuleLoaded
 Export-ModuleMember -Function Invoke-GraphCondenser
+Export-ModuleMember -Function Invoke-FormulaGraphCondenser
 Export-ModuleMember -Function Invoke-ConductionCondenser
 Export-ModuleMember -Function Invoke-FormulaGraph
 Export-ModuleMember -Function Apply-HydrationToGraph
@@ -151,5 +159,5 @@ Export-ModuleMember -Function Invoke-VisualizeSignalTreeTrace
 Export-ModuleMember -Function SovereignTrust.Foundation.Diagrams
 Export-ModuleMember -Function Test-IsClassDefined
 Export-ModuleMember -Function New-Conductor
-
+Export-ModuleMember -Function Invoke-HydrateTokenCondenser
 #        $bondingConductor = New-Conductor -HostConductor $null

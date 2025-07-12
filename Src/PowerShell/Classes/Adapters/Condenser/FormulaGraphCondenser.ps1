@@ -1,3 +1,42 @@
+# =============================================================================
+# 🧪 FormulaGraphCondenser (Declarative Multi-Plan Graph Launcher)
+#  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
+#  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 06/25/2025
+# =============================================================================
+# The FormulaGraphCondenser is a memory-driven execution class that consumes
+# declarative GraphPlans from sovereign memory, processes them via the SDA
+# graph condenser pipeline, and injects the resulting graph signals into 
+# structured runtime memory.
+#
+# It is designed for recursive, multi-agent, or adapter-based plan hydration,
+# and supports both default (%.*.FlatFormulaSource) and direct wire path 
+# triggering (e.g., %.%.%.@.GraphFormulas.Agents).
+#
+# Structure:
+#   - Conductor: the executing memory host (contains signal + pointer memory)
+#   - MappedCondenserAdapter: source of hydration condensers and plan logic
+#   - Signal: sovereign control and lineage vessel
+#
+# Core Methods:
+#   - Invoke(): Launches a top-level plan hydration from FlatFormulaSource
+#   - InvokeFromPlanPath(): Runs a graph plan directly from a given path
+#   - InvokeFromPlanPathOld(): Legacy path-based version for compatibility
+#
+# Behavior:
+#   - All plans must resolve to an array of declarative GraphFormulaPlan objects
+#   - All mutation is symbolic and sovereign (via Add-PathToDictionary)
+#   - All results are signalized (wrapped in Result, Jacket, or Pointer)
+#
+# Outputs:
+#   - Returns a Signal containing the resulting hydrated graph (or graphs)
+#   - Logs and signal merges capture all transformation phases
+#
+# Use Case:
+#   - Agent/Role/Adapter GSG construction
+#   - Plan injection and execution via MappedCondenserAdapter
+#   - Declarative runtime orchestration of multi-phase graph systems
+
+
 class FormulaGraphCondenser {
     [Conductor]$Conductor
     [MappedCondenserAdapter]$MappedCondenserAdapter

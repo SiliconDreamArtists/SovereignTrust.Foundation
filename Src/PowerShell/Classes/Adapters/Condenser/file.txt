@@ -1,0 +1,15 @@
+
+    Directory: C:\GitHub\SiliconDreamArtists\SovereignTrust.Foundation\Src\PowerShell\Classes\Adapters\Condenser
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---           5/25/2025 12:46 AM           1434 ConductionCondenser.ps1
+-a---            7/1/2025  9:36 PM           6684 FormulaGraphCondenser.ps1
+-a---            6/7/2025  5:48 PM           7702 GlobalCondenser.ps1
+-a---            6/7/2025  5:48 PM           4206 GraphCondenser.ps1
+-a---           5/22/2025  1:45 AM           7278 HydrationCondenser.ps1
+-a---           5/25/2025 12:47 AM           4115 MapCondenser.ps1
+-a---           5/19/2025 12:13 AM           2526 MemoryCondenser.ps1
+-a---           6/18/2025  9:41 PM           2519 MergeCondenser.ps1
+-a---           5/22/2025  1:55 AM           7032 TokenCondenser.ps1
+

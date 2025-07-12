@@ -37,7 +37,7 @@ function Convert-ToUnifiedHashtable {
         $converted = $null
 
         if ($InputObject -is [Graph]) {
-            $converted = $InputObject._Memory
+            $converted = $InputObject._Memory3
         }
         elseif ($InputObject -is [ordered]) {
             $converted = $InputObject
