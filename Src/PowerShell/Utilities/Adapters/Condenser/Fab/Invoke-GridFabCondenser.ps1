@@ -1,7 +1,7 @@
 # =============================================================================
-# 📍 Invoke-TokenCondenser (Declarative Token Hydration Injector)
+# 📍 Invoke-GridFabCondenser (Declarative Graph Builder + Injector)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
-#  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 07/10/2025
+#  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 06/25/2025
 # =============================================================================
 # This function performs a single declarative execution of a graph plan over a 
 # scoped memory object, returning a wrapped Signal with a `.Pointer` to the 
@@ -29,7 +29,7 @@
 # - All lineage is tracked through Signals
 # - Memory injection is explicit and symbolic
 
-function Invoke-HydrateTokenCondenser {
+function Invoke-GridFabCondenser {
     param (
         [Signal]$Signal,
         [object]$Plan,
@@ -37,19 +37,12 @@ function Invoke-HydrateTokenCondenser {
         [string]$PlanWirePathPrefix = "%.%.%.@"  # <- new param with default
     )
 
-    $opSignal = [Signal]::Start("Invoke-GridCondenser:$PlanName", $Signal) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-GridFabCondenser:$Plan.Name", $Signal) | Select-Object -Last 1
 
     $PlanName = $Plan.Name
     $subSignal = [Signal]::Start("GraphPlan:$PlanName", $Signal) | Select-Object -Last 1
     $subSignal.SetJacket($ItemSignal) | Out-Null
 
-    $addPlanSignal = Add-PathToDictionary -Dictionary $subSignal -Path "${PlanWirePathPrefix}.Plan" -Value $Plan | Select-Object -Last 1
-    if ($opSignal.MergeSignalAndVerifyFailure($addPlanSignal)) {
-        $opSignal.LogCritical("❌ Failed to attach Plan to subSignal at path ${PlanWirePathPrefix}.Plan")
-        return $opSignal
-    }
-
-    ##### Hydration Step
     $graphSignal = Resolve-PathFormulaGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
         $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
@@ -61,7 +54,34 @@ function Invoke-HydrateTokenCondenser {
     $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $Signal) | Select-Object -Last 1
     $wrappedGraphSignal.SetPointer($graphResult) | Out-Null
 
-    # Option to replace Jacket or other location with the output that is going into the opSignal result. (to replace the $graphSignal)
+
+    if ($Plan.TargetWirePath) {
+        $injectSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $Plan.TargetWirePath -Value $wrappedGraphSignal | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($injectSignal)) {
+            $opSignal.LogCritical("❌ Failed to inject graph into '$($Plan.TargetWirePath)'")
+            return $opSignal
+        }
+        $opSignal.LogInformation("📍 Injected graph '$PlanName' into '$($Plan.TargetWirePath)'")
+    }
+
+    <#
+    $addPlanSignal = Add-PathToDictionary -Dictionary $subSignal -Path "${PlanWirePathPrefix}.Plan" -Value $Plan | Select-Object -Last 1
+    if ($opSignal.MergeSignalAndVerifyFailure($addPlanSignal)) {
+        $opSignal.LogCritical("❌ Failed to attach Plan to subSignal at path ${PlanWirePathPrefix}.Plan")
+        return $opSignal
+    }
+
+    $graphSignal = Resolve-PathFormulaGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
+    if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
+        $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
+        return $opSignal
+    }
+
+    $graphResult = $graphSignal.GetResult()
+
+    $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $Signal) | Select-Object -Last 1
+    $wrappedGraphSignal.SetPointer($graphResult) | Out-Null
+
     if ($Plan.TargetWirePath) {
         $injectSignal = Add-PathToDictionary -Dictionary $ItemSignal -Path $Plan.TargetWirePath -Value $wrappedGraphSignal | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($injectSignal)) {
@@ -70,8 +90,9 @@ function Invoke-HydrateTokenCondenser {
         }
         $opSignal.LogInformation("📍 Injected graph '$PlanName' into '$($Plan.TargetWirePath)'")
     }
-
     $opSignal.SetResult($wrappedGraphSignal)
-    $opSignal.LogInformation("✅ Graph plan '$PlanName' completed successfully.")
+#>
+
+    $opSignal.LogInformation("✅ Graph Fab plan '$PlanName' completed successfully.")
     return $opSignal
 }

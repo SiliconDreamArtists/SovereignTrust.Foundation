@@ -1,5 +1,3 @@
-Import-Module SDA.MapCondenser.Shared -Force
-
 function Invoke-DirectMapCondenser {
     param (
         [Signal]$Signal,

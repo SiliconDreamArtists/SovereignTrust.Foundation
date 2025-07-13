@@ -26,7 +26,7 @@ Defines sovereign memory mutation through Condensers. Condensers are graph-resol
 - ✅ **HydrationCondenser** – Performs *bidirectional hydration*:
   - **Reverse Phase**: Token resolution and expansion from source memory
   - **Forward Phase**: Constructs hydrated memory plans or execution trees
-- ✅ **GraphCondenser** – Orchestrates condensation across collections of items (multi-phase or batch).
+- ✅ **GridCondenser** – Orchestrates condensation across collections of items (multi-phase or batch).
 - ✅ **MapCondenser** – Final rendering phase into templates, prompts, JSON, HTML, etc.
 
 ---
@@ -37,7 +37,7 @@ Defines sovereign memory mutation through Condensers. Condensers are graph-resol
 - `HydrationCondenser` typically runs twice:
   - First pass (reverse): fills values and decodes references.
   - Second pass (forward): injects structure and creates new memory graphs.
-- `GraphCondenser` drives multi-graph orchestration and plans.
+- `GridCondenser` drives multi-graph orchestration and plans.
 - `MapCondenser` completes the loop with a final rendering pass.
 
 ---

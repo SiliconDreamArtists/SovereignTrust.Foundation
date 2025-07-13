@@ -6,12 +6,14 @@ if (-not (Get-Module -Name $sgModuleName)) {
 }
 
     # Import shared functions for Map Condensers
+
     $mapSharedPath = Join-Path $PSScriptRoot "Utilities/Adapters/Condenser/Map/MapCondenser.Shared.psm1"
     Import-Module (Resolve-Path $mapSharedPath).ProviderPath -Force
 
 
 # Load all files (functions + classes)
 . "$PSScriptRoot/Classes/Adapters/MappedStorageAdapter.ps1"
+. "$PSScriptRoot/Classes/Adapters/MappedTokenAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedAdapterTemplate.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedCondenserAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedConduitAdapter.ps1"
@@ -23,10 +25,11 @@ if (-not (Get-Module -Name $sgModuleName)) {
 
 . "$PSScriptRoot/Classes/Adapters/BaseAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/Conduit.ps1"
+. "$PSScriptRoot/Classes/Adapters/Condenser/FabCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/ConductionCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/FormulaGraphCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/GlobalCondenser.ps1"
-. "$PSScriptRoot/Classes/Adapters/Condenser/GraphCondenser.ps1"
+. "$PSScriptRoot/Classes/Adapters/Condenser/GridCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/HydrationCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/MapCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/MemoryCondenser.ps1"
@@ -45,7 +48,9 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Adapters/Resolve-ConductorAdapters.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Resolve-DependencyModuleFromGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Test-ModuleLoaded.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-GraphCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-FabCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-GridFabCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Grid/Invoke-GridCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/FormulaGraph/Invoke-FormulaGraphCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-ConductionCondenser.ps1"
 #. "$PSScriptRoot/Utilities/Adapters/Condenser/FormulaGraph/Invoke-FormulaGraph.ps1"
@@ -107,7 +112,7 @@ Export-ModuleMember -Function Resolve-AdaptersFromJacket
 Export-ModuleMember -Function Resolve-ConductorAdapters
 Export-ModuleMember -Function Resolve-DependencyModuleFromGraph
 Export-ModuleMember -Function Test-ModuleLoaded
-Export-ModuleMember -Function Invoke-GraphCondenser
+Export-ModuleMember -Function Invoke-GridCondenser
 Export-ModuleMember -Function Invoke-FormulaGraphCondenser
 Export-ModuleMember -Function Invoke-ConductionCondenser
 Export-ModuleMember -Function Invoke-FormulaGraph

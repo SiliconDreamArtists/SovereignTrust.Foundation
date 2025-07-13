@@ -37,20 +37,20 @@
 #   - Declarative runtime orchestration of multi-phase graph systems
 
 
-class GraphCondenser {
+class GridCondenser {
     [Conductor]$Conductor
     [MappedCondenserAdapter]$MappedCondenserAdapter
     [Signal]$Signal  # Sovereign control signal
 
-    FormulaGraphCondenser() {
+    GridCondenser() {
         # Empty constructor, to enforce use of .Start()472
     }
 
-    static [GraphCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
-        $instance = [GraphCondenser]::new()
+    static [GridCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
+        $instance = [GridCondenser]::new()
         $instance.MappedCondenserAdapter = $mappedAdapter
         $instance.Conductor = $conductor
-        $instance.Signal = [Signal]::Start("GraphCondenser")
+        $instance.Signal = [Signal]::Start("GridCondenser")
         return $instance
     }
 
@@ -69,7 +69,7 @@ class GraphCondenser {
         $sourceData = $sourceSignal.GetResult()
 
         # Construct signal to feed into the FormulaGraphCondenser
-        $feedSignal = [Signal]::Start("GraphCondenser.Feed", $opSignal, $null, $sourceData) | Select-Object -Last 1
+        $feedSignal = [Signal]::Start("GridCondenser.Feed", $opSignal, $null, $sourceData) | Select-Object -Last 1
         Add-PathToDictionary -Dictionary $feedSignal -Path "$.%.FormulaGraphPlans" -Value $sourceData.GraphPlans | Out-Null
 
         # Call our declarative plan processor
@@ -81,7 +81,7 @@ class GraphCondenser {
     }
 
     [Signal] InvokeFromPlanPath([string]$PlanWirePath, [object]$jacketObject) {
-        $opSignal = [Signal]::Start("GraphCondenser.InvokeFromPlanPath") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("GridCondenser.InvokeFromPlanPath") | Select-Object -Last 1
 
         # Determine base memory to evolve (from existing Result or jacket)
         $initialMemory = if ($this.Signal -and $this.Signal.HasResult()) {
@@ -92,7 +92,7 @@ class GraphCondenser {
         }
 
         # Start a new signal for Condenser with memory + jacket
-        $condenserSignal = [Signal]::Start("GraphCondenser", $jacketObject) | Select-Object -Last 1
+        $condenserSignal = [Signal]::Start("GridCondenser", $jacketObject) | Select-Object -Last 1
         $condenserSignal.SetJacket($jacketObject) | Out-Null
 
         # Extract graph plans using WirePath
@@ -107,7 +107,7 @@ class GraphCondenser {
         Add-PathToDictionary -Dictionary $condenserSignal -Path "%.%.%.@.FormulaGraphPlans" -Value $graphPlans | Out-Null
 
         # 🔁 Invoke the FormulaGraphCondenser
-        $resultSignal = Invoke-GraphCondenser -Signal $condenserSignal | Select-Object -Last 1
+        $resultSignal = Invoke-GridCondenser -Signal $condenserSignal | Select-Object -Last 1
 
         # Merge final state back to opSignal for continuity
         $opSignal.SetResult($resultSignal.GetResult())

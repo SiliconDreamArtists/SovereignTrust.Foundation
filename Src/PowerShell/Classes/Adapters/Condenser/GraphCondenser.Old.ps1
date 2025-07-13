@@ -1,5 +1,5 @@
 # =============================================================================
-# 🧩 GraphCondenser (Tag Replacement + Textual Mini-Condenser)
+# 🧩 GridCondenser (Tag Replacement + Textual Mini-Condenser)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
 #  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Updated: 05/20/2025
 # =============================================================================
@@ -10,20 +10,20 @@
 # Memory-safe, signal-tracked, and designed for ceremonial use in Condenser layers.
 # =============================================================================
 
-class GraphCondenser {
+class GridCondenser {
     [Conductor]$Conductor
     [MappedCondenserAdapter]$MappedCondenserAdapter
     [Signal]$Signal  # Sovereign control signal
 
-    GraphCondenser() {
+    GridCondenser() {
         # Constructor intentionally empty; use Start() method.
     }
 
-    static [GraphCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
-        $instance = [GraphCondenser]::new()
+    static [GridCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
+        $instance = [GridCondenser]::new()
         $instance.MappedCondenserAdapter = $mappedAdapter
         $instance.Conductor = $conductor
-        $instance.Signal = [Signal]::Start("GraphCondenser.Control") | Select-Object -Last 1
+        $instance.Signal = [Signal]::Start("GridCondenser.Control") | Select-Object -Last 1
         return $instance
     }
 

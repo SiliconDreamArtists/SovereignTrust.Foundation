@@ -38,6 +38,8 @@ class Conductor {
 
         if ($conductor.Signal.MergeSignalAndVerifyFailure(@($conductor.InitializeMemory()    | Select-Object -Last 1))) { return $opSignal }
         if ($conductor.Signal.MergeSignalAndVerifyFailure(@($conductor.LoadMappedAdapters() | Select-Object -Last 1))) { return $opSignal }
+
+
         if ($conductor.Signal.MergeSignalAndVerifyFailure(@($conductor.LoadAgentGraph()     | Select-Object -Last 1))) { return $opSignal }
 
         $opSignal.SetResult($conductor)
@@ -68,6 +70,7 @@ class Conductor {
 
         # ░▒▓█ DEFINE ADAPTERS TO LOAD █▓▒░
         $adaptersToRegister = @(
+            @{ Name = "MappedToken"; Instance = [MappedTokenAdapter]::Start($this) },
             @{ Name = "MappedStorage"; Instance = [MappedStorageAdapter]::Start($this) },
             @{ Name = "MappedNetwork"; Instance = [MappedNetworkAdapter]::Start($this) }
         )

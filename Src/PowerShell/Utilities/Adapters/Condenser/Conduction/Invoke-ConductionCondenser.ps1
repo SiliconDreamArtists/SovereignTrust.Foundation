@@ -5,7 +5,7 @@
 # =============================================================================
 # Invokes Conduction phase processing using a sovereign Graph structure and
 # interprets each Phase block in sequence or via branching (OnSuccess / OnFail).
-# Compatible with the SDA GraphCondenser pipeline and sovereign runtime standards.
+# Compatible with the SDA GridCondenser pipeline and sovereign runtime standards.
 # =============================================================================
 
 function Invoke-ConductionCondenser {

@@ -91,7 +91,7 @@ class FormulaGraphCondenser {
         }
 
         # Start a new signal for Condenser with memory + jacket
-        $condenserSignal = [Signal]::Start("GraphCondenser", $jacketObject) | Select-Object -Last 1
+        $condenserSignal = [Signal]::Start("GridCondenser", $jacketObject) | Select-Object -Last 1
         $condenserSignal.SetJacket($jacketObject) | Out-Null
 
         # Extract graph plans using WirePath
@@ -119,7 +119,7 @@ class FormulaGraphCondenser {
         $opSignal = [Signal]::Start("FormulaGraphCondenser.InvokeFromPlanPath") | Select-Object -Last 1
 
         # Construct base signal with your jacketed runtime object
-        $condenserSignal = [Signal]::Start("GraphCondenser", $opSignal, $null, $jacketObject) | Select-Object -Last 1
+        $condenserSignal = [Signal]::Start("GridCondenser", $opSignal, $null, $jacketObject) | Select-Object -Last 1
         $condenserSignal.SetJacket($jacketObject) | Out-Null
 
         # Extract the graph plan array from the wire path

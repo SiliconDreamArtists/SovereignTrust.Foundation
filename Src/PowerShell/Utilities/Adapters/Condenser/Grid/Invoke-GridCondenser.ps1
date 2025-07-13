@@ -1,5 +1,5 @@
 # =============================================================================
-# 📍 Invoke-GraphCondenser (Declarative Graph Builder + Injector)
+# 📍 Invoke-GridCondenser (Declarative Graph Builder + Injector)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
 #  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 06/25/2025
 # =============================================================================
@@ -29,7 +29,7 @@
 # - All lineage is tracked through Signals
 # - Memory injection is explicit and symbolic
 
-function Invoke-GraphCondenser {
+function Invoke-GridCondenser {
     param (
         [Signal]$Signal,
         [object]$Plan,
@@ -37,7 +37,7 @@ function Invoke-GraphCondenser {
         [string]$PlanWirePathPrefix = "%.%.%.@"  # <- new param with default
     )
 
-    $opSignal = [Signal]::Start("Invoke-GraphCondenser:$PlanName", $Signal) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-GridCondenser:$PlanName", $Signal) | Select-Object -Last 1
 
     $PlanName = $Plan.Name
     $subSignal = [Signal]::Start("GraphPlan:$PlanName", $Signal) | Select-Object -Last 1

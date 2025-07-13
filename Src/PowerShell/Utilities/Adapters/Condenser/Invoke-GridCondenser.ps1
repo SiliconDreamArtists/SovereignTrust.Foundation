@@ -1,11 +1,11 @@
-function Invoke-GraphCondenser {
+function Invoke-GridCondenser {
     param (
         [Parameter(Mandatory)][object]$Conduction,
         [Parameter(Mandatory)][Graph]$Graph,
         [string]$WirePath = $null
     )
 
-    $signal = [Signal]::Start("Invoke-GraphCondenser") | Select-Object -Last 1
+    $signal = [Signal]::Start("Invoke-GridCondenser") | Select-Object -Last 1
 
     # ░▒▓█ RESOLVE TARGET GRAPH REGION █▓▒░
     $GraphTarget = $Graph
@@ -38,6 +38,6 @@ function Invoke-GraphCondenser {
         $signal.MergeSignal($hydrationSignal)
     }
 
-    $signal.LogInformation("🌐 GraphCondenser completed across signal grid.")
+    $signal.LogInformation("🌐 GridCondenser completed across signal grid.")
     return $signal
 }
