@@ -1,10 +1,10 @@
-function Resolve-PathFormulaGraphForModule {
+function Resolve-PathGraphForModule {
     param (
         [Parameter(Mandatory)][string]$WirePath,
         [Parameter()][object]$Environment
     )
 
-    $opSignal = [Signal]::Start("Resolve-PathFormulaGraphForModule:$WirePath") | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Resolve-PathGraphForModule:$WirePath") | Select-Object -Last 1
 
     try {
         # ░▒▓█ VERIFY WIREPATH FORMAT █▓▒░

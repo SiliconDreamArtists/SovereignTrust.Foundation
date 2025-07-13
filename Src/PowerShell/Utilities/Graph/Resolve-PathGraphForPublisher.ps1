@@ -1,11 +1,11 @@
-function Resolve-PathFormulaGraphForPublisher {
+function Resolve-PathGraphForPublisher {
     param (
         [Parameter(Mandatory)][string]$WirePath,
         [Parameter()][object]$Environment,
         [Parameter()][string]$RootPath = "m:/sda/Projects-meta"
     )
 
-    $signal = [Signal]::Start("Resolve-PathFormulaGraphForSDAPublisher:$WirePath") | Select-Object -Last 1
+    $signal = [Signal]::Start("Resolve-PathGraphForSDAPublisher:$WirePath") | Select-Object -Last 1
     $graph = [Graph]::new($Environment)
     $graph.Start()
 

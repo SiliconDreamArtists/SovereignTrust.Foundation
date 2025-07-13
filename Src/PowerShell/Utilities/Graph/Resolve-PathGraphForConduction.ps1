@@ -1,11 +1,11 @@
-function Resolve-PathFormulaGraphForConduction {
+function Resolve-PathGraphForConduction {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
         [Signal]$ConductionSignal
     )
 
-    $opSignal = [Signal]::Start("Resolve-PathFormulaGraphForConduction", $ConductionSignal) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Resolve-PathGraphForConduction", $ConductionSignal) | Select-Object -Last 1
     $opSignal.LogVerbose("📦 Resolving formula graph for Conduction memory layout.")
 
     # ░▒▓█ UNWRAP CONDUCTION OBJECT █▓▒░
@@ -52,7 +52,7 @@ function Resolve-PathFormulaGraphForConduction {
 <#
 [Signal] $opSignal
 │
-├── .Name = "Resolve-PathFormulaGraphForConduction"
+├── .Name = "Resolve-PathGraphForConduction"
 ├── .ReversePointer = $ConductionSignal
 ├── .Result = $graph (Graph)
 │   ├── .SignalGrid = @{

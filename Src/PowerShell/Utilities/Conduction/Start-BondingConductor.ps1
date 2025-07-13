@@ -44,13 +44,13 @@ function Start-BondingConductor {
         }
 
         $virtualPath = $vpSignal.GetResult()
-        $planSignal = Resolve-PathFormulaGraph -WirePath $virtualPath -StrategyType "Condenser" -Conductor $bondingConductor -Environment $environment | Select-Object -Last 1
+        $planSignal = Resolve-PathGraph -WirePath $virtualPath -StrategyType "Condenser" -Conductor $bondingConductor -Environment $environment | Select-Object -Last 1
         $opSignal.MergeSignal($planSignal)
+#>
 
         # ░▒▓█ RETURN CONDUCTOR █▓▒░
         $opSignal.SetResult($bondingConductor)
         $opSignal.LogInformation("🎯 BondingConductor started and ConductionPlan graph resolved.")
-#>
     }
     catch {
         $opSignal.LogCritical("🔥 Exception during Start-BondingConductor: $($_.Exception.Message)")

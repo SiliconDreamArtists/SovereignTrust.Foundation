@@ -1,5 +1,5 @@
 # =============================================================================
-# 📍 Invoke-GridFabCondenser (Declarative Graph Builder + Injector)
+# 📍 Invoke-GraphFabCondenser (Declarative Graph Builder + Injector)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
 #  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 06/25/2025
 # =============================================================================
@@ -17,7 +17,7 @@
 #
 # Process:
 #   - Creates a scoped sub-signal with jacket and plan metadata
-#   - Runs Resolve-PathFormulaGraphForJsonArray to generate graph
+#   - Runs Resolve-PathGraphForJsonArray to generate graph
 #   - Wraps result in a new Signal with .Pointer set
 #   - Injects signal into memory if TargetWirePath is defined
 #
@@ -29,7 +29,7 @@
 # - All lineage is tracked through Signals
 # - Memory injection is explicit and symbolic
 
-function Invoke-GridFabCondenser {
+function Invoke-GraphFabCondenser {
     param (
         [Signal]$Signal,
         [object]$Plan,
@@ -37,13 +37,13 @@ function Invoke-GridFabCondenser {
         [string]$PlanWirePathPrefix = "%.%.%.@"  # <- new param with default
     )
 
-    $opSignal = [Signal]::Start("Invoke-GridFabCondenser:$Plan.Name", $Signal) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-GraphFabCondenser:$Plan.Name", $Signal) | Select-Object -Last 1
 
     $PlanName = $Plan.Name
     $subSignal = [Signal]::Start("GraphPlan:$PlanName", $Signal) | Select-Object -Last 1
     $subSignal.SetJacket($ItemSignal) | Out-Null
 
-    $graphSignal = Resolve-PathFormulaGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
+    $graphSignal = Resolve-PathGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
         $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
         return $opSignal
@@ -71,7 +71,7 @@ function Invoke-GridFabCondenser {
         return $opSignal
     }
 
-    $graphSignal = Resolve-PathFormulaGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
+    $graphSignal = Resolve-PathGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
         $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
         return $opSignal

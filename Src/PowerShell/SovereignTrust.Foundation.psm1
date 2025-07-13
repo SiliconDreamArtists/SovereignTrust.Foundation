@@ -27,7 +27,7 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Classes/Adapters/Conduit.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/FabCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/ConductionCondenser.ps1"
-. "$PSScriptRoot/Classes/Adapters/Condenser/FormulaGraphCondenser.ps1"
+. "$PSScriptRoot/Classes/Adapters/Condenser/GraphCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/GlobalCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/GridCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/HydrationCondenser.ps1"
@@ -49,11 +49,11 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Adapters/Resolve-DependencyModuleFromGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Test-ModuleLoaded.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-FabCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-GridFabCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-GraphFabCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Grid/Invoke-GridCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/FormulaGraph/Invoke-FormulaGraphCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-GraphCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-ConductionCondenser.ps1"
-#. "$PSScriptRoot/Utilities/Adapters/Condenser/FormulaGraph/Invoke-FormulaGraph.ps1"
+#. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-Graph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Apply-HydrationToGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Convert-VirtualPathToWirePath.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Ensure-HydrationIntentInSignal.ps1"
@@ -79,11 +79,11 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Conduction/Start-BondingConductor.ps1"
 . "$PSScriptRoot/Utilities/Graph/Convert-GraphToJson.ps1"
 . "$PSScriptRoot/Utilities/Graph/Convert-JsonToGraph.ps1"
-. "$PSScriptRoot/Utilities/Graph/Resolve-PathFormulaGraph.ps1"
-. "$PSScriptRoot/Utilities/Graph/Resolve-PathFormulaGraphCondenserAdapter.ps1"
-. "$PSScriptRoot/Utilities/Graph/Resolve-PathFormulaGraphForConduction.ps1"
-. "$PSScriptRoot/Utilities/Graph/Resolve-PathFormulaGraphForModule.ps1"
-. "$PSScriptRoot/Utilities/Graph/Resolve-PathFormulaGraphForPublisher.ps1"
+. "$PSScriptRoot/Utilities/Graph/Resolve-PathGraph.ps1"
+. "$PSScriptRoot/Utilities/Graph/Resolve-PathGraphCondenserAdapter.ps1"
+. "$PSScriptRoot/Utilities/Graph/Resolve-PathGraphForConduction.ps1"
+. "$PSScriptRoot/Utilities/Graph/Resolve-PathGraphForModule.ps1"
+. "$PSScriptRoot/Utilities/Graph/Resolve-PathGraphForPublisher.ps1"
 . "$PSScriptRoot/Utilities/IO/LocalFileSystem/Read-JsonFileAsSignal.ps1"
 . "$PSScriptRoot/Utilities/IO/LocalFileSystem/Wait-ForFileUnlock.ps1"
 . "$PSScriptRoot/Utilities/Json/Convert-JsonToHashtable.ps1"
@@ -113,9 +113,9 @@ Export-ModuleMember -Function Resolve-ConductorAdapters
 Export-ModuleMember -Function Resolve-DependencyModuleFromGraph
 Export-ModuleMember -Function Test-ModuleLoaded
 Export-ModuleMember -Function Invoke-GridCondenser
-Export-ModuleMember -Function Invoke-FormulaGraphCondenser
+Export-ModuleMember -Function Invoke-GraphCondenser
 Export-ModuleMember -Function Invoke-ConductionCondenser
-Export-ModuleMember -Function Invoke-FormulaGraph
+Export-ModuleMember -Function Invoke-Graph
 Export-ModuleMember -Function Apply-HydrationToGraph
 Export-ModuleMember -Function Convert-VirtualPathToWirePath
 Export-ModuleMember -Function Ensure-HydrationIntentInSignal
@@ -140,11 +140,11 @@ Export-ModuleMember -Function Start-BondingConductor
 Export-ModuleMember -Function Start-SovereignTrust
 Export-ModuleMember -Function Convert-GraphToJson
 Export-ModuleMember -Function Convert-JsonToGraph
-Export-ModuleMember -Function Resolve-PathFormulaGraph
-Export-ModuleMember -Function Resolve-PathFormulaGraphCondenserAdapter
-Export-ModuleMember -Function Resolve-PathFormulaGraphForConduction
-Export-ModuleMember -Function Resolve-PathFormulaGraphForModule
-Export-ModuleMember -Function Resolve-PathFormulaGraphForPublisher
+Export-ModuleMember -Function Resolve-PathGraph
+Export-ModuleMember -Function Resolve-PathGraphCondenserAdapter
+Export-ModuleMember -Function Resolve-PathGraphForConduction
+Export-ModuleMember -Function Resolve-PathGraphForModule
+Export-ModuleMember -Function Resolve-PathGraphForPublisher
 Export-ModuleMember -Function Read-JsonFileAsSignal
 Export-ModuleMember -Function Wait-ForFileUnlock
 Export-ModuleMember -Function Convert-JsonToHashtable

@@ -38,7 +38,7 @@ function Invoke-FormulaHydrationCondenser {
     }
 
     ##### Hydration Step
-    $graphSignal = Resolve-PathFormulaGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
+    $graphSignal = Resolve-PathGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
         $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
         return $opSignal

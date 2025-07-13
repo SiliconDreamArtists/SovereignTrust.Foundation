@@ -10,7 +10,7 @@ function Resolve-DependencyModuleFromGraph {
     $signal = [Signal]::Start("Resolve-DependencyModuleFromGraph:$WirePath") | Select-Object -Last 1
 
     # ░▒▓█ RESOLVE PATH FORMULA GRAPH FOR MODULE █▓▒░
-    $pathFormulaSignal = Resolve-PathFormulaGraph -WirePath $WirePath -StrategyType "Module" -Environment $ConductionContext.Environment | Select-Object -Last 1
+    $pathFormulaSignal = Resolve-PathGraph -WirePath $WirePath -StrategyType "Module" -Environment $ConductionContext.Environment | Select-Object -Last 1
     if (-not $signal.MergeSignalAndVerifySuccess($pathFormulaSignal)) {
         $signal.LogCritical("❌ Failed to resolve path formula graph for module wire path: $WirePath")
         return $signal

@@ -1,11 +1,11 @@
-function Resolve-PathFormulaGraphCondenserAdapter {
+function Resolve-PathGraphCondenserAdapter {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
         [object]$Conductor
     )
 
-    $opSignal = [Signal]::Start("Resolve-PathFormulaGraph:CondenserAdapter") | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Resolve-PathGraph:CondenserAdapter") | Select-Object -Last 1
 
     # ░▒▓█ RESOLVE REQUIRED CONTEXT █▓▒░
     $pointerSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path "$.*.#.Adapters.*" | Select-Object -Last 1
@@ -34,7 +34,7 @@ function Resolve-PathFormulaGraphCondenserAdapter {
         $graph.RegisterResultAsSignal("HydrationCondenser", [HydrationCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
         $graph.RegisterResultAsSignal("GridCondenser",     [GridCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
         $graph.RegisterResultAsSignal("MemoryCondenser", [MemoryCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
-        $graph.RegisterResultAsSignal("FormulaGraphCondenser", [FormulaGraphCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
+        $graph.RegisterResultAsSignal("GraphCondenser", [GraphCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
         $graph.RegisterResultAsSignal("ConductionCondenser", [ConductionCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
 
         $graph.Finalize()

@@ -32,7 +32,7 @@ function New-MappedCondenserAdapterFromGraph {
         }
 
         # ░▒▓█ RESOLVE CONDENSER POPULATION GRAPH █▓▒░
-        $graphSourceSignal = Resolve-PathFormulaGraphCondenserAdapter -Conductor $Conductor | Select-Object -Last 1
+        $graphSourceSignal = Resolve-PathGraphCondenserAdapter -Conductor $Conductor | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($graphSourceSignal)) {
             $opSignal.LogCritical("❌ Failed to resolve Condenser adapter source graph.")
             return $opSignal

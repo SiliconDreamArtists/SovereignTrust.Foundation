@@ -1,9 +1,9 @@
 # =============================================================================
-# 🧪 FormulaGraphCondenser (Declarative Multi-Plan Graph Launcher)
+# 🧪 GraphCondenser (Declarative Multi-Plan Graph Launcher)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
 #  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 06/25/2025
 # =============================================================================
-# The FormulaGraphCondenser is a memory-driven execution class that consumes
+# The GraphCondenser is a memory-driven execution class that consumes
 # declarative GraphPlans from sovereign memory, processes them via the SDA
 # graph condenser pipeline, and injects the resulting graph signals into 
 # structured runtime memory.
@@ -68,12 +68,12 @@ class GridCondenser {
 
         $sourceData = $sourceSignal.GetResult()
 
-        # Construct signal to feed into the FormulaGraphCondenser
+        # Construct signal to feed into the GraphCondenser
         $feedSignal = [Signal]::Start("GridCondenser.Feed", $opSignal, $null, $sourceData) | Select-Object -Last 1
-        Add-PathToDictionary -Dictionary $feedSignal -Path "$.%.FormulaGraphPlans" -Value $sourceData.GraphPlans | Out-Null
+        Add-PathToDictionary -Dictionary $feedSignal -Path "$.%.GraphPlans" -Value $sourceData.GraphPlans | Out-Null
 
         # Call our declarative plan processor
-        $resultSignal = Invoke-FormulaGraphCondenser -ConductionSignal $feedSignal | Select-Object -Last 1
+        $resultSignal = Invoke-GraphCondenser -ConductionSignal $feedSignal | Select-Object -Last 1
         $opSignal.MergeSignal($resultSignal) | Out-Null
 
         $opSignal.SetResult($resultSignal.GetResult())
@@ -104,9 +104,9 @@ class GridCondenser {
 
         # Inject plans into %.GraphPlans for downstream Condenser
         $graphPlans = $planSignal.GetResult()
-        Add-PathToDictionary -Dictionary $condenserSignal -Path "%.%.%.@.FormulaGraphPlans" -Value $graphPlans | Out-Null
+        Add-PathToDictionary -Dictionary $condenserSignal -Path "%.%.%.@.GraphPlans" -Value $graphPlans | Out-Null
 
-        # 🔁 Invoke the FormulaGraphCondenser
+        # 🔁 Invoke the GraphCondenser
         $resultSignal = Invoke-GridCondenser -Signal $condenserSignal | Select-Object -Last 1
 
         # Merge final state back to opSignal for continuity

@@ -1,11 +1,11 @@
-function Invoke-FormulaGraphCondenser {
+function Invoke-GraphCondenser {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
         [Signal]$Signal
     )
 
-    $opSignal = [Signal]::Start("Invoke-FormulaGraphCondenser", $Signal) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-GraphCondenser", $Signal) | Select-Object -Last 1
 
     $plansSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%.%.%.@.GraphPlans" | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($plansSignal)) {
@@ -37,7 +37,7 @@ function Invoke-FormulaGraphCondenser {
                 return Invoke-GridCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
             }
             "Fab" {
-                return Invoke-GridFabCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
+                return Invoke-GraphFabCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
             }
             default {
     #            return Invoke-GridCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1

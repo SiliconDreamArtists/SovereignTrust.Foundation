@@ -1,4 +1,4 @@
-function Resolve-PathFormulaGraph {
+function Resolve-PathGraph {
     param (
         [Parameter(Mandatory)][string]$WirePath,
         [Parameter(Mandatory)][string]$StrategyType,
@@ -7,18 +7,18 @@ function Resolve-PathFormulaGraph {
     )
 
     # ░▒▓█ SIGNAL INIT █▓▒░
-    $signal = [Signal]::Start("Resolve-PathFormulaGraph:$WirePath") | Select-Object -Last 1
+    $signal = [Signal]::Start("Resolve-PathGraph:$WirePath") | Select-Object -Last 1
 
     # ░▒▓█ STRATEGY RESOLVER TABLE █▓▒░
     $strategyTable = @{
         "Publisher" = {
-            Resolve-PathFormulaGraphForPublisher -WirePath $WirePath -Environment $Environment
+            Resolve-PathGraphForPublisher -WirePath $WirePath -Environment $Environment
         }
         "Module" = {
-            Resolve-PathFormulaGraphForModule -WirePath $WirePath -Environment $Environment
+            Resolve-PathGraphForModule -WirePath $WirePath -Environment $Environment
         }
         "Condenser" = {
-            Resolve-PathFormulaGraphCondenserAdapter -Conductor $Conductor
+            Resolve-PathGraphCondenserAdapter -Conductor $Conductor
         }
     }
 
@@ -52,7 +52,7 @@ function Resolve-PathFormulaGraph {
 ░▒▓█ █▓▒░
 🧠 SOVEREIGN TRUST MODULE • PATH FORMULA GRAPH RESOLVER
 ────────────────────────────────────────────────────────────────────
-📂 File: Resolve-PathFormulaGraph.ps1
+📂 File: Resolve-PathGraph.ps1
 📘 Purpose: Build a structured memory Graph based on an addressable formula
            (usually a WirePath), populating key sections like Manifest,
            Adapter metadata, and Source lineage.

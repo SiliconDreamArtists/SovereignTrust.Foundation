@@ -104,11 +104,11 @@ class Conductor {
         try {
             $memoryCondenserSignal = Resolve-PathFromDictionary -Dictionary $this -Path "$.*.#.Adapters.*.#.MappedCondenser.@.$.*.#.MemoryCondenser.@.@" | Select-Object -Last 1
 
-            # ░▒▓█ Resolve FormulaGraphCondenser from memory █▓▒░
-            $condenserSignal = Resolve-PathFromDictionary -Dictionary $this -Path "$.*.#.Adapters.*.#.MappedCondenser.@.$.*.#.FormulaGraphCondenser" | Select-Object -Last 1
+            # ░▒▓█ Resolve GraphCondenser from memory █▓▒░
+            $condenserSignal = Resolve-PathFromDictionary -Dictionary $this -Path "$.*.#.Adapters.*.#.MappedCondenser.@.$.*.#.GraphCondenser" | Select-Object -Last 1
 
             if ($opSignal.MergeSignalAndVerifyFailure($condenserSignal)) {
-                return $opSignal.LogCritical("❌ Could not resolve FormulaGraphCondenser.")
+                return $opSignal.LogCritical("❌ Could not resolve GraphCondenser.")
             }
 
             $condenserGraphSignal = $condenserSignal.GetResult()

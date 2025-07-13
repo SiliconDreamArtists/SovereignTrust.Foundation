@@ -1,9 +1,9 @@
 # =============================================================================
-# 🧪 FormulaGraphCondenser (Declarative Multi-Plan Graph Launcher)
+# 🧪 GraphCondenser (Declarative Multi-Plan Graph Launcher)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
 #  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 06/25/2025
 # =============================================================================
-# The FormulaGraphCondenser is a memory-driven execution class that consumes
+# The GraphCondenser is a memory-driven execution class that consumes
 # declarative GraphPlans from sovereign memory, processes them via the SDA
 # graph condenser pipeline, and injects the resulting graph signals into 
 # structured runtime memory.
@@ -37,25 +37,25 @@
 #   - Declarative runtime orchestration of multi-phase graph systems
 
 
-class FormulaGraphCondenser {
+class GraphCondenser {
     [Conductor]$Conductor
     [MappedCondenserAdapter]$MappedCondenserAdapter
     [Signal]$Signal  # Sovereign control signal
 
-    FormulaGraphCondenser() {
+    GraphCondenser() {
         # Empty constructor, to enforce use of .Start()472
     }
 
-    static [FormulaGraphCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
-        $instance = [FormulaGraphCondenser]::new()
+    static [GraphCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
+        $instance = [GraphCondenser]::new()
         $instance.MappedCondenserAdapter = $mappedAdapter
         $instance.Conductor = $conductor
-        $instance.Signal = [Signal]::Start("FormulaGraphCondenser")
+        $instance.Signal = [Signal]::Start("GraphCondenser")
         return $instance
     }
 
     [Signal] Invoke() {
-        $opSignal = [Signal]::Start("FormulaGraphLauncher.Invoke", $this.Signal) | Select-Object -Last 1
+        $opSignal = [Signal]::Start("GraphLauncher.Invoke", $this.Signal) | Select-Object -Last 1
 
         $sourceSignal = Resolve-PathFromDictionary -Dictionary $this.Conductor -Path "%.FlatFormulaSource" | Select-Object -Last 1
         $opSignal.MergeSignal($sourceSignal) | Out-Null
@@ -67,12 +67,12 @@ class FormulaGraphCondenser {
 
         $sourceData = $sourceSignal.GetResult()
 
-        # Construct signal to feed into the FormulaGraphCondenser
-        $feedSignal = [Signal]::Start("FormulaGraphCondenser.Feed", $opSignal, $null, $sourceData) | Select-Object -Last 1
+        # Construct signal to feed into the GraphCondenser
+        $feedSignal = [Signal]::Start("GraphCondenser.Feed", $opSignal, $null, $sourceData) | Select-Object -Last 1
         Add-PathToDictionary -Dictionary $feedSignal -Path "$.%.GraphPlans" -Value $sourceData.GraphPlans | Out-Null
 
         # Call our declarative plan processor
-        $resultSignal = Invoke-FormulaGraphCondenser -ConductionSignal $feedSignal | Select-Object -Last 1
+        $resultSignal = Invoke-GraphCondenser -ConductionSignal $feedSignal | Select-Object -Last 1
         $opSignal.MergeSignal($resultSignal) | Out-Null
 
         $opSignal.SetResult($resultSignal.GetResult())
@@ -80,7 +80,7 @@ class FormulaGraphCondenser {
     }
 
     [Signal] InvokeFromPlanPath([string]$PlanWirePath, [object]$jacketObject) {
-        $opSignal = [Signal]::Start("FormulaGraphCondenser.InvokeFromPlanPath") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("GraphCondenser.InvokeFromPlanPath") | Select-Object -Last 1
 
         # Determine base memory to evolve (from existing Result or jacket)
         $initialMemory = if ($this.Signal -and $this.Signal.HasResult()) {
@@ -105,8 +105,8 @@ class FormulaGraphCondenser {
         $graphPlans = $planSignal.GetResult()
         Add-PathToDictionary -Dictionary $condenserSignal -Path "%.%.%.@.GraphPlans" -Value $graphPlans | Out-Null
 
-        # 🔁 Invoke the FormulaGraphCondenser
-        $resultSignal = Invoke-FormulaGraphCondenser -Signal $condenserSignal | Select-Object -Last 1
+        # 🔁 Invoke the GraphCondenser
+        $resultSignal = Invoke-GraphCondenser -Signal $condenserSignal | Select-Object -Last 1
 
         # Merge final state back to opSignal for continuity
         $opSignal.SetResult($resultSignal.GetResult())
@@ -116,7 +116,7 @@ class FormulaGraphCondenser {
     }
 
     [Signal] InvokeFromPlanPathOld([string]$PlanWirePath, [object]$jacketObject) {
-        $opSignal = [Signal]::Start("FormulaGraphCondenser.InvokeFromPlanPath") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("GraphCondenser.InvokeFromPlanPath") | Select-Object -Last 1
 
         # Construct base signal with your jacketed runtime object
         $condenserSignal = [Signal]::Start("GridCondenser", $opSignal, $null, $jacketObject) | Select-Object -Last 1
@@ -134,7 +134,7 @@ class FormulaGraphCondenser {
         Add-PathToDictionary -Dictionary $condenserSignal -Path "$.%.GraphPlans" -Value $graphPlans | Out-Null
 
         # 🔁 Run the plan-driven processor
-        $resultSignal = Invoke-FormulaGraphCondenser -Signal $condenserSignal | Select-Object -Last 1
+        $resultSignal = Invoke-GraphCondenser -Signal $condenserSignal | Select-Object -Last 1
         $opSignal.MergeSignal($resultSignal)
 
         return $opSignal

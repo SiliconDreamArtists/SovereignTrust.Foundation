@@ -17,7 +17,7 @@
 #
 # Process:
 #   - Creates a scoped sub-signal with jacket and plan metadata
-#   - Runs Resolve-PathFormulaGraphForJsonArray to generate graph
+#   - Runs Resolve-PathGraphForJsonArray to generate graph
 #   - Wraps result in a new Signal with .Pointer set
 #   - Injects signal into memory if TargetWirePath is defined
 #
@@ -50,7 +50,7 @@ function Invoke-HydrateTokenCondenser {
     }
 
     ##### Hydration Step
-    $graphSignal = Resolve-PathFormulaGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
+    $graphSignal = Resolve-PathGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
         $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
         return $opSignal
