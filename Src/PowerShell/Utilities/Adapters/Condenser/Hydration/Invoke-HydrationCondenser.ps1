@@ -1,42 +1,68 @@
+$TokenDispatch = @{
+    '*' = 'Invoke-GlobalCondenser'
+    '@' = 'Invoke-TokenCondenser'
+    '+' = 'Invoke-JsonCondenser'
+    '-' = 'Invoke-StringCondenser'
+    '~' = 'Invoke-NavigatorCondenser'
+    '#' = 'Invoke-MapCondenser'
+    '$' = 'Invoke-MergeCondenser'
+}
+
 function Invoke-HydrationCondenser {
     param (
-        [Parameter(Mandatory)][Graph]$Graph,
-        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Intent
+        [Parameter(Mandatory)] [Signal]$Signal,
+        [Parameter(Mandatory)] [object]$Plan,
+        [Parameter(Mandatory)] [object]$ItemSignal
     )
-    $signal = [Signal]::Start("Invoke-HydrationCondenser") | Select-Object -Last 1
-    foreach ($entry in $Intent) {
-        if ($null -eq $entry -or -not ($entry -is [hashtable])) {
-            $signal.LogWarning("⚠️ Invalid or null hydration entry — skipping.")
-            continue
+
+    $opSignal = [Signal]::Start("HydrationCondenser", $Signal) | Select-Object -Last 1
+
+    # Assume there are no changes until a change occurs.
+    $opSignal.SetResult($false)
+
+    try {
+        $hydrationPlanSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "HydrationPlan" | Select-Object -Last 1
+        if (-not $opSignal.MergeSignalAndVerifySuccess(@($hydrationPlanSignal))) {
+            $opSignal.LogInformation("ℹ️ No HydrationPlan specified, skipping hydration.")
+            return $Signal
         }
-        try {
-            $kind  = $entry.Kind  ?? "Storage"
-            $slot  = $entry.Slot  ?? "PrimaryContent"
-            $format = $entry.Format ?? "json"
-            $mode   = $entry.Mode   ?? "Replace"
-            $targetPath = $entry.TargetPath ?? "Memory.$($slot)"
-            $pathSignal = Resolve-HydrationSourcePath -Graph $Graph -Intent $entry -Kind $kind -Slot $slot | Select-Object -Last 1
-            if ($signal.MergeSignalAndVerifyFailure($pathSignal)) {
-                $signal.LogCritical("❌ Failed to resolve path for: $($entry.RelativePath)")
-                continue
+
+        $hydrationPlan = $hydrationPlanSignal.GetResult()
+    
+        foreach ($step in ($hydrationPlan.ToCharArray())) {
+            switch ($step) {
+                '^' {
+                    $oldResult = $Signal.GetResult() | ConvertTo-Json -Depth 99
+                    do {
+                        $prev = $oldResult
+                        $stepSignal = Invoke-HydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
+                        $oldResult = $stepSignal.GetResult() | ConvertTo-Json -Depth 99
+                    } while ($prev -ne $oldResult)
+                    $stepSignal
+                }
+                default {
+                    if ($TokenDispatch.ContainsKey([string]$step)) {
+                        $stepSignal = & $TokenDispatch[[string]$step] -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
+                    } else {
+                        $opSignal.LogWarning("⚠️ Unknown hydration step: $step")
+                        continue
+                    }
+                }
             }
-            $fullPath = $pathSignal.GetResult()
-            $readSignal = Read-HydrationFile -Path $fullPath -Format $format | Select-Object -Last 1
-            if ($signal.MergeSignalAndVerifyFailure($readSignal)) {
-                $signal.LogCritical("❌ Failed to read: $($entry.RelativePath)")
-                continue
+
+            if (-not $opSignal.MergeSignalAndVerifySuccess(@($stepSignal))) {
+                $opSignal.LogCritical("❌ Hydration step '$step' failed.")
+                break
             }
-            $parsed = $readSignal.GetResult()
-            $writeSignal = Apply-HydrationToGraph -Graph $Graph -ParsedObject $parsed -TargetPath $targetPath -Mode $mode | Select-Object -Last 1
-            $signal.MergeSignal($writeSignal)
-            if ($writeSignal.Success()) {
-                $signal.LogInformation("📥 Hydrated '$($entry.RelativePath)' → '$targetPath'")
-            } else {
-                $signal.LogWarning("⚠️ Write failed for '$targetPath'")
+
+            if ($stepSignal.HasResult()) {
+                $opSignal.SetResult($stepSignal.GetResult())
             }
-        } catch {
-            $signal.LogCritical("🔥 Exception during hydration pass: $($_.Exception.Message)")
         }
     }
-    return $signal
+    catch {
+        $opSignal.LogCritical("🔥 HydrationCondenser exception: $_")
+    }
+
+    return $opSignal
 }

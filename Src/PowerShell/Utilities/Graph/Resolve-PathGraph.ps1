@@ -15,7 +15,7 @@ function Resolve-PathGraph {
             Resolve-PathGraphForPublisher -WirePath $WirePath -Environment $Environment
         }
         "Module" = {
-            Resolve-PathGraphForModule -WirePath $WirePath -Environment $Environment
+            Resolve-ModulePathSignal -WirePath $WirePath
         }
         "Condenser" = {
             Resolve-PathGraphCondenserAdapter -Conductor $Conductor

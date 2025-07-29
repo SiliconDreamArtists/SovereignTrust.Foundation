@@ -1,5 +1,5 @@
 # =============================================================================
-# 📍 Invoke-GraphFabCondenser (Declarative Graph Builder + Injector)
+# 📍 Invoke-GraphConductionCondenser (Declarative Graph Builder + Injector)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
 #  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 06/25/2025
 # =============================================================================
@@ -29,7 +29,7 @@
 # - All lineage is tracked through Signals
 # - Memory injection is explicit and symbolic
 
-function Invoke-GraphFabCondenser {
+function Invoke-GraphConductionCondenser {
     param (
         [Signal]$Signal,
         [object]$Plan,
@@ -37,7 +37,7 @@ function Invoke-GraphFabCondenser {
         [string]$PlanWirePathPrefix = "%.%.%.@"  # <- new param with default
     )
 
-    $opSignal = [Signal]::Start("Invoke-GraphFabCondenser:$Plan.Name", $Signal) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-GraphConductionCondenser:$Plan.Name", $Signal) | Select-Object -Last 1
 
     $PlanName = $Plan.Name
     $subSignal = [Signal]::Start("GraphPlan:$PlanName", $Signal) | Select-Object -Last 1
@@ -48,11 +48,11 @@ function Invoke-GraphFabCondenser {
     
     $JacketSignal = $JacketSignalWrapper.GetResult()
 
-    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Jacket $JacketSignal | Select-Object -Last 1
+#    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Jacket $JacketSignal | Select-Object -Last 1
 
-    $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $ResolveAdapterSignal) | Select-Object -Last 1
+    $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $Signal) | Select-Object -Last 1
 
-    $Adapter = $ResolveAdapterSignal.GetResult() | Select-Object -Last 1
+    #$Adapter = $ResolveAdapterSignal.GetResult() | Select-Object -Last 1
     #    $wrappedGraphSignal.SetPointer($graphResult) | Out-Null
 
 
@@ -94,6 +94,6 @@ function Invoke-GraphFabCondenser {
     $opSignal.SetResult($wrappedGraphSignal)
 #>
 
-    $opSignal.LogInformation("✅ Graph Fab plan '$PlanName' completed successfully.")
+    $opSignal.LogInformation("✅ Graph Conduction plan '$PlanName' completed successfully.")
     return $opSignal
 }

@@ -6,7 +6,9 @@ function Resolve-PathGraphForPublisher {
     )
 
     $signal = [Signal]::Start("Resolve-PathGraphForSDAPublisher:$WirePath") | Select-Object -Last 1
-    $graph = [Graph]::new($Environment)
+    $graphSignal = [Graph]::Start("Resolve-PathGraphForSDAPublisher:$WirePath", $opSignal, $true) | Select-Object -Last 1
+    $graph = $graphSignal.GetResult()
+
     $graph.Start()
 
     $segmentsFull = $WirePath -split '_'

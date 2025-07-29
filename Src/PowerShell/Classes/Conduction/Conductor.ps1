@@ -94,6 +94,13 @@ class Conductor {
             }
         }
 
+        # ░▒▓█ RESOLVE TOKEN ADAPTER POPULATION GRAPH █▓▒░
+        $graphSourceSignal = Resolve-PathGraphTokenAdapter -Conductor $this | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($graphSourceSignal)) {
+            $opSignal.LogCritical("❌ Failed to resolve Condenser adapter source graph.")
+            return $opSignal
+        }
+
         Invoke-TraceSignalTree -Signal $this.Signal -VisualizeFinal $true
         return $opSignal
     }

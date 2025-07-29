@@ -22,6 +22,13 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Classes/Conduction/Conduit.ps1"
 . "$PSScriptRoot/Classes/Conduction/Conductor.ps1"
 
+. "$PSScriptRoot/Classes/Adapters/Token/Token_Conduction.ps1"
+. "$PSScriptRoot/Classes/Adapters/Token/Token_Environment.ps1"
+. "$PSScriptRoot/Classes/Adapters/Token/Token_Formatter.ps1"
+. "$PSScriptRoot/Classes/Adapters/Token/Token_Generator.ps1"
+. "$PSScriptRoot/Classes/Adapters/Token/Token_Navigator.ps1"
+. "$PSScriptRoot/Classes/Adapters/Token/Token_Storage.ps1"
+
 
 . "$PSScriptRoot/Classes/Adapters/BaseAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/Conduit.ps1"
@@ -53,10 +60,15 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Grid/Invoke-GridCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-GraphCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-ConductionCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-GraphConductionCondenser.ps1"
 #. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-Graph.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Global/Invoke-GlobalCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Token/Invoke-TokenCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Global/Resolve-GlobalTokenOverrideForProperty.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Apply-HydrationToGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Convert-VirtualPathToWirePath.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Ensure-HydrationIntentInSignal.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Invoke-GraphHydrationCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Invoke-HydrationCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Read-HydrationFile.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Resolve-GraphHydrationQueue.ps1"
@@ -81,8 +93,9 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Graph/Convert-JsonToGraph.ps1"
 . "$PSScriptRoot/Utilities/Graph/Resolve-PathGraph.ps1"
 . "$PSScriptRoot/Utilities/Graph/Resolve-PathGraphCondenserAdapter.ps1"
+. "$PSScriptRoot/Utilities/Graph/Resolve-PathGraphTokenAdapter.ps1"
 . "$PSScriptRoot/Utilities/Graph/Resolve-PathGraphForConduction.ps1"
-. "$PSScriptRoot/Utilities/Graph/Resolve-PathGraphForModule.ps1"
+. "$PSScriptRoot/Utilities/Graph/Resolve-ModulePathSignal.ps1"
 . "$PSScriptRoot/Utilities/Graph/Resolve-PathGraphForPublisher.ps1"
 . "$PSScriptRoot/Utilities/IO/LocalFileSystem/Read-JsonFileAsSignal.ps1"
 . "$PSScriptRoot/Utilities/IO/LocalFileSystem/Wait-ForFileUnlock.ps1"
@@ -113,13 +126,17 @@ Export-ModuleMember -Function Resolve-ConductorAdapters
 Export-ModuleMember -Function Resolve-DependencyModuleFromGraph
 Export-ModuleMember -Function Test-ModuleLoaded
 Export-ModuleMember -Function Invoke-GridCondenser
+Export-ModuleMember -Function Invoke-TokenCondenser
 Export-ModuleMember -Function Invoke-GraphCondenser
 Export-ModuleMember -Function Invoke-ConductionCondenser
+Export-ModuleMember -Function Invoke-GraphConductionCondenser
 Export-ModuleMember -Function Invoke-Graph
 Export-ModuleMember -Function Apply-HydrationToGraph
 Export-ModuleMember -Function Convert-VirtualPathToWirePath
 Export-ModuleMember -Function Ensure-HydrationIntentInSignal
+Export-ModuleMember -Function Invoke-GraphHydrationCondenser
 Export-ModuleMember -Function Invoke-HydrationCondenser
+Export-ModuleMember -Function Invoke-GlobalCondenser
 Export-ModuleMember -Function Read-HydrationFile
 Export-ModuleMember -Function Resolve-GraphHydrationQueue
 Export-ModuleMember -Function Resolve-HydrationSourcePath
@@ -143,7 +160,7 @@ Export-ModuleMember -Function Convert-JsonToGraph
 Export-ModuleMember -Function Resolve-PathGraph
 Export-ModuleMember -Function Resolve-PathGraphCondenserAdapter
 Export-ModuleMember -Function Resolve-PathGraphForConduction
-Export-ModuleMember -Function Resolve-PathGraphForModule
+Export-ModuleMember -Function Resolve-ModulePathSignal
 Export-ModuleMember -Function Resolve-PathGraphForPublisher
 Export-ModuleMember -Function Read-JsonFileAsSignal
 Export-ModuleMember -Function Wait-ForFileUnlock

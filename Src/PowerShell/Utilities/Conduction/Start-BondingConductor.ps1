@@ -10,10 +10,9 @@ function Start-BondingConductor {
 
     try {
         # ░▒▓█ INSTANTIATE CONDUCTOR █▓▒░
-#        $bondingConductor = New-Conductor -HostConductor $null -ConductionSignal $Signal
         $bondingConductor = [Conductor]::Start($null, $Signal)
         
-        Add-PathToDictionary -Dictionary $bondingConductor -Path "$.%.Status" -Value "Initializing" | Out-Null
+        Add-PathToDictionary -Dictionary $bondingConductor -Path "$.%.Status" -Value "Initializing" | Select-Object -Last 1
 
         $opSignal.LogInformation("✅ BondingConductor initialized from ConductionSignal.")
 
@@ -30,7 +29,8 @@ function Start-BondingConductor {
 
         $resolveSignal = Resolve-ConductorAdapters -Conductor $bondingConductor | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($resolveSignal)) {
-            $opSignal.LogCritical("❌ Conductor adapter resolution failed.")
+            $opSignal.LogCritical("❌ Conductor adapter resolution failed.")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       n 
+            
             return $opSignal
         }
 
