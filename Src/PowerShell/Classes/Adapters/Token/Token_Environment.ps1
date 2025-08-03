@@ -7,52 +7,50 @@ class Token_Environment {
     Token_Environment() {
     }
 
-
     static [Token_Environment] Start([MappedTokenAdapter]$mappedAdapter, [Conductor]$conductor) {
         $instance = [Token_Environment]::new()
         $instance.MappedAdapter = $mappedAdapter
         $instance.Conductor = $conductor
-        $instance.Signal = [Signal]::Start("GraphCondenser")
+        $instance.Signal = [Signal]::Start("TokenEnvironment")
         return $instance
     }
 
     [Signal] Construct([object]$dictionary) {
-        $opSignal = [Signal]::Start("Construct-EmbeddedFileSystem") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("Construct-TokenEnvironment") | Select-Object -Last 1
 
         try {
             if ($null -eq $dictionary) {
-                return $opSignal.LogCritical("Cannot construct EmbeddedFileSystem — provided dictionary is null.")
+                return $opSignal.LogCritical("Cannot construct Token_Environment — provided dictionary is null.")
             }
 
             $this.Jacket = $dictionary
-            $opSignal.LogInformation("EmbeddedFileSystem constructed successfully with provided jacket.")
+            $opSignal.LogInformation("Token_Environment constructed successfully with provided jacket.")
         }
         catch {
-            $opSignal.LogCritical("Error constructing EmbeddedFileSystem: $_")
+            $opSignal.LogCritical("🔥 Error constructing Token_Environment: $_")
         }
 
         return $opSignal
     }
 
-    [Signal] ReadObjectAsJson([string]$virtualPath) {
-        $opSignal = [Signal]::Start("EmbeddedFileSystem.ReadObjectAsJson") | Select-Object -Last 1
+[Signal] Invoke([object]$Path, [object]$Plan) {
+    $opSignal = [Signal]::Start("Token_Environment.Invoke") | Select-Object -Last 1
 
-        try {
-            $pathWithExtension = "$virtualPath.json"
-            $jsonSignal = Get-JsonObjectFromFile -RootFolder $this.Jacket.Address -VirtualPath $pathWithExtension | Select-Object -Last 1
-            $opSignal.MergeSignal($jsonSignal)
+    try {
+        $resultSignal = Invoke-TokenEnvironment -Conductor $this.Conductor -Conduit $null -Path $Path -Plan $Plan | Select-Object -Last 1
+        $opSignal.MergeSignal($resultSignal)
 
-            if ($jsonSignal.Success()) {
-                $opSignal.SetResult($jsonSignal.GetResult())
-                $opSignal.LogInformation("📄 JSON content read from embedded file system: $pathWithExtension")
-            } else {
-                $opSignal.LogWarning("⚠️ Failed to read JSON from: $pathWithExtension")
-            }
+        if ($resultSignal.Success()) {
+            $opSignal.SetResult($resultSignal.GetResult())
+            $opSignal.LogInformation("✅ Token environment path '$Path' resolved successfully.")
+        } else {
+            $opSignal.LogWarning("⚠️ Token environment path '$Path' failed to resolve.")
         }
-        catch {
-            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObjectAsJson: $($_.Exception.Message)")
-        }
-
-        return $opSignal
     }
+    catch {
+        $opSignal.LogCritical("🔥 Exception in Token_Environment.Invoke: $($_.Exception.Message)")
+    }
+
+    return $opSignal
+}
 }

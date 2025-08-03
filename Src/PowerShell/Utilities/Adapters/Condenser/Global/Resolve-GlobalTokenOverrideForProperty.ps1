@@ -81,10 +81,11 @@ function Resolve-GlobalTokenOverrideForProperty {
 
                 $adapterSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%.*.#.Adapters.*.#.MappedToken.@" | Select-Object -Last 1
                 
+                $adapter = $adapterSignal.GetResult()
 
-                $replacementTemplate = $matchText
+                $resultSignal = $adapter.Invoke($key);
                 $lookupSignal = [Signal]::Start("Resolve-GlobalTokenOverrideForProperty:$($Property.Name)", $null) | Select-Object -Last 1
-                $lookupSignal.SetResult("MYFRIEND!")
+                $lookupSignal.SetResult($resultSignal.GetResult())
             }
 
             $opSignal.MergeSignal($lookupSignal)
@@ -95,8 +96,22 @@ function Resolve-GlobalTokenOverrideForProperty {
                 if ($SplitMatchCharacter) {
                     $replacement = $replacementTemplate -f $key, $lookupSignal.Result
                 }
-                $innerRegex = [regex]::new("\[$key.*?\/\]")
+
+                # Escape the whole key again for regex use
+                $escapedKey = [regex]::Escape($key)  # results in "Formatter\\.FilePath"
+                $innerRegex = [regex]::new("\[$escapedKey.*?\/\]")
+                
+                $oldValue = $propertyValue
                 $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
+
+                if ($propertyValue -ne $oldValue) {
+                    $opSignal.LogInformation("🔄 Replaced '$key' with '$replacement' in property '$($Property.Name)'")
+                }
+                else {
+
+                    $propertyValue = $propertyValue -replace $match.Value, $replacement
+                    $opSignal.LogWarning("⚠️ No replacement made for '$key' in property '$($Property.Name)' — token may be malformed or missing. ($propertyValue)")
+                }
             }
         }
 

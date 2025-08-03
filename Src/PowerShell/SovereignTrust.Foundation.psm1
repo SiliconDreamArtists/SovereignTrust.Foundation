@@ -78,6 +78,12 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-PathHydration.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Merge/Merge-CondenserCore.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Token/Invoke-HydrateTokenCondenser.ps1"
+
+. "$PSScriptRoot/Utilities/Adapters/Token/Invoke-MappedTokenAdapter.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenEnvironment.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenFormatter.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenFormatterFilePath.ps1"
+
 . "$PSScriptRoot/Utilities/Conduction/Complete-Conduction.ps1"
 . "$PSScriptRoot/Utilities/Conduction/ConductionCoreFunctions.ps1"
 . "$PSScriptRoot/Utilities/Conduction/ConductionPhaseFunctions.ps1"

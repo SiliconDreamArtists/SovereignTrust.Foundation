@@ -45,19 +45,19 @@ function Invoke-GraphHydrationCondenser {
 
     $invokeResult = Invoke-HydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
 
-    $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "@.%" | Select-Object -Last 1
+#    $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "@.%" | Select-Object -Last 1
     
-    $JacketSignal = $JacketSignalWrapper.GetResult()
+#    $JacketSignal = $JacketSignalWrapper.GetResult()
 
 #    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Jacket $JacketSignal | Select-Object -Last 1
 
-    $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $Signal) | Select-Object -Last 1
+#    $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $Signal) | Select-Object -Last 1
 
     #$Adapter = $ResolveAdapterSignal.GetResult() | Select-Object -Last 1
     #    $wrappedGraphSignal.SetPointer($graphResult) | Out-Null
 
 
-    if ($Plan.TargetWirePath) {
+    if ($false -and $Plan.TargetWirePath) {
         $injectSignal = Add-PathToDictionary -Dictionary $ItemSignal -Path $Plan.TargetWirePath -Value $Adapter | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($injectSignal)) {
             $opSignal.LogCritical("❌ Failed to inject graph into '$($Plan.TargetWirePath)'")

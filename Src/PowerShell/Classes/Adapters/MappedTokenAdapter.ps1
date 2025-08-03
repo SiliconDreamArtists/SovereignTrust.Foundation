@@ -16,11 +16,16 @@ class MappedTokenAdapter {
         try {
             $adapter = [MappedTokenAdapter]::new()
             $adapter.Signal = [Signal]::Start("MappedTokenAdapter") | Select-Object -Last 1
+
+            # Yes, this is a weird place to keep the Conductor, we played around with putting it in the Signal, 
+            # but now we know it should be in Grid of the Signal or just include a $Conductor in the adapter
             $adapter.Signal.SetJacket($Conductor)
             $adapter.Signal.SetReversePointer($Conductor)
 
             $graphSignal = [Graph]::Start("MappedTokenAdapter", $adapter, $false)
-            $adapter.Signal.SetResult($graphSignal.GetResult())
+            $adapter.Signal.SetPointer($graphSignal)
+
+            $graphSignal.RegisterSignal
 
             $opSignal.SetResult($adapter)
             $opSignal.LogInformation("✅ MappedTokenAdapter initialized.")
@@ -43,11 +48,36 @@ class MappedTokenAdapter {
 
         if ($registerSignal.Success()) {
             $opSignal.LogInformation("✅ Registered adapter at key: '$Key'")
-        } else {
+        }
+        else {
             $opSignal.LogWarning("⚠️ Failed to register adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)
+        return $opSignal
+    }
+
+    [Signal] Invoke([object]$Path) {
+        $opSignal = [Signal]::Start("MappedTokenAdapter.Invoke") | Select-Object -Last 1
+
+        try {
+            # Yes, this is a weird place to keep the Conductor, we played around with putting it in the Signal, 
+            # but now we know it should be in Grid of the Signal or just include a $Conductor in the adapter
+            $resultSignal = Invoke-MappedTokenAdapter -MappedAdapter $this -Conductor $this.Signal.GetJacket() -Path $Path | Select-Object -Last 1
+            $opSignal.MergeSignal($resultSignal)
+
+            if ($resultSignal.Success()) {
+                $opSignal.SetResult($resultSignal.GetResult())
+                $opSignal.LogInformation("✅ MappedTokenAdapter resolved path successfully: $Path")
+            }
+            else {
+                $opSignal.LogWarning("⚠️ MappedTokenAdapter failed to resolve path: $Path")
+            }
+        }
+        catch {
+            $opSignal.LogCritical("🔥 Exception in MappedTokenAdapter.Invoke: $($_.Exception.Message)")
+        }
+
         return $opSignal
     }
 
@@ -67,10 +97,12 @@ class MappedTokenAdapter {
                     $opSignal.SetResult($result.GetResult())
                     $opSignal.LogInformation("🎯 Adapter '$key' successfully invoked '$MethodName'")
                     break
-                } else {
+                }
+                else {
                     $opSignal.LogWarning("⚠️ Adapter '$key' failed on method '$MethodName'")
                 }
-            } else {
+            }
+            else {
                 $opSignal.LogVerbose("⏭️ Adapter '$key' does not implement '$MethodName'")
             }
         }

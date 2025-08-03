@@ -30,8 +30,23 @@ function Invoke-TokenCondenser {
     $RegexPattern = "\[([^\[\]=]+?)/\]"
     $RegexPattern = "\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]"
 
+    $RegexPattern = "\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]"
+
     # Invoke recursive token crawl across the result object
-    Invoke-TokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
+    $_result = Invoke-TokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
+        -CurrentObject $result `
+        -Dictionary $Dictionary `
+        -DictionaryName $DictionaryName `
+        -ReturnRequiredValues:$ReturnRequiredValues `
+        -RegexPattern $RegexPattern
+
+    $RegexPattern = "\[([^\[\]/]+)\/\]"
+
+    # Use this for basic [Token.Path/] forms
+    $RegexPattern = "\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]"
+
+    # Invoke recursive token crawl across the result object
+    $_result = Invoke-TokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
         -CurrentObject $result `
         -Dictionary $Dictionary `
         -DictionaryName $DictionaryName `
@@ -70,7 +85,7 @@ function Invoke-TokenCrawl {
             if ($trimmed.StartsWith('{') -and $trimmed.EndsWith('}')) {
                 return $trimmed | ConvertFrom-Json -ErrorAction Stop
             }
-            elseif ($trimmed.StartsWith('[') -and $trimmed.EndsWith(']')) {
+            elseif ($trimmed.StartsWith('[') -and $trimmed.EndsWith(']') -and -not $trimmed.EndsWith('/]')) {
                 return @($trimmed | ConvertFrom-Json -ErrorAction Stop)
             }
         }
@@ -97,6 +112,11 @@ function Invoke-TokenCrawl {
         if ($valueSignal.Failure()) {
             #$MergeCondenserFeedback.LogWarning("Failed to resolve path '$Key' in dictionary '$DictionaryName'.")
             return
+        }
+
+        if ($Key -eq "1")
+        {
+$x = $valueSignal
         }
 
         $propObject = [PSCustomObject]@{ Name = $Key; Value = $valueSignal.GetResult() }
@@ -159,8 +179,8 @@ function Invoke-TokenCrawl {
                             -MergeCondenserFeedback $MergeCondenserFeedback `
                             -Parent $value `
                             -Key "$i" `
-                                        -Signal $Signal `
-                -Dictionary $Dictionary `
+                            -Signal $Signal `
+                            -Dictionary $Dictionary `
                             -DictionaryName $DictionaryName `
                             -ReturnRequiredValues:$ReturnRequiredValues `
                             -RegexPattern $RegexPattern
@@ -173,7 +193,7 @@ function Invoke-TokenCrawl {
                         -MergeCondenserFeedback $MergeCondenserFeedback `
                         -Parent $Parent `
                         -Key $Key `
-                            -Signal $Signal `
+                        -Signal $Signal `
                         -Dictionary $Dictionary `
                         -DictionaryName $DictionaryName `
                         -ReturnRequiredValues:$ReturnRequiredValues `

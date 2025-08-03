@@ -85,6 +85,10 @@ function Invoke-GraphCondenser {
                 $arraySignal = Resolve-PathFromDictionary -Dictionary $Item -Path "@.$($Plan.ForEachIn)" | Select-Object -Last 1
             }
 
+            if ($Plan.CondenserType -eq "Fab") {
+                $arraySignal = Resolve-PathFromDictionary -Dictionary $Item -Path "*.#.$($Plan.ForEachIn).*.#" | Select-Object -Last 1
+            }
+
             if ($Plan.CondenserType -eq "Conduction") {
                 $arraySignal = Resolve-PathFromDictionary -Dictionary $Item -Path "*.#.$($Plan.ForEachIn).*.#" | Select-Object -Last 1
             }
@@ -155,7 +159,7 @@ function Invoke-GraphCondenser {
                     }
                     else
                     {
-if ($dependent.CondenserType -eq "Conduction") {
+if ($dependent.CondenserType -eq "Fab") {
     $plan = $Plan
 }
 

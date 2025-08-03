@@ -33,25 +33,25 @@ class Token_Navigator {
         return $opSignal
     }
 
-    [Signal] ReadObjectAsJson([string]$virtualPath) {
-        $opSignal = [Signal]::Start("EmbeddedFileSystem.ReadObjectAsJson") | Select-Object -Last 1
+[Signal] Invoke([object]$Path, [object]$Plan) {
+    $opSignal = [Signal]::Start("Token_Navigator.Invoke") | Select-Object -Last 1
 
-        try {
-            $pathWithExtension = "$virtualPath.json"
-            $jsonSignal = Get-JsonObjectFromFile -RootFolder $this.Jacket.Address -VirtualPath $pathWithExtension | Select-Object -Last 1
-            $opSignal.MergeSignal($jsonSignal)
+    try {
+        $resultSignal = Invoke-TokenNavigator -Conductor $this.Conductor -Conduit $null -Path $Path -Plan $Plan | Select-Object -Last 1
+        $opSignal.MergeSignal($resultSignal)
 
-            if ($jsonSignal.Success()) {
-                $opSignal.SetResult($jsonSignal.GetResult())
-                $opSignal.LogInformation("📄 JSON content read from embedded file system: $pathWithExtension")
-            } else {
-                $opSignal.LogWarning("⚠️ Failed to read JSON from: $pathWithExtension")
-            }
+        if ($resultSignal.Success()) {
+            $opSignal.SetResult($resultSignal.GetResult())
+            $opSignal.LogInformation("✅ Token navigator path '$Path' resolved successfully.")
+        } else {
+            $opSignal.LogWarning("⚠️ Token navigator path '$Path' failed to resolve.")
         }
-        catch {
-            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObjectAsJson: $($_.Exception.Message)")
-        }
-
-        return $opSignal
     }
+    catch {
+        $opSignal.LogCritical("🔥 Exception in Token_Navigator.Invoke: $($_.Exception.Message)")
+    }
+
+    return $opSignal
+}
+
 }

@@ -36,6 +36,8 @@ function Resolve-PathGraphTokenAdapter {
 
         $graph.Finalize()
         $opSignal.SetResult($graph)
+
+        $mappedAdapter.Signal.SetPointer($graphSignal)
         $opSignal.LogInformation("✅ Token formula graph created and populated with condenser adapters.")
     }
     catch {
