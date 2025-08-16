@@ -19,8 +19,6 @@ function Invoke-GraphCondenser {
         $planMap[$plan.Name] = $plan
     }
 
-    $executedPlans = @{}
-
     function Invoke-CondenserForPlan {
         param (
             [Signal]$Signal,
@@ -43,7 +41,8 @@ function Invoke-GraphCondenser {
                 return Invoke-GridCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
             }
             "Hydration" {
-                return Invoke-GraphHydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
+                $opResult = Invoke-GraphHydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
+                return $opResult
             }
             "Fab" {
                 return Invoke-GraphFabCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
@@ -52,7 +51,7 @@ function Invoke-GraphCondenser {
                 return Invoke-GraphConductionCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
             }
             default {
-    #            return Invoke-GridCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
+                #            return Invoke-GridCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -PlanWirePathPrefix $PlanWirePathPrefix | Select-Object -Last 1
                 $logSignal = [Signal]::Start("CondenserDispatch:$($Plan.Name)", $Signal) | Select-Object -Last 1
                 $logSignal.LogWarning("⚠️ Unsupported CondenserType '$($Plan.CondenserType)' for plan: $($Plan.Name)")
                 return $logSignal
@@ -70,32 +69,39 @@ function Invoke-GraphCondenser {
 
         $planSignal = [Signal]::Start("GraphPlan:$($Plan.Name)", $Signal) | Select-Object -Last 1
 
-        if ($executedPlans.ContainsKey($Plan.Name)) {
-            return $planSignal
+        if ($Plan.CondenserType -eq "Fab") {
+            $opSignal.LogInformation("🔄 Executing Token Condenser for plan: $($Plan.Name)")
         }
-        $executedPlans[$Plan.Name] = $true
 
         if ($Plan.CondenserType -eq "Conduction") {
             $planSignal.LogInformation("🔄 Executing Token Condenser for plan: $($Plan.Name)")
         }
 
         if ($Plan.ForEachIn) {
-            $arraySignal = Resolve-PathFromDictionary -Dictionary $Item -Path "%.%.@.$($Plan.ForEachIn)" | Select-Object -Last 1
-            if ($arraySignal.Failure()) {
-                $arraySignal = Resolve-PathFromDictionary -Dictionary $Item -Path "@.$($Plan.ForEachIn)" | Select-Object -Last 1
-            }
+            # Default to {0} if template missing/blank
+            $template = if ([string]::IsNullOrWhiteSpace($Plan.ForEachInTemplate)) { '{0}' } else { $Plan.ForEachInTemplate }
+            $isDefault = ($template -eq '{0}')
 
-            if ($Plan.CondenserType -eq "Fab") {
-                $arraySignal = Resolve-PathFromDictionary -Dictionary $Item -Path "*.#.$($Plan.ForEachIn).*.#" | Select-Object -Last 1
-            }
-
-            if ($Plan.CondenserType -eq "Conduction") {
-                $arraySignal = Resolve-PathFromDictionary -Dictionary $Item -Path "*.#.$($Plan.ForEachIn).*.#" | Select-Object -Last 1
-            }
-
-            if ($planSignal.MergeSignalAndVerifyFailure($arraySignal)) {
-                $planSignal.LogWarning("⚠️ Could not resolve array path for ForEachIn: $($Plan.ForEachIn)")
+            # Enforce token
+            if ($template -notmatch '\{0\}') {
+                $planSignal.LogCritical("❌ ForEachInTemplate must contain '{0}'. Template: '$template'")
                 return $planSignal
+            }
+
+            # Build and resolve path
+            $path = [string]::Format($template, $Plan.ForEachIn)
+            $arraySignal = Resolve-PathFromDictionary -Dictionary $Item -Path $path | Select-Object -Last 1
+
+            if ($planSignal.MergeSignalAndVerifyFailure(@($arraySignal))) {
+                $planSignal.LogWarning("⚠️ Could not resolve array path for ForEachIn='$($Plan.ForEachIn)' → '$path'")
+                return $planSignal
+            }
+
+            if ($isDefault) {
+                $planSignal.LogInformation("✅ ForEachIn resolved: '$path'")
+            }
+            else {
+                $planSignal.LogInformation("✅ ForEachIn resolved: '$path' (template: '$template')")
             }
 
             $set = $arraySignal.GetResult()
@@ -107,21 +113,20 @@ function Invoke-GraphCondenser {
             foreach ($subItem in $set) {
                 $injectionContextSignal = Resolve-GraphPlanInjectionContext -ParentPlan $ParentPlan -Plan $Plan -AllPlans $plans -Signal $Signal -ParentItem $Item -Dynamic $subItem | Select-Object -Last 1
                 if ($planSignal.MergeSignalAndVerifyFailure($injectionContextSignal)) {
-
-                    $injectionContextSignal = Resolve-GraphPlanInjectionContext -ParentPlan $ParentPlan -Plan $Plan -AllPlans $plans -Signal $Signal -ParentItem $Item -Dynamic $subItem | Select-Object -Last 1
-                    if ($planSignal.MergeSignalAndVerifyFailure($injectionContextSignal)) {
-                        $planSignal.LogWarning("⚠️ Could not resolve injection context for item in $($Plan.Name)")
-                        continue
-                    }
-#                    $planSignal.LogWarning("⚠️ Could not resolve injection context for item in $($Plan.Name)")
-#                    continue
+                    $planSignal.LogWarning("⚠️ Could not resolve injection context for item in $($Plan.Name)")
+                    continue
                 }
 
-                $subItemSignal = [Signal]::Start("Item:$($subItem.Name):Wrapper", $Item) | Select-Object -Last 1
-                $subItemSignal.SetResult($subItem) | Out-Null
+                if ($subItem -is [Signal]) {
+                    # Already a signal → use it directly
+                    $subItemSignal = $subItem
+                } else {
+                    # Not a signal → wrap it
+                    $subItemSignal = [Signal]::Start("Item:$($subItem.Name):Wrapper", $Item) | Select-Object -Last 1
+                    $subItemSignal.SetResult($subItem) | Out-Null
+                }
 
-                if ($Plan.HydrationPlan)
-                {
+                if ($Plan.HydrationPlan) {
                     $condenserPreresult = Invoke-CondenserForPlan -Signal $Signal -Plan $Plan -ItemSignal $subItemSignal -PlanWirePathPrefix "%.@" -OverrideCondenserType "Hydration" | Select-Object -Last 1
                     if ($planSignal.MergeSignalAndVerifyFailure($condenserPreresult)) {
                         $planSignal.LogWarning("⚠️ Graph plan [Hydration Pre-Step] failed for item in $($Plan.Name)")
@@ -136,16 +141,21 @@ function Invoke-GraphCondenser {
                     continue
                 }
 
-                $condenserResultSignal = $condenserResult.GetResult()
-                $injectionContext = $injectionContextSignal.GetResult()
-                if ($injectionContext.FullTargetPath) {
-                    $injectSignal = Add-PathToDictionary -Dictionary $Item -Path $injectionContext.FullTargetPath -Value $condenserResultSignal | Select-Object -Last 1
-                    if ($planSignal.MergeSignalAndVerifyFailure($injectSignal)) {
-                        $planSignal.LogWarning("⚠️ Failed to inject graph result for plan: $($Plan.Name)")
-                        
-                        continue
+                if (-not $condenserResult.HasResult()) {
+                    $planSignal.LogWarning("⚠️ Condenser result is null for plan: $($Plan.Name)")
+                }
+                else {
+                    $condenserResultSignal = $condenserResult.GetResult()
+                    $injectionContext = $injectionContextSignal.GetResult()
+                    if ($injectionContext.FullTargetPath) {
+                        $injectSignal = Add-PathToDictionary -Dictionary $Item -Path $injectionContext.FullTargetPath -Value $condenserResultSignal | Select-Object -Last 1
+                        if ($planSignal.MergeSignalAndVerifyFailure($injectSignal)) {
+                            $planSignal.LogWarning("⚠️ Failed to inject graph result for plan: $($Plan.Name)")
+                            
+                            continue
+                        }
+                        $planSignal.LogInformation("📍 Injected graph into '$($injectionContext.FullTargetPath)'")
                     }
-                    $planSignal.LogInformation("📍 Injected graph into '$($injectionContext.FullTargetPath)'")
                 }
 
                 $subItemJacketSignal = [Signal]::Start("Item:$($subItem.Name):Jacket", $Item) | Select-Object -Last 1
@@ -153,17 +163,13 @@ function Invoke-GraphCondenser {
 
                 $steps = $plans | Sort-Object Order | Where-Object { $_.DependsOn -eq $Plan.Name }
                 foreach ($dependent in $steps) {
-                    if ($null -ne $dependent.Condenser)
-                    {
-                            $x = ""
+                    if ($null -ne $dependent.Condenser) {
+                        $x = ""
                     }
-                    else
-                    {
-if ($dependent.CondenserType -eq "Fab") {
-    $plan = $Plan
-}
-
-
+                    else {
+                        if ($dependent.CondenserType -eq "Fab") {
+                            $plan = $Plan
+                        }
 
                         $dependentResult = Invoke-PlanAndDependents -Signal $Signal -Plan $dependent -Item $subItemSignal -ParentPlan $Plan | Select-Object -Last 1
                         if ($planSignal.MergeSignalAndVerifyFailure($dependentResult)) {
@@ -176,8 +182,7 @@ if ($dependent.CondenserType -eq "Fab") {
             }
         }
         else {
-            if ($Plan.HydrationPlan)
-            {
+            if ($Plan.HydrationPlan) {
                 $condenserPreresult = Invoke-CondenserForPlan -Signal $Signal -Plan $Plan -ItemSignal $Item -OverrideCondenserType "Hydration" | Select-Object -Last 1
                 if ($planSignal.MergeSignalAndVerifyFailure($condenserPreresult)) {
                     $planSignal.LogWarning("⚠️ Graph plan [Hydration Pre-Step] failed for item in $($Plan.Name)")
@@ -185,7 +190,7 @@ if ($dependent.CondenserType -eq "Fab") {
                 }
             }
 
-                $condenserResultSignal = Invoke-CondenserForPlan -Signal $Signal -Plan $Plan -ItemSignal $Item | Select-Object -Last 1
+            $condenserResultSignal = Invoke-CondenserForPlan -Signal $Signal -Plan $Plan -ItemSignal $Item | Select-Object -Last 1
 
             if (-not $condenserResultSignal) { return $planSignal }
 
@@ -206,7 +211,13 @@ if ($dependent.CondenserType -eq "Fab") {
         }
     }
 
-    $finalGraph = Resolve-PathFromDictionary -Dictionary $Signal -Path "%" | Select-Object -Last 1
+    $finalGraph = Resolve-PathFromDicti vv1
+    
+    
+    
+    
+    
+    onary -Dictionary $Signal -Path "%" | Select-Object -Last 1
 
     $opSignal.SetResult($finalGraph.GetResult())
     $opSignal.LogInformation("✅ Completed all declared GraphPlans.")

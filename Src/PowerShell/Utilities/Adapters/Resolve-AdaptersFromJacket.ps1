@@ -1,6 +1,9 @@
 <# This should be moved to be the core of the Invoke-FabCondenser method? #>
 function Resolve-AdapterFromJacket {
     param (
+        [Parameter(Mandatory = $true)]
+        [Signal]$Signal,
+
         [Parameter(Mandatory)]
         [object]$ConductionContext,
 
@@ -21,7 +24,7 @@ function Resolve-AdapterFromJacket {
         $wirePath = $virtualPathSignal.GetResult()
 
         # ░▒▓█ LOAD MODULE MANIFEST GRAPH █▓▒░
-        $moduleGraphSignal = Resolve-DependencyModuleFromGraph -ConductionContext $ConductionContext -WirePath $wirePath | Select-Object -Last 1
+        $moduleGraphSignal = Resolve-DependencyModuleFromGraph -Signal $Signal -ConductionContext $ConductionContext -WirePath $wirePath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($moduleGraphSignal)) {
             $opSignal.LogCritical("❌ Failed to load manifest from WirePath: $wirePath")
             return $opSignal
@@ -36,12 +39,51 @@ function Resolve-AdapterFromJacket {
 
         $typeName = $typeSignal.GetResult()
 
+        # ░▒▓█ RESOLVE CLASS TYPE FROM MANIFEST █▓▒░
+        $instance = $null
+        $error1 = $null
+        $error2 = $null
+
+
         # ░▒▓█ INSTANCE CREATION █▓▒░
-        try {
-            $instance = New-Object -TypeName $typeName -ErrorAction Stop
+        if ($moduleGraphSignal.HasResult()) {
+            $typeClass = $moduleGraphSignal.GetResult()
+            while ($typeClass -is [Signal] -and $typeClass.HasResult()) {
+                $typeClass = $typeClass.GetResult() | Select-Object -Last 1
+            }
+
+            if ($typeClass -is [Type]) {
+                $instance = [System.Activator]::CreateInstance($typeClass)
+            }
         }
-        catch {
-            $opSignal.LogCritical("❌ Failed to instantiate type '$typeName': $_")
+
+        if ($opSignal.MergeSignalAndVerifyFailure($typeSignal)) {
+            $opSignal.LogCritical("❌ Class name missing in manifest.")
+            return $opSignal
+        }
+
+        if ($null -eq $instance) {
+            try {
+                $instance = New-Object -TypeName $typeName -ErrorAction Stop
+            }
+            catch {
+                $error1 = "❌ Failed to instantiate type '$typeName': $_"
+            }
+        }
+
+        if ($null -eq $instance) {
+            try {
+                $resolveFunctionName = "Resolve-$typeName"
+                $instance = & $resolveFunctionName
+            }
+            catch {
+                $error2 = "❌ Failed to instantiate type '$typeName': $_"
+            }
+        }
+
+        if ($null -eq $instance) {
+            $opSignal.LogCritical($error1)
+            $opSignal.LogCritical($error2)
             return $opSignal
         }
 
@@ -65,7 +107,8 @@ function Resolve-AdapterFromJacket {
 
         if ($opSignal.MergeSignalAndVerifyFailure($mergedSignal)) {
             $opSignal.LogWarning("⚠️ Jacket-to-Manifest merge failed; continuing with original jacket.")
-        } else {
+        }
+        else {
             $Jacket = $mergedSignal.GetResult()
             $opSignal.LogInformation("🧬 Jacket successfully merged over Manifest.")
         }
@@ -77,10 +120,12 @@ function Resolve-AdapterFromJacket {
 
             if ($opSignal.MergeSignalAndVerifySuccess($constructSignal)) {
                 $opSignal.LogInformation("✅ Adapter '$($Jacket.Name)' ($($Jacket.VirtualPath)) constructed successfully.")
-            } else {
+            }
+            else {
                 $opSignal.LogWarning("⚠️ Construct() failed on adapter '$($Jacket.Name)'.")
             }
-        } else {
+        }
+        else {
             $opSignal.LogVerbose("No Construct() method found for '$($Jacket.Name)'. ($($Jacket.VirtualPath)) Proceeding without initialization.")
         }
 

@@ -25,6 +25,8 @@ function Test-IsClassDefined {
             return $opSignal
         }
 
+        $types = [AppDomain]::CurrentDomain.GetAssemblies() 
+        
         # ░▒▓█ ASSEMBLY SCAN █▓▒░
         $opSignal.LogVerbose("🔍 Scanning assemblies for class: $ClassName")
         $type = [AppDomain]::CurrentDomain.GetAssemblies() |
@@ -34,16 +36,16 @@ function Test-IsClassDefined {
 
         if ($type) {
             $opSignal.LogVerbose("✅ Class found in assembly: $($type.Assembly.FullName)")
-            $opSignal.SetResult($true)
+            $opSignal.SetResult($type)
         }
         else {
             $opSignal.LogWarning("❌ Class not found: $ClassName")
-            $opSignal.SetResult($false)
+            #$opSignal.SetResult($false)
         }
     }
     catch {
         $opSignal.LogCritical("🔥 Error while checking class: $($_.Exception.Message)")
-        $opSignal.SetResult($false)
+        #$opSignal.SetResult($false)
     }
 
     return $opSignal

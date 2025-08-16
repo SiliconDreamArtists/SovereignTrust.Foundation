@@ -38,11 +38,11 @@ function Register-MappedAdapter {
             $signal.LogWarning("⚠️ Failed to register $Label at Slot: $slot.")
         }
 
-$foundAdapter = Resolve-PathFromDictionary -Dictionary $ServiceCollection -Path $slot | Select-Object -Last 1
-        ################### TODO, just do a simple path to test to see if it's easy to grab a item back from the ServiceCollection
-        ################### TODO: Rename ServiceCollection
+        $foundAdapter = Resolve-PathFromDictionary -Dictionary $ServiceCollection -Path $slot | Select-Object -Last 1
+                ################### TODO, just do a simple path to test to see if it's easy to grab a item back from the ServiceCollection
+                ################### TODO: Rename ServiceCollection
 
-$x = ""
+        $x = ""
     }
     catch {
         $signal.LogCritical("🔥 Exception while registering $($Label): $($_.Exception.Message)")

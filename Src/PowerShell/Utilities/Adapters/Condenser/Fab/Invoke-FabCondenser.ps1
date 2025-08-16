@@ -15,7 +15,7 @@ function Invoke-FabCondenser {
         if ($opSignal.MergeSignalAndVerifySuccess($nameSignal)) {
             $name = $nameSignal.GetResult()
 
-            $resolveSignal = Resolve-AdapterFromJacket -ConductionContext $Conductor -Jacket $jacket | Select-Object -Last 1
+            $resolveSignal = Resolve-AdapterFromJacket -Signal $Signal -ConductionContext $Conductor -Jacket $jacket | Select-Object -Last 1
 
             if ($opSignal.MergeSignalAndVerifySuccess($resolveSignal)) {
                 $resolvedAdapter = $resolveSignal.GetResult()

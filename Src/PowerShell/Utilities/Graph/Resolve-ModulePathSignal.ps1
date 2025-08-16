@@ -59,7 +59,9 @@ function Resolve-ModulePathSignal {
         $moduleName = "$moduleStem.psd1"
 
         $folderSegments = @("$project.$collection", 'Src', $kind, $type, 'PowerShell')
-        $relativeFolderPath = [System.IO.Path]::Combine($folderSegments)
+#        $relativeFolderPath = [System.IO.Path]::Combine($folderSegments)
+        $relativeFolderPath = ($folderSegments -join '\')
+
         $relativeFilePath = Join-Path $relativeFolderPath $moduleName
 
         # ░▒▓█ BUILD MODULE SIGNAL █▓▒░

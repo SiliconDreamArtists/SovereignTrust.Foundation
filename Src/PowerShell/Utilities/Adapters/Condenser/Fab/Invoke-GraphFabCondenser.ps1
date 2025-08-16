@@ -44,11 +44,10 @@ function Invoke-GraphFabCondenser {
     $subSignal.SetJacket($ItemSignal) | Out-Null
 
 
-    $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "@.%" | Select-Object -Last 1
-    
+    $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%" | Select-Object -Last 1
     $JacketSignal = $JacketSignalWrapper.GetResult()
+    $ResolveAdapterSignal = Resolve-AdapterFromJacket -Signal $Signal -ConductionContext $Signal -Jacket $JacketSignal | Select-Object -Last 1
 
-    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Jacket $JacketSignal | Select-Object -Last 1
 
     $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $ResolveAdapterSignal) | Select-Object -Last 1
 
@@ -63,6 +62,39 @@ function Invoke-GraphFabCondenser {
             return $opSignal
         }
         $opSignal.LogInformation("📍 Injected graph '$PlanName' into '$($Plan.TargetWirePath)'")
+    }
+
+    $isMappedSignal = Resolve-PathFromDictionary -Dictionary $JacketSignal -Path "@.IsMapped" | Select-Object -Last 1
+    if ($opSignal.MergeSignalAndVerifyFailure($isMappedSignal)) {
+        $opSignal.LogRecovery("⚠️ IsMapped status for jacket Not Required, Assumed False.")
+    }
+    else {
+        $isMapped = $isMappedSignal.GetResult()
+        if ($isMapped -eq $true) {
+            $adapterKindSignal = Resolve-PathFromDictionary -Dictionary $Adapter -Path "%.Kind" | Select-Object -Last 1
+            $adapterKind = $adapterKindSignal.GetResult()
+            $adapterSlotSignal = Resolve-PathFromDictionary -Dictionary $Adapter -Path "%.Slot" | Select-Object -Last 1
+            $adapterSlot = $adapterSlotSignal.GetResult()
+            $mappedAdapterSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%.*.#.Adapters.*.#.Mapped$($adapterKind)" | Select-Object -Last 1
+            if ($opSignal.MergeSignalAndVerifyFailure($mappedAdapterSignal)) {
+                $opSignal.LogWarning("⚠️ Failed to resolve mapped adapter for '$PlanName'.")
+            } else {
+                $mappedAdapter = $mappedAdapterSignal.GetResult()
+                while ($mappedAdapter -is [Signal]) {
+                    $mappedAdapter = $mappedAdapter.GetResult()
+                }
+
+                $registerSignal = $mappedAdapter.RegisterAdapter($ResolveAdapterSignal, $adapterSlot) | Select-Object -Last 1
+                if ($opSignal.MergeSignalAndVerifyFailure($registerSignal)) {
+                    $opSignal.LogCritical("❌ Failed to register mapped adapter '$PlanName' in slot '$adapterSlot'.")
+                    return $opSignal
+                }
+                
+                $opSignal.LogInformation("✅ Mapped adapter '$PlanName' successfully.")
+
+                $opSignal.SetResult($ResolveAdapterSignal)
+            }
+        }
     }
 
     <#

@@ -79,6 +79,11 @@ function Invoke-TraceSignalTree {
         $unwrapped = Resolve-PathFromDictionary -Dictionary $Signal -Path "@.$" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifySuccess(@($unwrapped))) {
             $graphSignal = $unwrapped.GetResult() | Select-Object -Last 1
+            if(-not $graphSignal.HasResult()) {
+                $opSignal.LogRecovery("🩹 `.@.$` resolution failed — no sovereign graph traversal attempted.")
+                return $diagramSignal
+            }
+
             $graphObject = $graphSignal.GetResult()
             if ( $opSignal.MergeSignalAndVerifySuccess(@($graphSignal))) {
                 if ($graphObject -is [Graph] -and $null -ne $graphObject.Grid) {
@@ -105,7 +110,7 @@ function Invoke-TraceSignalTree {
         $graphSignal = $unwrapped.GetResultSignal() | Select-Object -Last 1
         if ( $opSignal.MergeSignalAndVerifySuccess(@($graphSignal))) {
             $graphObject = $graphSignal.GetResult()
-            if ($null -ne $graphObject) {
+            if ( $null -ne $graphObject) {
                 foreach ($key in $graphObject.Keys) {
                     $entry = $graphObject[$key]
                     if ($entry -is [Signal]) {

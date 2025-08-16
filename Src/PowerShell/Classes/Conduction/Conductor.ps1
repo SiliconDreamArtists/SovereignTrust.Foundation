@@ -65,7 +65,8 @@ class Conductor {
         # ░▒▓█ ENSURE ADAPTERS GRID EXISTS █▓▒░
         $adaptersGridSignal = Add-PathToDictionary -Dictionary $this.Signal -Path "*.#.Adapters.*" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adaptersGridSignal)) {
-            return $opSignal.LogCritical("❌ Failed to initialize Adapters grid.")
+            $opSignal.LogCritical("❌ Failed to initialize Adapters grid.")
+            return $opSignal
         }
 
         # ░▒▓█ DEFINE ADAPTERS TO LOAD █▓▒░

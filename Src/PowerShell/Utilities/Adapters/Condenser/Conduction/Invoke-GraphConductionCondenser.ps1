@@ -48,7 +48,7 @@ function Invoke-GraphConductionCondenser {
     
     $JacketSignal = $JacketSignalWrapper.GetResult()
 
-#    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Jacket $JacketSignal | Select-Object -Last 1
+#    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Signal $Signal -Jacket $JacketSignal | Select-Object -Last 1
 
     $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $Signal) | Select-Object -Last 1
 

@@ -26,7 +26,7 @@
 #
 # All operations respect sovereign memory principles:
 # - No raw object mutation
-# - All lineage is tracked through Signals
+# - All lineage is tracked through Signals csdfvvvvvvvvvvvvvvvvddddddddddddcdrvceeds
 # - Memory injection is explicit and symbolic
 
 function Invoke-GraphHydrationCondenser {

@@ -55,7 +55,8 @@ class MappedConduitAdapter {
         $opSignal = [Signal]::Start("InvokeConduit:$Key", $InputSignal) | Select-Object -Last 1
 
         if (-not $this.Registry.ContainsKey($Key)) {
-            return $opSignal.LogCritical("❌ No conduit adapter registered for key: $Key")
+            $opSignal.LogCritical("❌ No conduit adapter registered for key: $Key")
+            return $opSignal
         }
 
         $adapter = $this.Registry[$Key]
@@ -68,7 +69,8 @@ class MappedConduitAdapter {
                 $resultSignal = $adapter.Invoke($InputSignal) | Select-Object -Last 1
             }
             else {
-                return $opSignal.LogCritical("❌ Invalid conduit adapter type for key: $Key")
+                $opSignal.LogCritical("❌ Invalid conduit adapter type for key: $Key")
+                return $opSignal
             }
 
             $opSignal.MergeSignal($resultSignal)

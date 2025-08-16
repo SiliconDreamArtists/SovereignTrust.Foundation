@@ -5,6 +5,7 @@ if (-not (Get-Module -Name $sgModuleName)) {
     Import-Module (Resolve-Path $sgPath).ProviderPath -Force
 }
 
+$abc = Get-Module -Name $sgModuleName
     # Import shared functions for Map Condensers
 
     $mapSharedPath = Join-Path $PSScriptRoot "Utilities/Adapters/Condenser/Map/MapCondenser.Shared.psm1"
@@ -46,6 +47,7 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Classes/Adapters/UX/ConsoleLogger.ps1"
 
 #. "$PSScriptRoot/Utilities/New-Conductor.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Storage/Invoke-EmbeddedFileSystem_ReadObject.ps1"
 
 . "$PSScriptRoot/Utilities/Adapters/New-MappedCondenserAdapterFromGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Register-AdapterToMappedSlot.ps1"
@@ -57,6 +59,7 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Adapters/Test-ModuleLoaded.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-FabCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-GraphFabCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Resolve-ModuleFromAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Grid/Invoke-GridCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-GraphCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-ConductionCondenser.ps1"
@@ -78,6 +81,7 @@ if (-not (Get-Module -Name $sgModuleName)) {
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-PathHydration.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Merge/Merge-CondenserCore.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Token/Invoke-HydrateTokenCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Storage/Resolve-ModulePathFromAdapter.ps1"
 
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-MappedTokenAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenEnvironment.ps1"

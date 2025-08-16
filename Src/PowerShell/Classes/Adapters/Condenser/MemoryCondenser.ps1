@@ -35,7 +35,8 @@ class MemoryCondenser {
         # 🔍 Step 1: Hot Path Resolution
         $hotPathSignal = Invoke-HotPathResolution -Path $Path -Signal $this.Signal -HotPathMapPath $HotPathMapPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($hotPathSignal)) {
-            return $opSignal.LogCritical("❌ Hot path resolution failed.")
+            $opSignal.LogCritical("❌ Hot path resolution failed.")
+            return $opSignal
         }
 
         $resolvedHotPath = $hotPathSignal.GetResult()
@@ -43,7 +44,8 @@ class MemoryCondenser {
         # 💧 Step 2: Path Hydration
         $hydratedSignal = Invoke-PathHydration -Path $resolvedHotPath -Signal $this.Signal -SignalFirst:$true | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($hydratedSignal)) {
-            return $opSignal.LogCritical("❌ Path hydration failed.")
+            $opSignal.LogCritical("❌ Path hydration failed.")
+            return $opSignal
         }
 
         $finalPath = $hydratedSignal.GetResult()

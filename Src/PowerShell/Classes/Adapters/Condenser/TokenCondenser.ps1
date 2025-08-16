@@ -37,12 +37,14 @@ class TokenCondenser {
         $opSignal = [Signal]::Start("GetToken:$Value") | Select-Object -Last 1
 
         if ([string]::IsNullOrWhiteSpace($Value)) {
-            return $opSignal.LogWarning("Token value was empty or null.")
+            $opSignal.LogWarning("Token value was empty or null.")
+            return $opSignal
         }
 
         $firstLookup = $Value.IndexOf(".")
         if ($firstLookup -lt 0) {
-            return $opSignal.LogWarning("Token missing required lookup structure (e.g., no dot separator): $Value")
+            $opSignal.LogWarning("Token missing required lookup structure (e.g., no dot separator): $Value")
+            return $opSignal
         }
 
         $tokenGraphFilePath = $Value.Substring(0, $firstLookup)
@@ -53,7 +55,8 @@ class TokenCondenser {
 
         $navigators = $matchingNavigators.GetResult()
         if (-not $navigators -or $navigators.Count -eq 0) {
-            return $opSignal.LogCritical("Token graph dictionary not found for: $Value")
+            $opSignal.LogCritical("Token graph dictionary not found for: $Value")
+            return $opSignal
         }
 
         foreach ($navigator in $navigators) {
@@ -61,14 +64,16 @@ class TokenCondenser {
                 $node = $navigator.SelectSingleNode($xpath)
                 if ($node) {
                     $opSignal.SetResult($node.InnerXml)
-                    return $opSignal.LogInformation("Token successfully resolved: $Value → $($node.InnerXml)")
+                    $opSignal.LogInformation("Token successfully resolved: $Value → $($node.InnerXml)")
+                    return $opSignal
                 }
             } catch {
                 $opSignal.LogWarning("Navigator exception for path '$xpath': $_")
             }
         }
 
-        return $opSignal.LogCritical("Token not resolved — node not found at: $xpath")
+        $opSignal.LogCritical("Token not resolved — node not found at: $xpath")
+        return $opSignal
     }
 
     [Signal] GetContext($TokenDocument, $TokenGraphOverrides, $OverloadGraphVirtualPath = $null) {
@@ -88,18 +93,21 @@ class TokenCondenser {
             $tokenGraphs = $tokenGraphsSignal.GetResult()
 
             if (-not $tokenGraphs) {
-                return $opSignal.LogWarning("Tokens node '$nodeName' not found in TokenDocument.")
+                $opSignal.LogWarning("Tokens node '$nodeName' not found in TokenDocument.")
+                return $opSignal
             }
 
             $graphsNode = $tokenGraphs[$settings.TokensNodeName][$settings.GraphNodeName]
             if (-not $graphsNode) {
-                return $opSignal.LogWarning("Graph node '$($settings.GraphNodeName)' not found under Tokens.")
+                $opSignal.LogWarning("Graph node '$($settings.GraphNodeName)' not found under Tokens.")
+                return $opSignal
             }
 
             $tokenGraphRoot = $graphsNode[$settings.TokenGraphRootNodeName]
             $importListRaw = $graphsNode[$settings.ImportNodeName]
             if (-not $tokenGraphRoot -or -not $importListRaw) {
-                return $opSignal.LogWarning("Missing tokenGraphRoot or importList.")
+                $opSignal.LogWarning("Missing tokenGraphRoot or importList.")
+                return $opSignal
             }
 
             $context = @{}
@@ -140,15 +148,18 @@ class TokenCondenser {
                 if ($opSignal.MergeSignalAndVerifySuccess(@($graphSignal))) {
                     $context.ContextNavigator[$relativePath] = $graphSignal.GetResult().CreateNavigator()
                 } else {
-                    return $opSignal.LogCritical("Aborted graph loading due to failed resolution of: $relativePath")
+                    $opSignal.LogCritical("Aborted graph loading due to failed resolution of: $relativePath")
+                    return $opSignal
                 }
             }
 
             $opSignal.SetResult($context)
-            return $opSignal.LogInformation("✅ Token context environment built successfully.")
+            $opSignal.LogInformation("✅ Token context environment built successfully.")
+            return $opSignal
         }
         catch {
-            return $opSignal.LogCritical("Unhandled exception in GetContext: $($_.Exception.Message)")
+            $opSignal.LogCritical("Unhandled exception in GetContext: $($_.Exception.Message)")
+            return $opSignal
         }
     }
 }

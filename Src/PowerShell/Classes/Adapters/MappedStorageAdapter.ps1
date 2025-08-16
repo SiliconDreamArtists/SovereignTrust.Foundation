@@ -21,6 +21,7 @@ class MappedStorageAdapter {
 
             $graphSignal = [Graph]::Start("MappedStorageAdapter", $adapter, $false)
             $adapter.Signal.SetResult($graphSignal.GetResult())
+            $adapter.Signal.SetPointer($graphSignal.GetResult())
 
             $opSignal.SetResult($adapter)
             $opSignal.LogInformation("✅ MappedStorageAdapter initialized.")
@@ -34,10 +35,15 @@ class MappedStorageAdapter {
 
     [Signal] RegisterAdapter([object]$AdapterInstance, [string]$Key = "StorageService") {
         $opSignal = [Signal]::Start("RegisterMappedAdapter:$Key") | Select-Object -Last 1
-        $adapterSignal = [Signal]::Start("Adapter:$Key") | Select-Object -Last 1
-        $adapterSignal.SetResult($AdapterInstance)
+        if ($AdapterInstance -isnot [Signal]) {
+            $adapterSignal = [Signal]::Start("Adapter:$Key") | Select-Object -Last 1
+            $adapterSignal.SetResult($AdapterInstance)
+        }
+        else {
+            $adapterSignal = $AdapterInstance
+        }
 
-        $graph = $this.Signal.GetResult()
+        $graph = $this.Signal.GetPointer()
         $registerSignal = $graph.RegisterSignal($Key, $adapterSignal)
         $opSignal.MergeSignal($registerSignal)
 
@@ -53,7 +59,7 @@ class MappedStorageAdapter {
 
     [Signal] InvokeAdapterMethod([string]$MethodName, [object[]]$Args) {
         $opSignal = [Signal]::Start("MappedStorageAdapter.Invoke:$MethodName") | Select-Object -Last 1
-        $graph = $this.Signal.GetResult()
+        $graph = $this.Signal.GetPointer()
 
         foreach ($key in $graph.Grid.Keys) {
             $adapterSignal = $graph.Grid[$key]
