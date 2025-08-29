@@ -1,6 +1,7 @@
 class Storage_EmbeddedFileSystem {
     [MappedStorageAdapter]$MappedAdapter
-    [object]$Jacket
+    [Signal]$Signal
+    #[object]$Jacket
 
     Storage_EmbeddedFileSystem() {
     }
@@ -17,7 +18,12 @@ class Storage_EmbeddedFileSystem {
                 return $opSignal.LogCritical("Cannot construct EmbeddedFileSystem — provided dictionary is null.")
             }
 
-            $this.Jacket = $dictionary
+            $this.Signal = [Signal]::Start("Construct-EmbeddedFileSystem") | Select-Object -Last 1
+
+            $jacket = [Signal]::Start("Construct-EmbeddedFileSystem") | Select-Object -Last 1 
+            
+            $this.Signal.SetJacket($jacket)
+            $jacket.SetResult($dictionary)
             $opSignal.LogInformation("EmbeddedFileSystem constructed successfully with provided jacket.")
         }
         catch {
@@ -71,6 +77,30 @@ class Storage_EmbeddedFileSystem {
         try {
             # ░▒▓█ RESOLVE ADDRESSES FROM %.@.Addresses █▓▒░
             $addressSignal = Resolve-PathFromDictionary -Dictionary $this -Path '%.@.Addresses' | Select-Object -Last 1
+            if ($opSignal.MergeSignalAndVerifyFailure(@($addressSignal))) {
+                return $opSignal.LogCritical("❌ Could not resolve Jacket.Addresses path.")
+            }
+
+            $callSignal = Invoke-EmbeddedFileSystem_ReadObject -Signal $this.Signal -VirtualPath $virtualPath -Addresses $addressSignal.GetResult() | Select-Object -Last 1
+            if ($opSignal.MergeSignalAndVerifySuccess($callSignal))
+            {
+                 $opSignal.SetResult($callSignal.GetResult())
+                 $opSignal.LogInformation("📄 Successfully read object from virtual path: $virtualPath")   
+            }
+        }
+        catch {
+            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObject: $($_.Exception.Message)")
+        }
+
+        return $opSignal
+    }
+
+    [Signal] Invoke([string]$virtualPath) {
+        $opSignal = [Signal]::Start("EmbeddedFileSystem.ReadObject:$virtualPath") | Select-Object -Last 1
+
+        try {
+            # ░▒▓█ RESOLVE ADDRESSES FROM %.@.Addresses █▓▒░
+            $addressSignal = Resolve-PathFromDictionary -Dictionary $this -Path '$.%.@.Addresses' | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure(@($addressSignal))) {
                 return $opSignal.LogCritical("❌ Could not resolve Jacket.Addresses path.")
             }

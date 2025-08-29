@@ -13,24 +13,24 @@ function Invoke-TokenCondenser {
     param (
         [Parameter(Mandatory)] [Signal]$Signal,
         [Parameter(Mandatory)] [object]$Plan,
-        [Parameter(Mandatory)] [object]$ItemSignal
+        [Parameter(Mandatory)] [object]$ItemSignal,
+        [string]$RegexPattern = "\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]",
+        [string]$HydrationStyle = ""
     )
 
     $opSignal = [Signal]::Start("Invoke-TokenCondenser", $Signal) | Select-Object -Last 1
 
     $result = $ItemSignal.GetResult()
 
+    if ($HydrationStyle -eq "Deferred") {
+        $RegexPattern = "\[((?>[^\[\]|]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\|\]"
+    }   
+
     # Stubbed placeholders for testing
     $MergeCondenserFeedback = $opSignal
     $Dictionary = $null
     $DictionaryName = "DefaultGlobalDictionary"
     $ReturnRequiredValues = $true
-
-    $RegexPattern = "\[[^\[@=]*=[^\/]*\/\]|\[[^\]]+\/\]"
-    $RegexPattern = "\[([^\[\]=]+?)/\]"
-    $RegexPattern = "\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]"
-
-    $RegexPattern = "\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]"
 
     # Invoke recursive token crawl across the result object
     $_result = Invoke-TokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
@@ -39,11 +39,6 @@ function Invoke-TokenCondenser {
         -DictionaryName $DictionaryName `
         -ReturnRequiredValues:$ReturnRequiredValues `
         -RegexPattern $RegexPattern
-
-    $RegexPattern = "\[([^\[\]/]+)\/\]"
-
-    # Use this for basic [Token.Path/] forms
-    $RegexPattern = "\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]"
 
     # Invoke recursive token crawl across the result object
     $_result = Invoke-TokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
@@ -85,8 +80,9 @@ function Invoke-TokenCrawl {
             if ($trimmed.StartsWith('{') -and $trimmed.EndsWith('}')) {
                 return $trimmed | ConvertFrom-Json -ErrorAction Stop
             }
-            elseif ($trimmed.StartsWith('[') -and $trimmed.EndsWith(']') -and -not $trimmed.EndsWith('/]')) {
-                return @($trimmed | ConvertFrom-Json -ErrorAction Stop)
+            elseif ($trimmed.StartsWith('[') -and $trimmed.EndsWith(']') -and (-not $trimmed.EndsWith('/]') -and -not $trimmed.EndsWith('|]'))) {
+                $val = $trimmed | ConvertFrom-Json -ErrorAction Stop
+                return @($val)
             }
         }
         catch {
@@ -105,18 +101,14 @@ function Invoke-TokenCrawl {
             [object]$Dictionary,
             [string]$DictionaryName,
             [bool]$ReturnRequiredValues,
-            [string]$RegexPattern
+            [string]$RegexPattern,
+            [string]$HydrationStyle = ""
         )
 
         $valueSignal = Resolve-PathFromDictionary -Dictionary $Parent -Path $Key | Select-Object -Last 1
         if ($valueSignal.Failure()) {
             #$MergeCondenserFeedback.LogWarning("Failed to resolve path '$Key' in dictionary '$DictionaryName'.")
             return
-        }
-
-        if ($Key -eq "1")
-        {
-$x = $valueSignal
         }
 
         $propObject = [PSCustomObject]@{ Name = $Key; Value = $valueSignal.GetResult() }
@@ -127,6 +119,7 @@ $x = $valueSignal
             -Signal $Signal `
             -Dictionary $Dictionary `
             -DictionaryName $DictionaryName `
+                        -HydrationStyle $HydrationStyle `
             -RegexPattern $RegexPattern `
             -ReturnRequiredValues:$ReturnRequiredValues | Select-Object -Last 1 | Out-Null
 
@@ -182,6 +175,7 @@ $x = $valueSignal
                             -Signal $Signal `
                             -Dictionary $Dictionary `
                             -DictionaryName $DictionaryName `
+                        -HydrationStyle $HydrationStyle `
                             -ReturnRequiredValues:$ReturnRequiredValues `
                             -RegexPattern $RegexPattern
                     }
@@ -196,6 +190,7 @@ $x = $valueSignal
                         -Signal $Signal `
                         -Dictionary $Dictionary `
                         -DictionaryName $DictionaryName `
+                        -HydrationStyle $HydrationStyle `
                         -ReturnRequiredValues:$ReturnRequiredValues `
                         -RegexPattern $RegexPattern
                 }

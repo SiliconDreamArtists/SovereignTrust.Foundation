@@ -13,6 +13,7 @@ function Invoke-TokenStorage {
 
     $opSignal = [Signal]::Start("Invoke-TokenStorage", $Conductor) | Select-Object -Last 1
 
+
     try {
         if ([string]::IsNullOrWhiteSpace($Path)) {
             $opSignal.LogWarning("⚠️ Path is empty. Nothing to resolve.")
@@ -20,6 +21,7 @@ function Invoke-TokenStorage {
         }
 
         $segments = $Path -split '\.'
+        $PartialPath = ($segments[2..($segments.Count - 1)] -join '.')
 
         $key = ''
         $scope = ''
@@ -32,27 +34,30 @@ function Invoke-TokenStorage {
             $key = $segments[0]
         }
 
+        $key = $segments[0]
+        $slot = $segments[1]
         $value = $null
 
-        switch ($scope.ToLowerInvariant()) {
-            'process' { $value = [System.Storage]::GetStorageVariable($key, 'Process') }
-            'user'    { $value = [System.Storage]::GetStorageVariable($key, 'User') }
-            'machine' { $value = [System.Storage]::GetStorageVariable($key, 'Machine') }
-            default {
-                # Try process → user → machine fallback
-                $value = [System.Storage]::GetStorageVariable($key, 'Process')
-                if (-not $value) {
-                    $value = [System.Storage]::GetStorageVariable($key, 'User')
-                }
-                if (-not $value) {
-                    $value = [System.Storage]::GetStorageVariable($key, 'Machine')
-                }
-            }
+        $mappedAdapterPath = "$.*.#.Adapters.*.#.Mapped$key.@"
+        $mappedAdapterSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path $mappedAdapterPath | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($mappedAdapterSignal)) {
+            $opSignal.LogCritical("⚠️ MappedAdapter path '$mappedAdapterPath' not found in Conductor.")
+            return $opSignal
+        }
+
+        $mappedAdapter = $mappedAdapterSignal.GetResult()
+
+        $resultSignal = $mappedAdapter.Invoke($slot, $PartialPath) | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
+            $opSignal.LogCritical("⚠️ MappedAdapter failed to resolve key '$key' with scope '$scope'.")
+            return $opSignal
+        }
+        else {
+            $value = $resultSignal.GetResult()
         }
 
         if ($null -ne $value) {
             $opSignal.SetResult($value)
-            $opSignal.MarkSuccess()
         }
         else {
             $opSignal.LogWarning("⚠️ Storage variable not found for key: $Path")

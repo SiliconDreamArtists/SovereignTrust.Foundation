@@ -40,6 +40,12 @@ function Invoke-GridCondenser {
     $opSignal = [Signal]::Start("Invoke-GridCondenser:$PlanName", $Signal) | Select-Object -Last 1
 
     $PlanName = $Plan.Name
+
+    if ($PlanName -eq "ConductionGraphPerRole")
+    {
+        $opSignal.LogInformation("🔄 Executing Grid Condenser for plan: $($Plan.Name)")
+    }
+
     $subSignal = [Signal]::Start("GraphPlan:$PlanName", $Signal) | Select-Object -Last 1
     $subSignal.SetJacket($ItemSignal) | Out-Null
 

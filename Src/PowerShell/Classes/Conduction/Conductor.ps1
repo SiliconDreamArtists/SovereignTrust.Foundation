@@ -72,6 +72,7 @@ class Conductor {
         # ░▒▓█ DEFINE ADAPTERS TO LOAD █▓▒░
         $adaptersToRegister = @(
             @{ Name = "MappedToken"; Instance = [MappedTokenAdapter]::Start($this) },
+            @{ Name = "MappedConduction"; Instance = [MappedConductionAdapter]::Start($this) },
             @{ Name = "MappedStorage"; Instance = [MappedStorageAdapter]::Start($this) },
             @{ Name = "MappedNetwork"; Instance = [MappedNetworkAdapter]::Start($this) }
         )

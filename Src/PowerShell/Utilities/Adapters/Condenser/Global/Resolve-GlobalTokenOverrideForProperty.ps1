@@ -48,18 +48,35 @@ function Resolve-GlobalTokenOverrideForProperty {
 
         [string]$RegexPattern = "\[[^\[@]*=[^\/]*\/\]",
 
+        [string]$HydrationStyle = "",
         [char]$SplitMatchCharacter
     )
 
     $opSignal = [Signal]::Start("Resolve-GlobalTokenOverrideForProperty:$($Property.Name)", $null) | Select-Object -Last 1
 
+    if ($HydrationStyle -eq "Deferred") {
+        $RegexPattern = "\[[^\[\]\|]*\|\]"
+
+        # Version to get items when they have [] inside the text.
+        #$RegexPattern = "\[(.*?)\|\]"
+    }
+
     try {
         $propertyValue = $Property.Value.ToString()
         $pathSegments = $Property.Name -split '\.'
 
-        $Dictionary = @{ environmentName = "abc" }
+        $Dictionary = @{ }
 
         $matches = [regex]::Matches($propertyValue, $RegexPattern)
+
+        if ($matches.Count -eq 0) {
+            if ($HydrationStyle -eq "Deferred") {
+                # Version to get items when they have [] inside the text.
+                $RegexPattern = "\[(.*?)\|\]"
+            }
+
+            $matches = [regex]::Matches($propertyValue, $RegexPattern)
+        }
 
         foreach ($match in $matches) {
             $matchText = $match.Value.Trim()
@@ -83,6 +100,10 @@ function Resolve-GlobalTokenOverrideForProperty {
                 
                 $adapter = $adapterSignal.GetResult()
 
+                if ($HydrationStyle -eq "Deferred") {
+                    $RegexPattern = "\[[^\[\]\|]*\|\]"
+                }
+
                 $resultSignal = $adapter.Invoke($key);
                 $lookupSignal = [Signal]::Start("Resolve-GlobalTokenOverrideForProperty:$($Property.Name)", $null) | Select-Object -Last 1
                 $lookupSignal.SetResult($resultSignal.GetResult())
@@ -99,16 +120,24 @@ function Resolve-GlobalTokenOverrideForProperty {
 
                 # Escape the whole key again for regex use
                 $escapedKey = [regex]::Escape($key)  # results in "Formatter\\.FilePath"
-                $innerRegex = [regex]::new("\[$escapedKey.*?\/\]")
+
+
+                $RegexPattern = "\[$escapedKey.*?\/\]"
+                if ($HydrationStyle -eq "Deferred") {
+                    #\[[^\[\]\|]*\|\]
+                    $RegexPattern = "\[$escapedKey.*?\|\]"
+                }
+
+                $innerRegex = [regex]::new($RegexPattern)
                 
                 $oldValue = $propertyValue
+                #$propertyValue = $innerRegex.Replace($propertyValue, $replacement)
                 $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
 
                 if ($propertyValue -ne $oldValue) {
                     $opSignal.LogInformation("🔄 Replaced '$key' with '$replacement' in property '$($Property.Name)'")
                 }
                 else {
-
                     $propertyValue = $propertyValue -replace $match.Value, $replacement
                     $opSignal.LogWarning("⚠️ No replacement made for '$key' in property '$($Property.Name)' — token may be malformed or missing. ($propertyValue)")
                 }

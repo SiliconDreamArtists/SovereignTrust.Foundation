@@ -170,6 +170,9 @@ function Invoke-GraphCondenser {
                         if ($dependent.CondenserType -eq "Fab") {
                             $plan = $Plan
                         }
+                        if ($dependent.Name -eq "ConductionGraphPerRole") {
+                            $plan = $Plan
+                        }
 
                         $dependentResult = Invoke-PlanAndDependents -Signal $Signal -Plan $dependent -Item $subItemSignal -ParentPlan $Plan | Select-Object -Last 1
                         if ($planSignal.MergeSignalAndVerifyFailure($dependentResult)) {

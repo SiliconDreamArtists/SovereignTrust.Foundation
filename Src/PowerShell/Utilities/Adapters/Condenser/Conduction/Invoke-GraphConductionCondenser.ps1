@@ -44,17 +44,35 @@ function Invoke-GraphConductionCondenser {
     $subSignal.SetJacket($ItemSignal) | Out-Null
 
 
-    $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "@.%" | Select-Object -Last 1
+    #Check to see if the ItemSignal (The Conduction Signal) has a Grid. If so, then we can go to the step of executing the conduction graph. 
+
+    $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%" | Select-Object -Last 1
     
     $JacketSignal = $JacketSignalWrapper.GetResult()
 
-#    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Signal $Signal -Jacket $JacketSignal | Select-Object -Last 1
+    $hydrationSignal = Invoke-HydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $JacketSignal -HydrationStyle "Deferred" | Select-Object -Last 1
+
+    #    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Signal $Signal -Jacket $JacketSignal | Select-Object -Last 1
 
     $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $Signal) | Select-Object -Last 1
 
-    #$Adapter = $ResolveAdapterSignal.GetResult() | Select-Object -Last 1
-    #    $wrappedGraphSignal.SetPointer($graphResult) | Out-Null
+    $sourcePathSignal = Resolve-SourcePathFromPlan -plan $Plan | Select-Object -Last 1
 
+    $conductionPlanSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $sourcePathSignal.GetResult() | Select-Object -Last 1
+
+    $GridPlan = [PSCustomObject]@{
+        SourcesWirePath = "ConductionPlan"
+        SourcesWirePathTemplate = "%.%.@.{0}"
+        SourcesIdentifierWirePath = "Name"
+    }
+
+    $gridConductionPlanSignal = Invoke-GridCondenser -Signal $Signal -Plan $GridPlan -ItemSignal $ItemSignal -PlanWirePathPrefix "%.%.@" | Select-Object -Last 1
+    
+    $gridConductionPlan = Resolve-PathFromDictionary -Dictionary $gridConductionPlanSignal -Path "@.*" | Select-Object -Last 1
+
+    $ItemSignal.SetPointer($gridConductionPlan.GetResult()) | Out-Null
+
+    $ConductionResult = Invoke-ConductionCondenser -Signal $ConductionSignal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
 
     if ($Plan.TargetWirePath) {
         $injectSignal = Add-PathToDictionary -Dictionary $ItemSignal -Path $Plan.TargetWirePath -Value $Adapter | Select-Object -Last 1

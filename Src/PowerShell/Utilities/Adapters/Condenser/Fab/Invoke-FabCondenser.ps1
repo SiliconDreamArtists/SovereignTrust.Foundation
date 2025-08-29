@@ -22,7 +22,7 @@ function Invoke-FabCondenser {
                 $resolvedType = $resolvedAdapter.GetType().Name
                 $opSignal.LogVerbose("Adapter '$name' resolved as type '$resolvedType'.")
 
-                $addSignal = Register-AdapterToMappedSlot -Conductor $Conductor -Adapter $resolveSignal | Select-Object -Last 1
+                $addSignal = Register-AdapterToMappedSlot-NonGrid -Conductor $Conductor -Adapter $resolveSignal | Select-Object -Last 1
 
                 if ($opSignal.MergeSignalAndVerifySuccess($addSignal)) {
                     $opSignal.LogInformation("Adapter '$name' mounted successfully.")

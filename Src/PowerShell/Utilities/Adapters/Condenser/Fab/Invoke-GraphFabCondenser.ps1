@@ -48,12 +48,15 @@ function Invoke-GraphFabCondenser {
     $JacketSignal = $JacketSignalWrapper.GetResult()
     $ResolveAdapterSignal = Resolve-AdapterFromJacket -Signal $Signal -ConductionContext $Signal -Jacket $JacketSignal | Select-Object -Last 1
 
-
-    $wrappedGraphSignal = [Signal]::Start("Graph:$PlanName", $ResolveAdapterSignal) | Select-Object -Last 1
-
     $Adapter = $ResolveAdapterSignal.GetResult() | Select-Object -Last 1
-    #    $wrappedGraphSignal.SetPointer($graphResult) | Out-Null
 
+    $conductorJacketSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%" | Select-Object -Last 1
+    $addSignal = Register-AdapterToMappedSlot -ConductorJacketSignal $conductorJacketSignal.GetResult() -Adapter $ResolveAdapterSignal | Select-Object -Last 1
+
+    if ($opSignal.MergeSignalAndVerifyFailure($addSignal)) {
+        $opSignal.LogCritical("❌ Failed to add adapter to appropriate Mapped Adapter.")
+        return $opSignal
+    }
 
     if ($Plan.TargetWirePath) {
         $injectSignal = Add-PathToDictionary -Dictionary $ItemSignal -Path $Plan.TargetWirePath -Value $Adapter | Select-Object -Last 1
@@ -64,6 +67,7 @@ function Invoke-GraphFabCondenser {
         $opSignal.LogInformation("📍 Injected graph '$PlanName' into '$($Plan.TargetWirePath)'")
     }
 
+    <# Done in Register-AdapterToMappedSlot
     $isMappedSignal = Resolve-PathFromDictionary -Dictionary $JacketSignal -Path "@.IsMapped" | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($isMappedSignal)) {
         $opSignal.LogRecovery("⚠️ IsMapped status for jacket Not Required, Assumed False.")
@@ -78,7 +82,8 @@ function Invoke-GraphFabCondenser {
             $mappedAdapterSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%.*.#.Adapters.*.#.Mapped$($adapterKind)" | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure($mappedAdapterSignal)) {
                 $opSignal.LogWarning("⚠️ Failed to resolve mapped adapter for '$PlanName'.")
-            } else {
+            }
+            else {
                 $mappedAdapter = $mappedAdapterSignal.GetResult()
                 while ($mappedAdapter -is [Signal]) {
                     $mappedAdapter = $mappedAdapter.GetResult()
@@ -96,7 +101,7 @@ function Invoke-GraphFabCondenser {
             }
         }
     }
-
+    #>
     <#
     $addPlanSignal = Add-PathToDictionary -Dictionary $subSignal -Path "${PlanWirePathPrefix}.Plan" -Value $Plan | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($addPlanSignal)) {

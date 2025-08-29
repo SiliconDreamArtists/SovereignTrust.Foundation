@@ -54,8 +54,9 @@ function Invoke-MappedTokenAdapter {
             $opSignal.MergeSignal($invokeSignal)
 
             if ($invokeSignal.Success()) {
-                $opSignal.SetResult($invokeSignal.GetResult())
-                $opSignal.LogInformation("✅ MappedTokenAdapter successfully invoked path: $trimmed")
+                $result = $invokeSignal.GetResult()
+                $opSignal.SetResult($result)
+                $opSignal.LogInformation("✅ MappedTokenAdapter successfully invoked path: $trimmed to $result")
             }
             else {
                 $opSignal.LogWarning("⚠️ Invocation failed for path: $trimmed")

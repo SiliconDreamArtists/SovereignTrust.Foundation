@@ -25,8 +25,6 @@ class MappedTokenAdapter {
             $graphSignal = [Graph]::Start("MappedTokenAdapter", $adapter, $false)
             $adapter.Signal.SetPointer($graphSignal)
 
-            $graphSignal.RegisterSignal
-
             $opSignal.SetResult($adapter)
             $opSignal.LogInformation("✅ MappedTokenAdapter initialized.")
         }
@@ -68,7 +66,8 @@ class MappedTokenAdapter {
 
             if ($resultSignal.Success()) {
                 $opSignal.SetResult($resultSignal.GetResult())
-                $opSignal.LogInformation("✅ MappedTokenAdapter resolved path successfully: $Path")
+                $result = $resultSignal.GetResult()
+                $opSignal.LogInformation("✅ MappedTokenAdapter resolved path successfully: $Path -> $result")
             }
             else {
                 $opSignal.LogWarning("⚠️ MappedTokenAdapter failed to resolve path: $Path")

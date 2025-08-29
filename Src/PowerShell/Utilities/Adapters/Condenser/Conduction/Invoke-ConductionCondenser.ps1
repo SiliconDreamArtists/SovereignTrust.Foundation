@@ -6,25 +6,27 @@
 # Invokes Conduction phase processing using a sovereign Graph structure and
 # interprets each Phase block in sequence or via branching (OnSuccess / OnFail).
 # Compatible with the SDA GridCondenser pipeline and sovereign runtime standards.
-# =============================================================================
+# =============================================================================Thank
 
 function Invoke-ConductionCondenser {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
-        [Signal]$ConductionSignal
+        [Signal]$Signal,
+        [object]$Plan,
+        [object]$ItemSignal,
+        [string]$PlanWirePathPrefix = "%.%.%.@"  # <- new param with default
     )
 
-    $opSignal = [Signal]::Start("Invoke-ConductionCondenser", $ConductionSignal) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-ConductionCondenser", $Signal) | Select-Object -Last 1
 
-    $graphSignal = Resolve-PathFromDictionary -Dictionary $ConductionSignal -Path "@.Graph" | Select-Object -Last 1
-    if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
-        return $opSignal.LogCritical("❌ No Graph found in ConductionSignal.")
-    }
 
-    $graph = $graphSignal.GetResult()
+    $sourcePathSignal = Resolve-SourcePathFromPlan -plan $Plan | Select-Object -Last 1
 
-    $phaseDictSignal = Resolve-PathFromDictionary -Dictionary $graph -Path "PhaseDictionary" | Select-Object -Last 1
+    $conductionPlanSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $sourcePathSignal.GetResult() | Select-Object -Last 1
+
+    $conductionPlan = $conductionPlanSignal.GetResult()
+
+    $phaseDictSignal = Resolve-PathFromDictionary -Dictionary $conductionPlan -Path "PhaseDictionary" | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($phaseDictSignal)) {
         return $opSignal.LogCritical("❌ PhaseDictionary not found in Graph.")
     }
@@ -36,7 +38,7 @@ function Invoke-ConductionCondenser {
     while ($phaseIndex -lt $phaseKeys.Count) {
         $phaseKey = $phaseKeys[$phaseIndex]
         $phase = $phaseDict[$phaseKey]
-        $stepSignal = [Signal]::Start("Phase:$phaseKey", $ConductionSignal) | Select-Object -Last 1
+        $stepSignal = [Signal]::Start("Phase:$phaseKey", $Signal) | Select-Object -Last 1
 
         $stepType = $phase.Type
         switch ($stepType) {

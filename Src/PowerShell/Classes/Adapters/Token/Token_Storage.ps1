@@ -37,13 +37,14 @@ class Token_Storage {
         $opSignal = [Signal]::Start("Token_Storage.Invoke") | Select-Object -Last 1
 
         try {
+            
             $resultSignal = Invoke-TokenStorage -Conductor $this.Conductor -Conduit $null -Path $Path -Plan $Plan | Select-Object -Last 1
             $opSignal.MergeSignal($resultSignal)
 
             if ($resultSignal.Success()) {
                 $opSignal.SetResult($resultSignal.GetResult())
                 $opSignal.LogInformation("✅ Token storage path '$Path' resolved successfully.")
-            }
+            }   
             else {
                 $opSignal.LogWarning("⚠️ Token storage path '$Path' failed to resolve.")
             }

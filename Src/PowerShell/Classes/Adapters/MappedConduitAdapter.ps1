@@ -1,7 +1,7 @@
-class MappedCondenserAdapter {
+class MappedConduitAdapter {
     [Signal]$Signal
 
-    MappedCondenserAdapter() {
+    MappedConduitAdapter() {
         # Use static Start() to initialize
     }
 
@@ -10,7 +10,7 @@ class MappedCondenserAdapter {
     }
 
     static [Signal] Start([object]$conductor) {
-        $opSignal = [Signal]::Start("MappedCondenserAdapter.Start") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("MappedConduitAdapter.Start") | Select-Object -Last 1
 
         if (-not $conductor) {
             $opSignal.LogCritical("❌ Null Conductor passed to Start().")
@@ -18,17 +18,17 @@ class MappedCondenserAdapter {
         }
 
         try {
-            $adapter = [MappedCondenserAdapter]::new()
-            $adapter.Signal = [Signal]::Start("MappedCondenserAdapter") | Select-Object -Last 1
+            $adapter = [MappedConduitAdapter]::new()
+            $adapter.Signal = [Signal]::Start("MappedConduitAdapter") | Select-Object -Last 1
             $adapter.Signal.SetJacket($conductor)
             $adapter.Signal.SetReversePointer($conductor)
 
-            $graphSignal = [Graph]::Start("MappedCondenserAdapter", $adapter, $false)
+            $graphSignal = [Graph]::Start("MappedConduitAdapter", $adapter, $false)
             $adapter.Signal.SetResult($graphSignal, $true)
             $adapter.Signal.SetPointer($graphSignal.GetResult()) 
 
             $opSignal.SetResult($adapter)
-            $opSignal.LogInformation("✅ MappedCondenserAdapter initialized successfully.")
+            $opSignal.LogInformation("✅ MappedConduitAdapter initialized successfully.")
         }
         catch {
             $opSignal.LogCritical("💥 Exception during adapter setup: $_")
@@ -37,17 +37,17 @@ class MappedCondenserAdapter {
         return $opSignal
     }
 
-    [Signal] RegisterAdapter([string]$Key, [object]$CondenserAdapter) {
+    [Signal] RegisterAdapter([string]$Key, [object]$ConduitAdapter) {
         $opSignal = [Signal]::Start("RegisterMappedAdapter:$Key") | Select-Object -Last 1
         $adapterSignal = [Signal]::Start("Adapter:$Key") | Select-Object -Last 1
-        $adapterSignal.SetResult($CondenserAdapter)
+        $adapterSignal.SetResult($ConduitAdapter)
 
         $graph = $this.Signal.GetResult() | Select-Object -Last 1
         $registerSignal = $graph.RegisterSignal($Key, $adapterSignal)
         $opSignal.MergeSignal($registerSignal)
 
         if ($registerSignal.Success()) {
-            $opSignal.LogInformation("✅ Registered Condenser adapter under key: '$Key'")
+            $opSignal.LogInformation("✅ Registered Conduit adapter under key: '$Key'")
         } else {
             $opSignal.LogWarning("⚠️ Failed to register adapter at key: '$Key'")
         }
@@ -57,7 +57,7 @@ class MappedCondenserAdapter {
     }
 
     [Signal] Invoke([object]$Context) {
-        $opSignal = [Signal]::Start("MappedCondenserAdapter.Invoke") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("MappedConduitAdapter.Invoke") | Select-Object -Last 1
         $graph = $this.Signal.GetResult() | Select-Object -Last 1
 
         foreach ($key in $graph.Grid.Keys) {
@@ -81,7 +81,7 @@ class MappedCondenserAdapter {
         }
 
         if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No Condenser adapter produced a valid result.")
+            $opSignal.LogCritical("❌ No Conduit adapter produced a valid result.")
         }
 
         $this.Signal.MergeSignal($opSignal)

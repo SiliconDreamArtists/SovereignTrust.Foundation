@@ -19,7 +19,7 @@ function Resolve-ModulePathFromAdapter {
 
         $rootAdapter = $rootAdapter.GetResult()
 
-        $addressesSignal = Resolve-PathFromDictionary -Dictionary $rootAdapter -Path "%.Addresses" | Select-Object -Last 1
+        $addressesSignal = Resolve-PathFromDictionary -Dictionary $rootAdapter -Path "$.%.@.Addresses" | Select-Object -Last 1
         
         $addresses = $addressesSignal.GetResult()
 

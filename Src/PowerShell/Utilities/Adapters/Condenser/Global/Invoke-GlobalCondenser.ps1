@@ -13,35 +13,36 @@ function Invoke-GlobalCondenser {
     param (
         [Parameter(Mandatory)] [Signal]$Signal,
         [Parameter(Mandatory)] [object]$Plan,
-        [Parameter(Mandatory)] [object]$ItemSignal
+        [Parameter(Mandatory)] [object]$ItemSignal,
+        [string]$HydrationStyle = "",
+        [string]$RegexPattern = "\[[^\[@]*=[^/]*\/\]"
     )
 
-    $opSignal = [Signal]::Start("Invoke-GlobalCondenser", $Signal) | Select-Object -Last 1
+    if ($HydrationStyle -eq "Deferred") {
+        $RegexPattern = "\[[^\[@]*=[^|]*\|\]"
+    }
 
+    $opSignal = [Signal]::Start("Invoke-GlobalCondenser", $Signal) | Select-Object -Last 1
     $result = $ItemSignal.GetResult()
 
-    # Stubbed placeholders for testing
     $MergeCondenserFeedback = $opSignal
     $Dictionary = $null
     $DictionaryName = "DefaultGlobalDictionary"
     $ReturnRequiredValues = $true
 
-    # Invoke recursive token crawl across the result object
     Invoke-GlobalTokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
         -CurrentObject $result `
         -Dictionary $Dictionary `
         -Signal $Signal `
         -DictionaryName $DictionaryName `
+        -HydrationStyle $HydrationStyle `
+        -RegexPattern $RegexPattern `
         -ReturnRequiredValues:$ReturnRequiredValues
 
     $opSignal.LogInformation("✅ Global Condenser executed.")
-
-    # HACK - SETTING TO FALSE TO AVOID LOOP, NEEDS TO REVIEW ITSELF FOR CHANGES AND REPORT TRUE/FALSE
-    $opSignal.SetResult($false)
+    $opSignal.SetResult($false)  # HACK – Needs real change detection
     return $opSignal
 }
-
-<# TODO: Fix this not returning an opSignal that is gathering the opSignal results. #>
 
 function Invoke-GlobalTokenCrawl {
     [CmdletBinding()]
@@ -51,65 +52,72 @@ function Invoke-GlobalTokenCrawl {
         [object]$CurrentObject,
         [object]$Dictionary,
         [string]$DictionaryName,
+        [string]$RegexPattern,
+        [string]$HydrationStyle = "",
         [bool]$ReturnRequiredValues = $true
     )
 
     function _Walk {
         param (
             [object]$Parent,
-            [object]$Key
+            [object]$Key,
+            [string]$RegexPattern,
+            [string]$HydrationStyle
         )
+
         if ($Key -is [int]) {
             if ($Key -ge 0 -and $Key -lt $Parent.Count) {
                 $value = $Parent[$Key]
-            }
-            else {
-                return  # Index out of range, safely exit
-            }
-        }
-        else {
+            } else { return }
+        } else {
             $valueSignal = Resolve-PathFromDictionary -Dictionary $Parent -Path $Key | Select-Object -Last 1
-            if ($valueSignal.Failure()) {
-                # $MergeCondenserFeedback.LogWarning("Failed to resolve path '$Key' in dictionary '$DictionaryName'.")
-                return
-            }
-
+            if ($valueSignal.Failure()) { return }
             $value = $valueSignal.GetResult()
         }
-
 
         if ($null -eq $value) { return }
 
         switch ($value.GetType().Name) {
             'Hashtable' {
                 foreach ($subKey in $value.Keys) {
-                    _Walk -Parent $value -Key $subKey
+                    _Walk -Parent $value -Key $subKey -RegexPattern $RegexPattern -HydrationStyle $HydrationStyle
                 }
             }
             'PSCustomObject' {
                 foreach ($prop in $value.PSObject.Properties) {
-                    _Walk -Parent $value -Key $prop.Name
+                    _Walk -Parent $value -Key $prop.Name -RegexPattern $RegexPattern -HydrationStyle $HydrationStyle
                 }
             }
             'Object[]' {
                 for ($i = 0; $i -lt $value.Count; $i++) {
                     if ($value[$i] -is [hashtable] -or $value[$i] -is [pscustomobject]) {
-                        _Walk -Parent $value -Key $i
-                    }
-                    elseif ($value[$i] -is [string]) {
-                        if ($value[$i] -match '\[[^@\[]*=[^/]*\/\]') {
-                            $propObject = [PSCustomObject]@{ Name = "$i"; Value = $value[$i] }
-                            Resolve-GlobalTokenOverrideForProperty -Signal $Signal -MergeCondenserFeedback $MergeCondenserFeedback -Property $propObject -Dictionary $Dictionary -DictionaryName $DictionaryName -SplitMatchCharacter '=' -ReturnRequiredValues:$ReturnRequiredValues | Out-Null
-                            $value[$i] = $propObject.Value
-                        }
+                        _Walk -Parent $value -Key $i -RegexPattern $RegexPattern -HydrationStyle $HydrationStyle
+                    } elseif ($value[$i] -is [string] -and $value[$i] -match $RegexPattern) {
+                        $propObject = [PSCustomObject]@{ Name = "$i"; Value = $value[$i] }
+                        Resolve-GlobalTokenOverrideForProperty -Signal $Signal `
+                            -MergeCondenserFeedback $MergeCondenserFeedback `
+                            -Property $propObject `
+                            -Dictionary $Dictionary `
+                            -DictionaryName $DictionaryName `
+                            -SplitMatchCharacter '=' `
+                            -ReturnRequiredValues:$ReturnRequiredValues `
+                            -HydrationStyle $HydrationStyle | Out-Null
+                        $value[$i] = $propObject.Value
                     }
                 }
             }
             'String' {
-                if ($value -match '\[[^@\[]*=[^/]*\/\]') {
+                if ($value -match $RegexPattern) {
                     $propObject = [PSCustomObject]@{ Name = $Key; Value = $value }
-                    Resolve-GlobalTokenOverrideForProperty -Signal $Signal -MergeCondenserFeedback $MergeCondenserFeedback -Property $propObject -Dictionary $Dictionary -DictionaryName $DictionaryName -SplitMatchCharacter '=' -ReturnRequiredValues:$ReturnRequiredValues | Out-Null
-                    Add-PathToDictionary -Dictionary $Parent -Path $Key -Value $propObject.Value | Select-Object -Last 1
+                    Resolve-GlobalTokenOverrideForProperty -Signal $Signal `
+                        -MergeCondenserFeedback $MergeCondenserFeedback `
+                        -Property $propObject `
+                        -Dictionary $Dictionary `
+                        -DictionaryName $DictionaryName `
+                        -SplitMatchCharacter '=' `
+                        -ReturnRequiredValues:$ReturnRequiredValues `
+                        -HydrationStyle $HydrationStyle | Out-Null
+                    Add-PathToDictionary -Dictionary $Parent -Path $Key -Value $propObject.Value | Out-Null
                 }
             }
         }
@@ -117,12 +125,11 @@ function Invoke-GlobalTokenCrawl {
 
     if ($CurrentObject -is [hashtable]) {
         foreach ($key in $CurrentObject.Keys) {
-            _Walk -Parent $CurrentObject -Key $key
+            _Walk -Parent $CurrentObject -Key $key -RegexPattern $RegexPattern -HydrationStyle $HydrationStyle
         }
-    }
-    elseif ($CurrentObject -is [pscustomobject]) {
+    } elseif ($CurrentObject -is [pscustomobject]) {
         foreach ($prop in $CurrentObject.PSObject.Properties) {
-            _Walk -Parent $CurrentObject -Key $prop.Name
+            _Walk -Parent $CurrentObject -Key $prop.Name -RegexPattern $RegexPattern -HydrationStyle $HydrationStyle
         }
     }
 }

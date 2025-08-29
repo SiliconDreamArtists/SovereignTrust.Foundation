@@ -57,6 +57,15 @@ class MappedStorageAdapter {
         return $opSignal
     }
 
+    [Signal] Invoke([string]$Slot, [string]$Path) {
+        $opSignal = [Signal]::Start("MappedStorageAdapter.Invoke:$Slot.$Path") | Select-Object -Last 1
+
+        $conductor = $this.Signal.GetJacket()
+        return Invoke-StorageAdapter -MappedAdapterSignal $this.Signal -Conduit $null -Conductor $this.Signal.GetJacket() -Path $Path -Slot $Slot | Select-Object -Last 1
+
+        return $opSignal
+    }
+
     [Signal] InvokeAdapterMethod([string]$MethodName, [object[]]$Args) {
         $opSignal = [Signal]::Start("MappedStorageAdapter.Invoke:$MethodName") | Select-Object -Last 1
         $graph = $this.Signal.GetPointer()
