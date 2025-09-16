@@ -5,8 +5,8 @@ function Invoke-StorageAdapter {
         [Conduit]$Conduit,
         [Conductor]$Conductor,
         [string]$Path,
-        [string]$Slot
-#        [object]$Plan  # Typically a small PSObject or Phase class in the future
+        [string]$Slot,
+        [object]$Plan  # Typically a small PSObject or Phase class in the future
     )
 
     if ( $Conduit -and -not $Conduit.IsRunning) {
@@ -40,7 +40,7 @@ function Invoke-StorageAdapter {
         
         $Path = $resolvedPathSignal.GetResult()
 
-        $adapterIvokeSignal = $adapter.Invoke($Path) | Select-Object -Last 1
+        $adapterIvokeSignal = $adapter.Invoke($Path, $Plan) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterIvokeSignal)) {
             $opSignal.LogCritical("⚠️ Adapter failed to resolve path '$Path' with slot '$Slot'.")
             return $opSignal

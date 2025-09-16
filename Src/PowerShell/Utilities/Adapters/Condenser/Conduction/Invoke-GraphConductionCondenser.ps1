@@ -50,7 +50,7 @@ function Invoke-GraphConductionCondenser {
     
     $JacketSignal = $JacketSignalWrapper.GetResult()
 
-    $hydrationSignal = Invoke-HydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $JacketSignal -HydrationStyle "Deferred" | Select-Object -Last 1
+    $hydrationSignal = Invoke-HydrationCondenser -Signal  $Signal -Plan $Plan -ItemSignal $JacketSignal -HydrationStyle "Deferred" | Select-Object -Last 1
 
     #    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Signal $Signal -Jacket $JacketSignal | Select-Object -Last 1
 
@@ -66,13 +66,48 @@ function Invoke-GraphConductionCondenser {
         SourcesIdentifierWirePath = "Name"
     }
 
+    $ConductionPlanWrapperSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@"  | Select-Object -Last 1
+    $ConductionSlotSignal = Resolve-PathFromDictionary -Dictionary $ConductionPlanWrapperSignal.GetResult() -Path "ConductionType"  | Select-Object -Last 1
+
+    $slot = $ConductionSlotSignal.GetResult()
+
     $gridConductionPlanSignal = Invoke-GridCondenser -Signal $Signal -Plan $GridPlan -ItemSignal $ItemSignal -PlanWirePathPrefix "%.%.@" | Select-Object -Last 1
-    
+   
     $gridConductionPlan = Resolve-PathFromDictionary -Dictionary $gridConductionPlanSignal -Path "@.*" | Select-Object -Last 1
 
-    $ItemSignal.SetPointer($gridConductionPlan.GetResult()) | Out-Null
+#    $ItemSignal.SetPointer($gridConductionPlan.GetResult()) | Out-Null
 
-    $ConductionResult = Invoke-ConductionCondenser -Signal $ConductionSignal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
+   $mappedConductionPath = "%.*.#.Adapters.*.#.MappedConduction"
+
+    $AdapterSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path $mappedConductionPath | Select-Object -Last 1
+ 
+    if ($opSignal.MergeSignalAndVerifyFailure($adapterResultSignal)) {
+        $opSignal.LogCritical("❌ MappedConduction Adapter not found at path '$mappedConductionPath'. Ensure the Conductor has been initialized with the MappedConductionAdapter.")
+        return $opSignal
+    }
+
+    $Adapter = $AdapterSignal.GetResult() | Select-Object -Last 1
+
+    while ($Adapter -is [Signal]) {
+        $Adapter = $Adapter.GetResult()
+    }
+
+    $conductionSignal = [Signal]::Start("Conduction:Signal", $Signal) | Select-Object -Last 1
+    $conductionSignal.SetPointer($gridConductionPlan.GetResult()) | Out-Null
+    $conductionSignal.SetJacket($ItemSignal.GetJacket()) | Out-Null
+ 
+    $adapterResultSignal = $Adapter.Invoke($slot, $conductionSignal, $Plan) | Select-Object -Last 1
+
+    if ($opSignal.MergeSignalAndVerifyFailure($adapterResultSignal)) {
+        $opSignal.LogCritical("❌ Failed to execute MappedConduction Adapter for plan '$PlanName'.")
+        return $opSignal
+    }
+
+
+
+#    $ConductionResult = Invoke-ConductionCondenser -Signal $ConductionSignal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
+
+
 
     if ($Plan.TargetWirePath) {
         $injectSignal = Add-PathToDictionary -Dictionary $ItemSignal -Path $Plan.TargetWirePath -Value $Adapter | Select-Object -Last 1
@@ -82,6 +117,7 @@ function Invoke-GraphConductionCondenser {
         }
         $opSignal.LogInformation("📍 Injected graph '$PlanName' into '$($Plan.TargetWirePath)'")
     }
+
 
     <#
     $addPlanSignal = Add-PathToDictionary -Dictionary $subSignal -Path "${PlanWirePathPrefix}.Plan" -Value $Plan | Select-Object -Last 1

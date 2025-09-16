@@ -56,7 +56,7 @@ class MappedCondenserAdapter {
         return $opSignal
     }
 
-    [Signal] Invoke([object]$Context) {
+    [Signal] Invoke([object]$Context, [object]$Plan) {
         $opSignal = [Signal]::Start("MappedCondenserAdapter.Invoke") | Select-Object -Last 1
         $graph = $this.Signal.GetResult() | Select-Object -Last 1
 

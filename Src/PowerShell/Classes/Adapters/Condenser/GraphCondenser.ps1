@@ -55,6 +55,10 @@ class GraphCondenser {
     }
 
     [Signal] Invoke() {
+        return $this.Invoke($null, $null) | Select-Object -Last 1
+    }
+
+    [Signal] Invoke([string]$Path, [object]$Plan) {
         $opSignal = [Signal]::Start("GraphLauncher.Invoke", $this.Signal) | Select-Object -Last 1
 
         $sourceSignal = Resolve-PathFromDictionary -Dictionary $this.Conductor -Path "%.FlatFormulaSource" | Select-Object -Last 1

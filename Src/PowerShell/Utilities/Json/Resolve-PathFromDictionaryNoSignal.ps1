@@ -1,10 +1,16 @@
 function Resolve-PathFromDictionaryNoSignal {
     param (
         [Parameter(Mandatory)] $Dictionary,
-        [Parameter(Mandatory)] [string]$Path,
+        [string]$Path,
         [bool]$IgnoreInternalObjects = $true,
-        [string]$InternalObjectsPrefix = "_"
+        [string]$InternalObjectsPrefix = "_",
+        [bool]$AssumeInteralObjects = $false
     )
+
+        if ($null -eq $Path) 
+        { 
+            return $null
+        }
 
     $parts = $Path -split '\.'
     $current = $Dictionary
@@ -16,17 +22,28 @@ function Resolve-PathFromDictionaryNoSignal {
             if ($current -is [hashtable]) {
                 foreach ($key in @($current.Keys)) {
                     if ($key.StartsWith($InternalObjectsPrefix)) {
-                        $current.Remove($key)
+                        #$current.Remove($key)
                     }
                 }
             }
             elseif ($current -is [pscustomobject]) {
                 foreach ($prop in @($current.PSObject.Properties)) {
                     if ($prop.Name.StartsWith($InternalObjectsPrefix)) {
-                        $current.PSObject.Properties.Remove($prop.Name)
+                        if ($AssumeInteralObjects) {
+                            $propName = $prop.Name
+                            $current = $current.$propName
+                        }
+                        else {
+                            #$current.PSObject.Properties.Remove($prop.Name)                            
+                        }
                     }
                 }
             }
+        }
+
+        if ($null -eq $current) 
+        { 
+            return $null
         }
 
         # Traverse dictionary
@@ -37,15 +54,17 @@ function Resolve-PathFromDictionaryNoSignal {
         elseif ($current -is [hashtable]) {
             if ($current.Contains($part)) {
                 $current = $current[$part]
-            } else {
+            }
+            else {
                 return $null
             }
         }
-        # Traverse pscustomobject
+        # Traverse pscustomobject..
         elseif ($current -is [pscustomobject]) {
             if ($current.PSObject.Properties.Name -contains $part) {
                 $current = $current.$part
-            } else {
+            }
+            else {
                 return $null
             }
         }
@@ -61,10 +80,14 @@ function Resolve-PathFromDictionaryNoSignal {
             }
             if ($found) {
                 $current = $found
-            } else {
+            }
+            else {
                 return $null
             }
         }
+
+
+
         # Traverse PowerShell class instance
         elseif ($current.GetType().IsClass -and $current.GetType().Namespace -ne "System") {
             $propInfo = $current.GetType().GetProperty($part)

@@ -21,7 +21,11 @@ class ConductionCondenser {
         return $instance
     }
 
-    [Signal] Invoke([Signal]$ConductionSignal) {
-        return Invoke-ConductionCondenser -ConductionSignal $ConductionSignal | Select-Object -Last 1
+    [Signal] Invoke([object]$Context) {
+        return $this.Invoke($Context, $null) | Select-Object -Last 1
+    }
+
+    [Signal] Invoke([object]$Context, [object]$Plan) {
+        return Invoke-ConductionCondenser -ConductionSignal $Context | Select-Object -Last 1
     }
 }

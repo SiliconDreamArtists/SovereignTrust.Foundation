@@ -214,13 +214,7 @@ function Invoke-GraphCondenser {
         }
     }
 
-    $finalGraph = Resolve-PathFromDicti vv1
-    
-    
-    
-    
-    
-    onary -Dictionary $Signal -Path "%" | Select-Object -Last 1
+    $finalGraph = Resolve-PathFromDictionary -Dictionary $Signal -Path "%" | Select-Object -Last 1
 
     $opSignal.SetResult($finalGraph.GetResult())
     $opSignal.LogInformation("✅ Completed all declared GraphPlans.")

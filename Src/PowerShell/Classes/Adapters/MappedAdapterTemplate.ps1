@@ -52,7 +52,8 @@ class MappedAdapterTemplate {
         return $opSignal
     }
 
-    [Signal] Invoke([object]$Context) {
+#    [Signal] Invoke([object]$Context) {
+    [Signal] Invoke([string]$Slot, [Signal]$Context, [object]$Plan) {
         $opSignal = [Signal]::Start("MappedAdapterTemplate.Invoke") | Select-Object -Last 1
         $graph = $this.Signal.GetResult()
 

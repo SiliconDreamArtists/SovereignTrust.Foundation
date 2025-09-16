@@ -56,7 +56,7 @@ class MappedConduitAdapter {
         return $opSignal
     }
 
-    [Signal] Invoke([object]$Context) {
+    [Signal] Invoke([object]$Context, [object]$Plan) {
         $opSignal = [Signal]::Start("MappedConduitAdapter.Invoke") | Select-Object -Last 1
         $graph = $this.Signal.GetResult() | Select-Object -Last 1
 
@@ -65,7 +65,7 @@ class MappedConduitAdapter {
             $adapter = $subSignal.GetResult() | Select-Object -Last 1
 
             if ($null -ne $adapter -and ($adapter | Get-Member -Name "Invoke")) {
-                $resultSignal = $adapter.Invoke($Context)
+                $resultSignal = $adapter.Invoke($Context, $Plan) | Select-Object -Last 1
                 $opSignal.MergeSignal($resultSignal)
 
                 if ($resultSignal.Success()) {

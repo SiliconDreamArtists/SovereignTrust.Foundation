@@ -103,7 +103,8 @@ class Conductor {
             return $opSignal
         }
 
-        Invoke-TraceSignalTree -Signal $this.Signal -VisualizeFinal $true
+        ## TODO: Restore, turned off due to LogCriticals
+##        Invoke-TraceSignalTree -Signal $this.Signal -VisualizeFinal $true
         return $opSignal
     }
 

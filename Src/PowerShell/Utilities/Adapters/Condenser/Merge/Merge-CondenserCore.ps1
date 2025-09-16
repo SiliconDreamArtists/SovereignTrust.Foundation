@@ -1,4 +1,8 @@
-Export-ModuleMember -Function *
+#Export-ModuleMember -Function *
+Export-ModuleMember -Function Invoke-ConvertToUnifiedHashtable
+Export-ModuleMember -Function Invoke-MergeCondenserDictionaries
+Export-ModuleMember -Function Invoke-MergeCondenserUnifiedMemory
+
 
 # ================================
 # 📦 MergeCondenser.ps1 
@@ -9,9 +13,9 @@ Export-ModuleMember -Function *
 # results, support graph/signal unification, and respect memory lineage.
 #
 # Core Functions:
-#   - Merge-CondenserDictionaries
-#   - Convert-ToUnifiedHashtable
-#   - Merge-CondenserUnifiedMemory
+#   - Invoke-MergeCondenserDictionaries
+#   - Invoke-ConvertToUnifiedHashtable
+#   - Invoke-MergeCondenserUnifiedMemory
 #   - MergeCondenser (class)
 #
 # Doctrine Status:
@@ -22,12 +26,12 @@ Export-ModuleMember -Function *
 #
 
 
-function Convert-ToUnifiedHashtable {
+function Invoke-ConvertToUnifiedHashtable {
     param (
         [Parameter(Mandatory)][object]$InputObject
     )
 
-    $signal = [Signal]::Start("Convert-ToUnifiedHashtable") | Select-Object -Last 1
+    $signal = [Signal]::Start("Invoke-ConvertToUnifiedHashtable") | Select-Object -Last 1
 
     try {
         if ($InputObject -is [Signal]) {
@@ -67,14 +71,14 @@ function Convert-ToUnifiedHashtable {
     return $signal
 }
 
-function Merge-CondenserDictionaries {
+function Invoke-MergeCondenserDictionaries {
     param (
         [Parameter(Mandatory)][hashtable]$Base,
         [Parameter(Mandatory)][hashtable]$Overlay,
         [Parameter()][bool]$Recursive = $true
     )
 
-    $signal = [Signal]::Start("Merge-CondenserDictionaries") | Select-Object -Last 1
+    $signal = [Signal]::Start("Invoke-MergeCondenserDictionaries") | Select-Object -Last 1
 
     function Merge-Inner {
         param (
@@ -100,25 +104,25 @@ function Merge-CondenserDictionaries {
         $signal.SetResult($Base)
         $signal.LogInformation("✅ Hashtable merge completed successfully.")
     } catch {
-        $signal.LogCritical("🔥 Exception in Merge-CondenserDictionaries: $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception in Invoke-MergeCondenserDictionaries: $($_.Exception.Message)")
     }
 
     return $signal
 }
 
-function Merge-CondenserUnifiedMemory {
+function Invoke-MergeCondenserUnifiedMemory {
     param (
         [Parameter(Mandatory)][object]$Base,
         [Parameter(Mandatory)][object]$Overlay
     )
 
-    $signal = [Signal]::Start("Merge-CondenserUnifiedMemory") | Select-Object -Last 1
+    $signal = [Signal]::Start("Invoke-MergeCondenserUnifiedMemory") | Select-Object -Last 1
 
     try {
-        $baseHash   = Convert-ToUnifiedHashtable -InputObject $Base | Select-Object -Last 1
-        $overlayHash = Convert-ToUnifiedHashtable -InputObject $Overlay | Select-Object -Last 1
+        $baseHash   = Invoke-ConvertToUnifiedHashtable -InputObject $Base | Select-Object -Last 1
+        $overlayHash = Invoke-ConvertToUnifiedHashtable -InputObject $Overlay | Select-Object -Last 1
 
-        $mergeSignal = Merge-CondenserDictionaries -Base $baseHash.GetResult() -Overlay $overlayHash.GetResult() | Select-Object -Last 1
+        $mergeSignal = Invoke-MergeCondenserDictionaries -Base $baseHash.GetResult() -Overlay $overlayHash.GetResult() | Select-Object -Last 1
         $signal.MergeSignal($mergeSignal)
 
         if ($mergeSignal.Success()) {

@@ -41,7 +41,7 @@ class MergeCondenser {
     [Signal] InvokeByParameter([object]$Base, [object]$Overlay, [bool]$IgnoreInternalObjects = $true) {
         $opSignal = [Signal]::Start("MergeCondenser.Invoke-ByParameter") | Select-Object -Last 1
 
-        $mergeSignal = Merge-CondenserUnifiedMemory -Base $Base -Overlay $Overlay | Select-Object -Last 1
+        $mergeSignal = Invoke-MergeCondenserUnifiedMemory -Base $Base -Overlay $Overlay | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifySuccess($mergeSignal)) {
             $opSignal.SetResult($mergeSignal.GetResult())

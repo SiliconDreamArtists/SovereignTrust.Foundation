@@ -26,20 +26,20 @@ class FabCondenser {
         return $instance
     }
 
-    [Signal] Invoke([Signal]$Signal, [object]$Proposal, [object]$Context = $null) {
-        $opSignal = [Signal]::Start("FabCondenser.Invoke", $Signal) | Select-Object -Last 1
+    [Signal] Invoke([Signal]$ItemSignal, [object]$Proposal, [object]$Context = $null) {
+        $opSignal = [Signal]::Start("FabCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
 
         if ($null -eq $Proposal) {
-            $ProposalSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%.Proposal" | Select-Object -Last 1
+            $ProposalSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.Proposal" | Select-Object -Last 1
             $Proposal = $ProposalSignal.GetResult()
         }
 
         if ($null -eq $Context) {
-            $ContextSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%.Context" | Select-Object -Last 1
+            $ContextSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.Context" | Select-Object -Last 1
             $Context = $ContextSignal.GetResult()
         }
 
-        $resultSignal = Invoke-FabCondenser -Signal $Signal -Proposal $Proposal -Context $Context | Select-Object -Last 1
+        $resultSignal = Invoke-FabCondenser -Signal $ItemSignal -Proposal $Proposal -Context $Context | Select-Object -Last 1
         $opSignal.MergeSignal($resultSignal)
 
         if ($resultSignal.HasResult()) {

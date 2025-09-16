@@ -42,6 +42,7 @@ class MappedConductionAdapter {
             $adapterSignal = $AdapterInstance
         }
 
+        $AddMappedAdapterSignal = Add-PathToDictionary -Dictionary $AdapterInstance -Path "MappedAdapter" -Value $this | Select-Object -Last 1
         $graph = $this.Signal.GetPointer()
         $registerSignal = $graph.RegisterSignal($Key, $adapterSignal)
         $opSignal.MergeSignal($registerSignal)
@@ -56,11 +57,11 @@ class MappedConductionAdapter {
         return $opSignal
     }
 
-    [Signal] Invoke([string]$Slot, [string]$Path) {
-        $opSignal = [Signal]::Start("MappedConductionAdapter.Invoke:$Slot.$Path") | Select-Object -Last 1
+    [Signal] Invoke([string]$Slot, [object]$Context, [object]$Plan) {
+        $opSignal = [Signal]::Start("MappedConductionAdapter.Invoke:$Slot") | Select-Object -Last 1
 
         $conductor = $this.Signal.GetJacket()
-        return Invoke-ConductionAdapter -MappedAdapterSignal $this.Signal -Conduit $null -Conductor $this.Signal.GetJacket() -Path $Path -Slot $Slot | Select-Object -Last 1
+        $opSignal = Invoke-ConductionAdapter -MappedAdapterSignal $this.Signal -Conduit $null -Conductor $this.Signal.GetJacket() -ConductionSignal $Context -Slot $Slot | Select-Object -Last 1
 
         return $opSignal
     }

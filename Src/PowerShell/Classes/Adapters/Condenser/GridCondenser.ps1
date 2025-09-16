@@ -54,7 +54,7 @@ class GridCondenser {
         return $instance
     }
 
-    [Signal] Invoke() {
+    [Signal] Invoke([string]$Path, [object]$Plan) {
         $opSignal = [Signal]::Start("GraphLauncher.Invoke", $this.
         Signal) | Select-Object -Last 1
 

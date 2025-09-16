@@ -14,7 +14,7 @@ function Invoke-EmbeddedFileSystem_ReadObject {
             $VirtualPath = "$VirtualPath$PathSuffix"
         }
 
-        foreach ($address in $addresses) {
+        foreach ($address in $Addresses) {
             $fullPath = Join-Path -Path $address -ChildPath $VirtualPath
 
             if (Test-Path -Path $fullPath) {
@@ -25,7 +25,7 @@ function Invoke-EmbeddedFileSystem_ReadObject {
             }
         }
 
-        $opSignal.LogWarning("⚠️ File '$VirtualPath' not found in any address.")
+        $opSignal.LogCritical("⚠️ File '$VirtualPath' not found in any address.")
     }
     catch {
         $opSignal.LogCritical("🔥 Exception during Invoke-ReadVirtualFileFromAddresses: $($_.Exception.Message)")

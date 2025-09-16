@@ -43,7 +43,7 @@ function Invoke-GraphFabCondenser {
     $subSignal = [Signal]::Start("GraphPlan:$PlanName", $Signal) | Select-Object -Last 1
     $subSignal.SetJacket($ItemSignal) | Out-Null
 
-
+    
     $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%" | Select-Object -Last 1
     $JacketSignal = $JacketSignalWrapper.GetResult()
     $ResolveAdapterSignal = Resolve-AdapterFromJacket -Signal $Signal -ConductionContext $Signal -Jacket $JacketSignal | Select-Object -Last 1

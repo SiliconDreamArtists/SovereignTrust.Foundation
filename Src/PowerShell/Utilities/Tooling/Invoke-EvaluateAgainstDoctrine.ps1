@@ -1,10 +1,10 @@
-function Evaluate-AgainstDoctrine {
+function Invoke-EvaluateAgainstDoctrine {
     param (
         [Parameter(Mandatory = $true)][string]$ScriptText,
         [Parameter()][string]$SourceName = "UnnamedScript"
     )
 
-    $signal = [Signal]::Start("Evaluate-AgainstDoctrine:$SourceName") | Select-Object -Last 1
+    $signal = [Signal]::Start("Invoke-EvaluateAgainstDoctrine:$SourceName") | Select-Object -Last 1
     $score = 100
     $flags = @()
 

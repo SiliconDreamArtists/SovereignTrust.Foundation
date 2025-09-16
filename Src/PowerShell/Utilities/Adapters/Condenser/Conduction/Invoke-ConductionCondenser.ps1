@@ -22,10 +22,12 @@ function Invoke-ConductionCondenser {
 
     $sourcePathSignal = Resolve-SourcePathFromPlan -plan $Plan | Select-Object -Last 1
 
+   # Conduction Condenser needs to call the Mapped Conduction Adapter and pass through the steps.
+
     $conductionPlanSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $sourcePathSignal.GetResult() | Select-Object -Last 1
 
     $conductionPlan = $conductionPlanSignal.GetResult()
-
+        
     $phaseDictSignal = Resolve-PathFromDictionary -Dictionary $conductionPlan -Path "PhaseDictionary" | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($phaseDictSignal)) {
         return $opSignal.LogCritical("❌ PhaseDictionary not found in Graph.")

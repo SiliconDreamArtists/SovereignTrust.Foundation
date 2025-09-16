@@ -47,7 +47,7 @@ function Invoke-TokenStorage {
 
         $mappedAdapter = $mappedAdapterSignal.GetResult()
 
-        $resultSignal = $mappedAdapter.Invoke($slot, $PartialPath) | Select-Object -Last 1
+        $resultSignal = $mappedAdapter.Invoke($slot, $PartialPath, $Plan) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
             $opSignal.LogCritical("⚠️ MappedAdapter failed to resolve key '$key' with scope '$scope'.")
             return $opSignal

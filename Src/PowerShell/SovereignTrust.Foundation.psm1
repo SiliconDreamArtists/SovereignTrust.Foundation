@@ -97,13 +97,13 @@ $abc = Get-Module -Name $sgModuleName
 
 . "$PSScriptRoot/Utilities/Resolve-SourcePathFromPlan.ps1"
 
-. "$PSScriptRoot/Utilities/Conduction/Complete-Conduction.ps1"
-. "$PSScriptRoot/Utilities/Conduction/ConductionCoreFunctions.ps1"
-. "$PSScriptRoot/Utilities/Conduction/ConductionPhaseFunctions.ps1"
-. "$PSScriptRoot/Utilities/Conduction/Convert-AgentAdaptersToConductor.ps1"
+##. "$PSScriptRoot/Utilities/Conduction/Complete-Conduction.ps1"
+#. "$PSScriptRoot/Utilities/Conduction/ConductionCoreFunctions.ps1"
+#. "$PSScriptRoot/Utilities/Conduction/ConductionPhaseFunctions.ps1"
+#. "$PSScriptRoot/Utilities/Conduction/Convert-AgentAdaptersToConductor.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Get-AgentForConductor.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Invoke-Conduction.ps1"
-. "$PSScriptRoot/Utilities/Conduction/Resolve-RelativePathFromWirePath-na.ps1"
+#. "$PSScriptRoot/Utilities/Conduction/Resolve-RelativePathFromWirePath-na.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Start-Conduction.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Start-SovereignTrust.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Start-BondingConduction.ps1"
@@ -127,8 +127,8 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Utilities/Json/Resolve-RegexPlaceholders.ps1"
 . "$PSScriptRoot/Utilities/Json/Set-DictionaryValue.ps1"
 . "$PSScriptRoot/Utilities/Json/Test-Paths.ps1"
-. "$PSScriptRoot/Utilities/Tooling/Ensure-DotNetLibraryFromNuget.ps1"
-. "$PSScriptRoot/Utilities/Tooling/Evaluate-AgainstDoctrine.ps1"
+. "$PSScriptRoot/Utilities/Tooling/Resolve-DotNetLibraryFromNuget.ps1"
+. "$PSScriptRoot/Utilities/Tooling/Invoke-EvaluateAgainstDoctrine.ps1"
 . "$PSScriptRoot/Utilities/Tooling/Invoke-TestGraph.ps1"
 . "$PSScriptRoot/Utilities/Tooling/Invoke-TraceSignalTree.ps1"
 . "$PSScriptRoot/Utilities/Tooling/Invoke-VisualizeSignalTreeTrace.ps1"
@@ -151,9 +151,9 @@ Export-ModuleMember -Function Invoke-GraphCondenser
 Export-ModuleMember -Function Invoke-ConductionCondenser
 Export-ModuleMember -Function Invoke-GraphConductionCondenser
 Export-ModuleMember -Function Invoke-Graph
-Export-ModuleMember -Function Apply-HydrationToGraph
+##Export-ModuleMember -Function Apply-HydrationToGraph
 Export-ModuleMember -Function Convert-VirtualPathToWirePath
-Export-ModuleMember -Function Ensure-HydrationIntentInSignal
+##Export-ModuleMember -Function Ensure-HydrationIntentInSignal
 Export-ModuleMember -Function Invoke-GraphHydrationCondenser
 Export-ModuleMember -Function Invoke-HydrationCondenser
 Export-ModuleMember -Function Invoke-GlobalCondenser
@@ -165,8 +165,8 @@ Export-ModuleMember -Function Invoke-MemoryCondenser
 Export-ModuleMember -Function Invoke-PathHydration
 Export-ModuleMember -Function Merge-CondenserCore
 Export-ModuleMember -Function Complete-Conduction
-Export-ModuleMember -Function ConductionCoreFunctions
-Export-ModuleMember -Function ConductionPhaseFunctions
+##Export-ModuleMember -Function ConductionCoreFunctions
+##Export-ModuleMember -Function ConductionPhaseFunctions
 Export-ModuleMember -Function Convert-AgentAdaptersToConductor
 Export-ModuleMember -Function Get-AgentForConductor
 Export-ModuleMember -Function Invoke-Conduction
@@ -193,12 +193,12 @@ Export-ModuleMember -Function Resolve-PathFromDictionaryNoSignal
 Export-ModuleMember -Function Resolve-RegexPlaceholders
 Export-ModuleMember -Function Set-DictionaryValue
 Export-ModuleMember -Function Test-Paths
-Export-ModuleMember -Function Ensure-DotNetLibraryFromNuget
-Export-ModuleMember -Function Evaluate-AgainstDoctrine
+Export-ModuleMember -Function Resolve-DotNetLibraryFromNuget
+Export-ModuleMember -Function Invoke-EvaluateAgainstDoctrine
 Export-ModuleMember -Function Invoke-TestGraph
 Export-ModuleMember -Function Invoke-TraceSignalTree
 Export-ModuleMember -Function Invoke-VisualizeSignalTreeTrace
-Export-ModuleMember -Function SovereignTrust.Foundation.Diagrams
+#Export-ModuleMember -Function SovereignTrust.Foundation.Diagrams
 Export-ModuleMember -Function Test-IsClassDefined
 Export-ModuleMember -Function New-Conductor
 Export-ModuleMember -Function Invoke-HydrateTokenCondenser

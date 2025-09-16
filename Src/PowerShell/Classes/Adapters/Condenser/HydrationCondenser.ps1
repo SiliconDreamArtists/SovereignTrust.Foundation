@@ -130,7 +130,7 @@ class HydrationCondenser {
                 }
             }
 
-            foreach ($tokenGraph in ($importList | Sort-Dictionary -Unique)) {
+            foreach ($tokenGraph in ($importList | Invoke-SortDictionary -Unique)) {
                 $relativePath = $tokenGraph.Replace("\", "/")
                 $adjustedBasePath = $tokenGraphRoot
 

@@ -95,7 +95,7 @@ class Storage_EmbeddedFileSystem {
         return $opSignal
     }
 
-    [Signal] Invoke([string]$virtualPath) {
+    [Signal] Invoke([string]$virtualPath, [object]$Plan) {
         $opSignal = [Signal]::Start("EmbeddedFileSystem.ReadObject:$virtualPath") | Select-Object -Last 1
 
         try {

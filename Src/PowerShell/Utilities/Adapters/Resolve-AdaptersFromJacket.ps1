@@ -130,7 +130,7 @@ function Resolve-AdapterFromJacket {
         }
 
         # ░▒▓█ RESULT █▓▒░
-        $opSignal.SetResult($instance)
+            $opSignal.SetResult($instance)
         $opSignal.LogInformation("📦 Adapter '$($Jacket.Name)' resolved and returned successfully.")
     }
     catch {

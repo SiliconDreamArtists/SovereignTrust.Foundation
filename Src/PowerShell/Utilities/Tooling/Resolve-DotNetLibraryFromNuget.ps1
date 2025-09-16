@@ -1,4 +1,4 @@
-function Ensure-DotNetLibraryFromNuget {
+function Resolve-DotNetLibraryFromNuget {
     param (
         [Parameter(Mandatory = $true)] [object]$ConductionContext,
         [Parameter(Mandatory = $true)] [string]$LibraryName,

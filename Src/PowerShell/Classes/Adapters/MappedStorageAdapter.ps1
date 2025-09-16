@@ -57,12 +57,25 @@ class MappedStorageAdapter {
         return $opSignal
     }
 
-    [Signal] Invoke([string]$Slot, [string]$Path) {
-        $opSignal = [Signal]::Start("MappedStorageAdapter.Invoke:$Slot.$Path") | Select-Object -Last 1
+    [Signal] Invoke([object]$Context) {
+        return $this.Invoke($null, $Context) | Select-Object -Last 1
+    }
+
+    [Signal] Invoke([string]$Slot, [object]$Context) {
+        return $this.Invoke($Slot, $Context) | Select-Object -Last 1
+    }
+
+    [Signal] Invoke([string]$Slot, [object]$Context, [object]$Plan = $null) {
+        $opSignal = [Signal]::Start("MappedStorageAdapter.Invoke:$Slot.$Context") | Select-Object -Last 1
 
         $conductor = $this.Signal.GetJacket()
-        return Invoke-StorageAdapter -MappedAdapterSignal $this.Signal -Conduit $null -Conductor $this.Signal.GetJacket() -Path $Path -Slot $Slot | Select-Object -Last 1
+        $adapterSignal = Invoke-StorageAdapter -MappedAdapterSignal $this.Signal -Conduit $null -Conductor $this.Signal.GetJacket() -Path $Context -Slot $Slot | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
+            $opSignal.LogCritical("❌ MappedStorageAdapter failed to invoke path '$Context' in slot '$Slot'.")
+            return $opSignal
+        }
 
+        $opSignal.SetResult($adapterSignal.GetResult())
         return $opSignal
     }
 
