@@ -34,6 +34,9 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Utilities/Adapters/Storage/Invoke-StorageAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Conduction/Invoke-ConductionAdapter.ps1"
 
+. "$PSScriptRoot/Utilities/Adapters/Network/Invoke-NetworkAdapter.ps1"
+
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Transform/Invoke-TransformCondenser.ps1"
 
 . "$PSScriptRoot/Classes/Adapters/BaseAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/Conduit.ps1"
@@ -47,6 +50,7 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Classes/Adapters/Condenser/MemoryCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/MergeCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/TokenCondenser.ps1"
+. "$PSScriptRoot/Classes/Adapters/Condenser/TransformCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Storage/Storage_EmbeddedFileSystem.ps1"
 . "$PSScriptRoot/Classes/Adapters/UX/ConsoleLogger.ps1"
 
@@ -62,6 +66,10 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Utilities/Adapters/Resolve-ConductorAdapters.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Resolve-DependencyModuleFromGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Test-ModuleLoaded.ps1"
+
+
+#Src\PowerShell\Utilities\Adapters\Condenser\Fab\Invoke-FabCondenser.ps1
+
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-FabCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-GraphFabCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Resolve-ModuleFromAdapter.ps1"
@@ -87,6 +95,7 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Utilities/Adapters/Storage/Resolve-ModulePathFromAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Storage/Resolve-PathWithExtensionFromPath.ps1"
 
+. "$PSScriptRoot/Utilities/Adapters/Invoke-MappedAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-MappedTokenAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenEnvironment.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenFormatter.ps1"
@@ -136,6 +145,7 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Utilities/Tooling/Test-IsClassDefined.ps1"
 
 # Export public utility functions
+Export-ModuleMember -Function Invoke-FabCondenser
 Export-ModuleMember -Function Invoke-CloneItem
 Export-ModuleMember -Function New-MappedCondenserAdapterFromGraph
 Export-ModuleMember -Function Register-AdapterToMappedSlot
@@ -205,4 +215,6 @@ Export-ModuleMember -Function Invoke-HydrateTokenCondenser
 #        $bondingConductor = New-Conductor -HostConductor $null
 
 Export-ModuleMember -Function Invoke-StorageAdapter
+Export-ModuleMember -Function Invoke-NetworkAdapter
 Export-ModuleMember -Function Invoke-TokenStorage
+Export-ModuleMember -Function Invoke-MappedAdapter

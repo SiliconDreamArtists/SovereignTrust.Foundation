@@ -75,9 +75,21 @@ function Resolve-GlobalTokenOverrideForProperty {
                 $RegexPattern = "\[(.*?)\|\]"
             }
 
+            # Account for line breaks
+            if (-not ($RegexPattern -match '^\(\?s\)')) {
+                $RegexPattern = "(?s)$RegexPattern"
+            }
+
             $matches = [regex]::Matches($propertyValue, $RegexPattern)
         }
 
+                if ($matches.Count -gt 100) {
+
+         $matches = $matches |
+                ForEach-Object { $_.Value } |
+                Select-Object -Unique
+                }
+                
         foreach ($match in $matches) {
             $matchText = $match.Value.Trim()
             $equalsIndex = $matchText.Length - 2
@@ -104,6 +116,11 @@ function Resolve-GlobalTokenOverrideForProperty {
                     $RegexPattern = "\[[^\[\]\|]*\|\]"
                 }
 
+                # Account for line breaks
+                if (-not ($RegexPattern -match '^\(\?s\)')) {
+                    $RegexPattern = "(?s)$RegexPattern"
+                }
+
                 $resultSignal = $adapter.Invoke($key);
                 $lookupSignal = [Signal]::Start("Resolve-GlobalTokenOverrideForProperty:$($Property.Name)", $null) | Select-Object -Last 1
                 $lookupSignal.SetResult($resultSignal.GetResult())
@@ -114,33 +131,42 @@ function Resolve-GlobalTokenOverrideForProperty {
             if ($lookupSignal.Success() -and -not [string]::IsNullOrWhiteSpace($lookupSignal.Result)) {
 
                 $replacement = $lookupSignal.Result
-                if ($SplitMatchCharacter) {
-                    $replacement = $replacementTemplate -f $key, $lookupSignal.Result
-                }
 
-                # Escape the whole key again for regex use
-                $escapedKey = [regex]::Escape($key)  # results in "Formatter\\.FilePath"
-
-
-                $RegexPattern = "\[$escapedKey.*?\/\]"
-                if ($HydrationStyle -eq "Deferred") {
-                    #\[[^\[\]\|]*\|\]
-                    $RegexPattern = "\[$escapedKey.*?\|\]"
-                }
-
-                $innerRegex = [regex]::new($RegexPattern)
-                
-                $oldValue = $propertyValue
-                #$propertyValue = $innerRegex.Replace($propertyValue, $replacement)
-                $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
-
-                if ($propertyValue -ne $oldValue) {
-                    $opSignal.LogInformation("🔄 Replaced '$key' with '$replacement' in property '$($Property.Name)'")
+                # When a replacement value is a json object, etc, we can't do a replacement and must assume the object is ready to be returned.
+                if ($replacement -is [PSCustomObject])
+                {
+                    $propertyValue = $replacement
                 }
                 else {
-                    $propertyValue = $propertyValue -replace $match.Value, $replacement
-                    $opSignal.LogWarning("⚠️ No replacement made for '$key' in property '$($Property.Name)' — token may be malformed or missing. ($propertyValue)")
+                    if ($SplitMatchCharacter) {
+                        $replacement = $replacementTemplate -f $key, $lookupSignal.Result
+                    }
+
+                    # Escape the whole key again for regex use
+                    $escapedKey = [regex]::Escape($key)  # results in "Formatter\\.FilePath"
+
+
+                    $RegexPattern = "\[$escapedKey.*?\/\]"
+                    if ($HydrationStyle -eq "Deferred") {
+                        #\[[^\[\]\|]*\|\]
+                        $RegexPattern = "\[$escapedKey.*?\|\]"
+                    }
+
+                    $innerRegex = [regex]::new($RegexPattern)
+                    
+                    $oldValue = $propertyValue
+
+                    $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
+
+                    if ($propertyValue -ne $oldValue) {
+                        $opSignal.LogInformation("🔄 Replaced '$key' with '$replacement' in property '$($Property.Name)'")
+                    }
+                    else {
+                      #  $propertyValue = $propertyValue -replace $match.Value, $replacement
+                        $opSignal.LogWarning("⚠️ No replacement made for '$key' in property '$($Property.Name)' — token may be malformed or missing. ($propertyValue)")
+                    }
                 }
+
             }
         }
 

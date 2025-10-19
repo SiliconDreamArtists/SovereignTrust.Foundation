@@ -33,6 +33,7 @@ function Resolve-PathGraphCondenserAdapter {
         $graph.RegisterResultAsSignal("TokenCondenser",     [TokenCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
         $graph.RegisterResultAsSignal("GlobalCondenser",     [GlobalCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
         $graph.RegisterResultAsSignal("HydrationCondenser", [HydrationCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
+        $graph.RegisterResultAsSignal("TransformCondenser", [TransformCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
         $graph.RegisterResultAsSignal("GridCondenser",     [GridCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
         $graph.RegisterResultAsSignal("MemoryCondenser", [MemoryCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
         $graph.RegisterResultAsSignal("GraphCondenser", [GraphCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null

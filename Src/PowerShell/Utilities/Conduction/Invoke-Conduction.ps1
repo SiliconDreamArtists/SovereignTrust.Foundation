@@ -1,11 +1,11 @@
 function Invoke-Conduction {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Signal]$Signal,
+        [Conductor]$Conductor,
         [Conduit]$Conduit,
-
-        [Parameter(Mandatory = $true)]
         [object]$Phase  # Typically a small PSObject or Phase class in the future
+        
     )
 
     if (-not $Conduit.IsRunning) {

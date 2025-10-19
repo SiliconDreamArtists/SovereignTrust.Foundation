@@ -30,16 +30,16 @@ class MapCondenser {
         $opSignal = [Signal]::Start("MapCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
 
         if ($null -eq $Plan) {
-            $PlanSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.Plan" | Select-Object -Last 1
+            $PlanSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.Plan" | Select-Object -Last 1
             $Plan = $PlanSignal.GetResult()
         }
 
         if ($null -eq $Context) {
-            $ContextSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.Context" | Select-Object -Last 1
+            $ContextSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.Context" | Select-Object -Last 1
             $Context = $ContextSignal.GetResult()
         }
 
-        $resultSignal = Invoke-MapCondenser -Signal $ItemSignal -Plan $Plan -Context $Context | Select-Object -Last 1
+        $resultSignal = Invoke-MapCondenser -Signal $ItemSignal -ProposalSignal $Plan -Context $Context | Select-Object -Last 1
         $opSignal.MergeSignal($resultSignal)
 
         if ($resultSignal.HasResult()) {

@@ -10,7 +10,7 @@ class MappedCondenserAdapter {
     }
 
     static [Signal] Start([object]$conductor) {
-        $opSignal = [Signal]::Start("MappedCondenserAdapter.Start") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("MappedCondenser.Start") | Select-Object -Last 1
 
         if (-not $conductor) {
             $opSignal.LogCritical("❌ Null Conductor passed to Start().")
@@ -19,11 +19,11 @@ class MappedCondenserAdapter {
 
         try {
             $adapter = [MappedCondenserAdapter]::new()
-            $adapter.Signal = [Signal]::Start("MappedCondenserAdapter") | Select-Object -Last 1
+            $adapter.Signal = [Signal]::Start("MappedCondenser") | Select-Object -Last 1
             $adapter.Signal.SetJacket($conductor)
             $adapter.Signal.SetReversePointer($conductor)
 
-            $graphSignal = [Graph]::Start("MappedCondenserAdapter", $adapter, $false)
+            $graphSignal = [Graph]::Start("MappedCondenser", $adapter, $false)
             $adapter.Signal.SetResult($graphSignal, $true)
             $adapter.Signal.SetPointer($graphSignal.GetResult()) 
 
@@ -57,7 +57,7 @@ class MappedCondenserAdapter {
     }
 
     [Signal] Invoke([object]$Context, [object]$Plan) {
-        $opSignal = [Signal]::Start("MappedCondenserAdapter.Invoke") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("MappedCondenser.Invoke") | Select-Object -Last 1
         $graph = $this.Signal.GetResult() | Select-Object -Last 1
 
         foreach ($key in $graph.Grid.Keys) {

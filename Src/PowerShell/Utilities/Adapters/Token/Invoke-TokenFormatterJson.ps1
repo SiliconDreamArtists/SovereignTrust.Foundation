@@ -4,19 +4,20 @@ function Invoke-TokenFormatterJson {
         [object]$Plan
     )
 
-    $opSignal = [Signal]::Start("Invoke-TokenFormatterVirtualFolder") | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-TokenFormatterJson") | Select-Object -Last 1
 
     try {
-        # Split into path segments
-        $segments = $Path -split '\.'
-        $formatted = ($segments[2..($segments.Count - 1)] -join '/') + "/"
+        # everything after the 2nd '.'
+        $parts = $Path -split '\.', 3
+        $formatted = if ($parts.Count -ge 3) { $parts[2] } else { '' }
 
-         $opSignal.SetResult($formatted)
+        $json = $formatted | ConvertFrom-Json -Depth 100 
+        $opSignal.SetResult($json)
 
-        $opSignal.LogInformation("✅ Formatted path: $formatted")
+        $opSignal.LogInformation("✅ Json Created from Path")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatterVirtualFolder: $_")
+        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatterJson: $_")
     }
 
     return $opSignal

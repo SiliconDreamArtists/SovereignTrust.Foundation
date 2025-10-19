@@ -1,4 +1,4 @@
-function Invoke-TokenFormatter {
+function Invoke-TransformCondenser {
     [CmdletBinding()]
     param (
         [Conduit]$Conduit,
@@ -11,7 +11,7 @@ function Invoke-TokenFormatter {
         throw "Conduction is not running. Cannot invoke Formatter Phase."
     }
 
-    $opSignal = [Signal]::Start("Invoke-TokenFormatter", $Conductor) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-TransformCondenser", $Conductor) | Select-Object -Last 1
 
     try {
         if ([string]::IsNullOrWhiteSpace($Path)) {
@@ -27,11 +27,7 @@ function Invoke-TokenFormatter {
         }
 
         $formatterKey = $segments[1]
-        $subInvokeName = "Invoke-TokenFormatter$formatterKey"
-if ($formatterKey -eq "Json")
-{
-    $a = "b"
-}
+        $subInvokeName = "Invoke-TransformCondenser$formatterKey"
 
         if (-not (Get-Command $subInvokeName -ErrorAction SilentlyContinue)) {
             $opSignal.LogCritical("❌ Formatter handler '$subInvokeName' not found.")

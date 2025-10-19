@@ -2,18 +2,22 @@ function Invoke-MapCondenser {
     [CmdletBinding()]
     param (
         [Signal]$Signal,
-        [object]$Proposal,
+        [object]$ProposalSignal,
         [object]$Context = $null
     )
 
     $opSignal = [Signal]::Start("Invoke-MapCondenser", $Signal) | Select-Object -Last 1
 
-    if (-not $Proposal) {
+    if (-not $ProposalSignal.HasResult()) {
         $opSignal.LogCritical("❌ Missing Proposal object.")
         return $opSignal
     }
 
-    $mode = $Proposal.CondenserMode
+    $modeSignal = Resolve-PathFromDictionary -Dictionary $ProposalSignal -Path "@.CondenserMode" -FailureLogLevel "Verbose" | Select-Object -Last 1
+    if ($modeSignal.HasResult()) {
+        $mode = $modeSignal.GetResult()
+    }
+
     if ([string]::IsNullOrWhiteSpace($mode)) {
         $mode = 'Direct'
         $opSignal.LogVerbose("ℹ️ Defaulting CondenserMode to 'Direct'.")
@@ -21,13 +25,20 @@ function Invoke-MapCondenser {
 
     switch ($mode) {
         'Direct' {
-            $directResult = Invoke-DirectMapCondenser -Proposal $Proposal
-            $opSignal.MergeSignal($directResult)
+            $directResult = Invoke-DirectMapCondenser -Signal $Signal -Context $Context -ProposalSignal $ProposalSignal | Select-Object -Last 1
+            if ($opSignal.MergeSignalAndVerifyFailure($directResult)) {
+                $opSignal.LogCritical("❌ DirectMapCondenser failed.")
+                return $opSignal
+            }
+            else {
+                $opSignal.SetResult($directResult.GetResult())
+            }
+
             return $opSignal
         }
 
         'Template' {
-            $templateResult = Invoke-TemplateMapCondenser -Signal $opSignal -Proposal $Proposal -Context $Context
+            $templateResult = Invoke-TemplateMapCondenser -Signal $opSignal -Proposal $ProposalSignal -Context $Context
             return $templateResult
         }
 

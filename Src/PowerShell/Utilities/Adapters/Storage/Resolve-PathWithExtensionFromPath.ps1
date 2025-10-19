@@ -8,7 +8,7 @@ function Resolve-PathWithExtensionFromPath {
 
     try {
         # Return as-is if path already ends with a known extension (case-insensitive)
-        if ($Path -match '\.(?i:json|xml)$') {
+        if ($Path -match '\.(?i:json|xml|txt|map)$') {
             $opSignal.SetResult($Path)
             return $opSignal
         }
@@ -22,6 +22,14 @@ function Resolve-PathWithExtensionFromPath {
         }
         elseif ($segments -contains 'xml') {
             $result = "$Path.xml"
+            $opSignal.LogInformation("🧩 Appended .xml based on lowercase segment match.")
+        }
+        elseif ($segments -contains 'text' -or $segments -contains 'txt') {
+            $result = "$Path.txt"
+            $opSignal.LogInformation("🧩 Appended .xml based on lowercase segment match.")
+        }
+        elseif ($segments -contains 'map' -or $segments -contains 'maps') {
+            $result = "$Path.map"
             $opSignal.LogInformation("🧩 Appended .xml based on lowercase segment match.")
         }
         else {

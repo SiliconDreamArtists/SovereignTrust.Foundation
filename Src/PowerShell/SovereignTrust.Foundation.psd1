@@ -18,7 +18,7 @@ ModuleVersion = '1.0.0'
 CompatiblePSEditions = 'Core'
 
 # ID used to uniquely identify this module
-GUID = '3a6e5209-69c9-4a4e-b2e9-1b7426d98a45'
+GUID = '4707f9ba-7523-49ae-8cb2-f9eb707aef59'
 
 # Author of this module
 Author = 'Silicon Dream Artists'

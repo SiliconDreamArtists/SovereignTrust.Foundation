@@ -13,7 +13,7 @@ function Invoke-StorageAdapter {
         throw "Conduction is not running. Cannot invoke Phase."
     }
 
-    $opSignal = [Signal]::Start("Invoke-TokenStorage", $Conductor) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-StorageAdapter", $Conductor) | Select-Object -Last 1
 
 
     try {

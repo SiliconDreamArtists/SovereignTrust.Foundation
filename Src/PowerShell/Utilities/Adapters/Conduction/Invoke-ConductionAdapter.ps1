@@ -15,9 +15,11 @@ function Invoke-ConductionAdapter {
 
     $opSignal = [Signal]::Start("Invoke-TokenConduction", $Conductor) | Select-Object -Last 1
 
-
+    $slotParts = $Slot -Split '\.'
+    $slotParts = @($slotParts)
     try {
-        $adapterPath = "*.#.$Slot.@"
+        $slotPathPart = $slotParts[0]
+        $adapterPath = "*.#.$($slotPathPart).@"
         $adapterSignal = Resolve-PathFromDictionary -Dictionary $MappedAdapterSignal -Path $adapterPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
             $opSignal.LogCritical("⚠️ Adapter path '$adapterPath' not found in Conductor.")

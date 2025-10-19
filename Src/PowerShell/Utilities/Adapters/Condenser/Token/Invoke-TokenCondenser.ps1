@@ -11,10 +11,10 @@
 function Invoke-TokenCondenser {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)] [Signal]$Signal,
-        [Parameter(Mandatory)] [object]$Plan,
-        [Parameter(Mandatory)] [object]$ItemSignal,
-        [string]$RegexPattern = "\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]",
+        [Signal]$Signal,
+        [object]$Plan,
+        [object]$ItemSignal,
+        [string]$RegexPattern = "(?s)\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]",
         [string]$HydrationStyle = ""
     )
 
@@ -23,7 +23,7 @@ function Invoke-TokenCondenser {
     $result = $ItemSignal.GetResult()
 
     if ($HydrationStyle -eq "Deferred") {
-        $RegexPattern = "\[((?>[^\[\]|]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\|\]"
+        $RegexPattern = "(?s)\[((?>[^\[\]|]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\|\]"
     }   
 
     # Stubbed placeholders for testing
@@ -77,10 +77,17 @@ function Invoke-TokenCrawl {
         $trimmed = $_input.Trim()
 
         try {
+            if ($trimmed.StartsWith('Formatter.Json')) {
+                return $_input
+                return $trimmed | ConvertFrom-Json -ErrorAction Stop
+            }
+
             if ($trimmed.StartsWith('{') -and $trimmed.EndsWith('}')) {
+                return $_input
                 return $trimmed | ConvertFrom-Json -ErrorAction Stop
             }
             elseif ($trimmed.StartsWith('[') -and $trimmed.EndsWith(']') -and (-not $trimmed.EndsWith('/]') -and -not $trimmed.EndsWith('|]'))) {
+                return $_input
                 $val = $trimmed | ConvertFrom-Json -ErrorAction Stop
                 return @($val)
             }
@@ -142,6 +149,7 @@ function Invoke-TokenCrawl {
             [string]$RegexPattern
         )
 
+
         $valueSignal = Resolve-PathFromDictionary -Dictionary $Parent -Path $Key | Select-Object -Last 1
         if ($valueSignal.Failure()) {
             return
@@ -183,6 +191,12 @@ function Invoke-TokenCrawl {
             }
             'String' {
                 if ($value -match $RegexPattern) {
+
+                    if ($Key -like "Test2")
+                    {
+                        $Key = $Key
+                    }
+
                     _ResolveAndDeserializeProperty `
                         -MergeCondenserFeedback $MergeCondenserFeedback `
                         -Parent $Parent `

@@ -104,7 +104,7 @@ function Register-AdapterToMappedSlot-NonGrid {
         }
 
         # ░▒▓█ RESOLVE KIND FROM JACKET █▓▒░
-        $kindSignal = Resolve-PathFromDictionary -Dictionary $resolvedAdapter -Path "Jacket.Kind" | Select-Object -Last 1
+        $kindSignal = Resolve-PathFromDictionary -Dictionary $resolvedAdapter -Path "$.%.@.Kind" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($kindSignal)) {
             return $opSignal.LogCritical("❌ Adapter does not contain a resolvable 'Jacket.Kind' path.")
         }
@@ -115,7 +115,7 @@ function Register-AdapterToMappedSlot-NonGrid {
         }
 
         # ░▒▓█ RESOLVE MAPPED ATTACHMENT CONTAINER █▓▒░
-        $mappedPath = "MappedAdapters.$kind"
+        $mappedPath = "$.*.#.Adapters.*.#.Mapped$($kind)"
         $mappedSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path $mappedPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($mappedSignal)) {
             return $opSignal.LogCritical("❌ MappedAdapter path '$mappedPath' not found in Conductor.")

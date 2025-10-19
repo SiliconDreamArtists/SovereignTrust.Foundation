@@ -11,8 +11,10 @@ function Get-MapCondenserVariableTags {
     if (-not $Content) { return @() }
 
     switch ($Type) {
-        'AtAttag'     { return [regex]::Matches($Content, "@@[a-zA-Z0-9-]+") | ForEach-Object { $_.Value.Substring(2) } }
-        'HashHashtag' { return [regex]::Matches($Content, "##[a-zA-Z0-9_.-]+") | ForEach-Object { $_.Value.Substring(2) } }
+        'AtAt'     { return [regex]::Matches($Content, "@@\[(?<token>[A-Za-z0-9._/-]+)\]") | ForEach-Object { $_.Value } }
+        'AtAtx'     { return [regex]::Matches($Content, "@@\[(?<token>[A-Za-z0-9._/-]+)\]") | ForEach-Object { $_.Value.Substring(2) } }
+        'AtAtOld'     { return [regex]::Matches($Content, "@@[a-zA-Z0-9-]+") | ForEach-Object { $_.Value.Substring(2) } }
+        'HashHash' { return [regex]::Matches($Content, "##[a-zA-Z0-9_.-]+") | ForEach-Object { $_.Value.Substring(2) } }
         default       { return @() }
     }
 }
@@ -25,8 +27,8 @@ function Get-MapCondenserReplacementPatterns {
 
     switch ($Type) {
         'XmlTag'       { return @("<$Tag />", "&lt;$Tag /&gt;") }
-        'HashHashtag'  { return @("##$Tag") }
-        'AtAttag'      { return @("@@$Tag") }
+        'HashHash'  { return @("##$Tag") }
+        'AtAt'      { return @("@@$Tag") }
         default        { return @() }
     }
 }

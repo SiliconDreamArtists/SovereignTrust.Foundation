@@ -106,4 +106,28 @@ class MappedNetworkAdapter {
         $this.Signal.MergeSignal($opSignal)
         return $opSignal
     }
+
+    [Signal] Invoke([string]$Slot, [Signal]$Context, [object]$Plan) {
+        $opSignal = [Signal]::Start("Token_Environment.Invoke") | Select-Object -Last 1
+        $conductor = $this.Signal.GetJacket()
+        $graph = $this.Signal.GetResult()
+        
+        try {
+            $resultSignal = Invoke-NetworkAdapter -MappedAdapterSignal $this.Signal -Conductor $conductor -Conduit $null -ConductionSignal $Context -PlanSignal $Plan | Select-Object -Last 1
+            $opSignal.MergeSignal($resultSignal)
+
+            if ($resultSignal.Success()) {
+                $opSignal.SetResult($resultSignal.GetResult())
+                $opSignal.LogInformation("✅ Ran successfully.")
+            } else {
+                $opSignal.LogWarning("⚠️ Failed to Run.")
+            }
+        }
+        catch {
+            $opSignal.LogCritical("🔥 Exception in Token_Environment.Invoke: $($_.Exception.Message)")
+        }
+
+        return $opSignal
+    }
+
 }
