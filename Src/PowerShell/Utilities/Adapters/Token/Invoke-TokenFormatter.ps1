@@ -28,10 +28,6 @@ function Invoke-TokenFormatter {
 
         $formatterKey = $segments[1]
         $subInvokeName = "Invoke-TokenFormatter$formatterKey"
-if ($formatterKey -eq "Json")
-{
-    $a = "b"
-}
 
         if (-not (Get-Command $subInvokeName -ErrorAction SilentlyContinue)) {
             $opSignal.LogCritical("❌ Formatter handler '$subInvokeName' not found.")

@@ -46,7 +46,7 @@ function Resolve-GlobalTokenOverrideForProperty {
 
         [bool]$ReturnRequiredValues = $true,
 
-        [string]$RegexPattern = "\[[^\[@]*=[^\/]*\/\]",
+        [string]$RegexPattern = "(?s)\[[^\[@]*=[^\/]*\/\]",
 
         [string]$HydrationStyle = "",
         [char]$SplitMatchCharacter
@@ -55,7 +55,7 @@ function Resolve-GlobalTokenOverrideForProperty {
     $opSignal = [Signal]::Start("Resolve-GlobalTokenOverrideForProperty:$($Property.Name)", $null) | Select-Object -Last 1
 
     if ($HydrationStyle -eq "Deferred") {
-        $RegexPattern = "\[[^\[\]\|]*\|\]"
+        $RegexPattern = "(?s)\[[^\[\]\|]*\|\]"
 
         # Version to get items when they have [] inside the text.
         #$RegexPattern = "\[(.*?)\|\]"
@@ -72,12 +72,7 @@ function Resolve-GlobalTokenOverrideForProperty {
         if ($matches.Count -eq 0) {
             if ($HydrationStyle -eq "Deferred") {
                 # Version to get items when they have [] inside the text.
-                $RegexPattern = "\[(.*?)\|\]"
-            }
-
-            # Account for line breaks
-            if (-not ($RegexPattern -match '^\(\?s\)')) {
-                $RegexPattern = "(?s)$RegexPattern"
+                $RegexPattern = "(?s)\[(.*?)\|\]"
             }
 
             $matches = [regex]::Matches($propertyValue, $RegexPattern)
