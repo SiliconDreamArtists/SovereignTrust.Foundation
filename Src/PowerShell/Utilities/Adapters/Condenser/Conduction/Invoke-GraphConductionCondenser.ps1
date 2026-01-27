@@ -50,7 +50,7 @@ function Invoke-GraphConductionCondenser {
     
     $JacketSignal = $JacketSignalWrapper.GetResult()
 
-    $hydrationSignal = Invoke-HydrationCondenser -Signal  $Signal -Plan $Plan -ItemSignal $JacketSignal -HydrationStyle "Deferred" | Select-Object -Last 1
+    $hydrationSignal = Invoke-ApplyHydrationCondenser -Signal  $Signal -Plan $Plan -ItemSignal $JacketSignal -HydrationStyle "Deferred" | Select-Object -Last 1
 
     #    $ResolveAdapterSignal = Resolve-AdapterFromJacket -ConductionContext $Signal -Signal $Signal -Jacket $JacketSignal | Select-Object -Last 1
 

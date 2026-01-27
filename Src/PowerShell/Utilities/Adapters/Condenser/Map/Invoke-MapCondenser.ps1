@@ -13,7 +13,7 @@ function Invoke-MapCondenser {
         return $opSignal
     }
 
-    $modeSignal = Resolve-PathFromDictionary -Dictionary $ProposalSignal -Path "@.CondenserMode" -FailureLogLevel "Verbose" | Select-Object -Last 1
+    $modeSignal = Resolve-PathFromDictionary -Dictionary $ProposalSignal -Path "@.CondenserMode" -SignalLevel "Warning" -SignalTags @("Verbose") | Select-Object -Last 1
     if ($modeSignal.HasResult()) {
         $mode = $modeSignal.GetResult()
     }

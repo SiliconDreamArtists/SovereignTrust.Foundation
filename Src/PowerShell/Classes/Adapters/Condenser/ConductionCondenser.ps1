@@ -9,16 +9,45 @@
 # imperative scripts with sovereign lifecycle-encoded execution.
 
 class ConductionCondenser {
-    [MappedCondenserAdapter]$MappedCondenserAdapter
     [Conductor]$Conductor
-    [Signal]$ControlSignal
+    [MappedCondenserAdapter]$MappedCondenserAdapter
+    [Signal]$Signal  # Previously ControlSignal
 
+    ConductionCondenser() {
+        # Empty constructor — use .Start()
+    }
+       
     static [ConductionCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
         $instance = [ConductionCondenser]::new()
         $instance.MappedCondenserAdapter = $mappedAdapter
         $instance.Conductor = $conductor
-        $instance.ControlSignal = [Signal]::Start("ConductionCondenser") | Select-Object -Last 1
+        $instance.Signal = [Signal]::Start("ConductionCondenser.Control") | Select-Object -Last 1
         return $instance
+    }
+
+    
+    [Signal]Invoke([string]$Slot, [string]$Activity, [Signal]$ConductionSignal, [object]$Plan, [Signal]$ItemSignal) {
+
+        # For the Content Condenser, the plan contains the steps to perform, similar to the steps in the FormulaGraphCondenser but 2 dimensional mappings
+
+        $opSignal = [Signal]::Start("ConductionCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
+
+        $resultSignal = Invoke-MappedAdapter -Signal $ConductionSignal -ItemSignal $ItemSignal -Plan $Plan -Adapter "Conduction.$Activity" -Activity $Activity  | Select-Object -Last 1
+                $AdapterPath = "*.#.$Activity"
+        $adapterSignal = Resolve-PathFromDictionary -Dictionary $this.Signal -Path $AdapterPath | Select-Object -Last 1
+
+        $adapter = $adapterSignal.GetResult($true)
+        $resultSignal = $adapter.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal)
+
+        if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
+            $opSignal.LogCritical("❌ MappedStorageAdapter failed to invoke against slot '$Slot'.")
+            return $opSignal
+        }
+
+        $opSignal.SetResult($resultSignal.GetResult())
+
+
+        return $opSignal
     }
 
     [Signal] Invoke([object]$Context) {

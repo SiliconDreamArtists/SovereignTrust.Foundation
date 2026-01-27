@@ -30,7 +30,7 @@ function Invoke-GridCondenser {
         $nodeSignal = $entry.Value
 
         # ░▒▓█ TOKEN PASS █▓▒░
-        $tokenSignal = Invoke-TokenCondenser -Conduction $Conduction -Signal $nodeSignal | Select-Object -Last 1
+        $tokenSignal = Invoke-JsonTokenCondenser -Conduction $Conduction -Signal $nodeSignal | Select-Object -Last 1
         $signal.MergeSignal($tokenSignal)
 
         # ░▒▓█ HYDRATION PASS █▓▒░

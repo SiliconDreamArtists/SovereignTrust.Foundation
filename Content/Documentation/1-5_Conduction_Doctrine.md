@@ -21,7 +21,7 @@ Describes the lifecycle, jacket usage, and memory expansion rules for all Conduc
 
 ## II. Jacket-First Bootstrapping
 
-- Conductions are started via `Start-BondingConductor`
+- Conductions are started via `Resolve-Conductor`
 - The ConductionJacket includes all initial memory surfaces.
 - Adapters must be resolved from jackets using `Resolve-AdapterFromJacket`.
 

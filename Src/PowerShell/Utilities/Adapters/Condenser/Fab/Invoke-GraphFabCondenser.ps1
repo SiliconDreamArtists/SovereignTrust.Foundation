@@ -40,8 +40,8 @@ function Invoke-GraphFabCondenser {
     $opSignal = [Signal]::Start("Invoke-GraphFabCondenser:$Plan.Name", $Signal) | Select-Object -Last 1
 
     $PlanName = $Plan.Name
-    $subSignal = [Signal]::Start("GraphPlan:$PlanName", $Signal) | Select-Object -Last 1
-    $subSignal.SetJacket($ItemSignal) | Out-Null
+  #  $subSignal = [Signal]::Start("GraphPlan:$PlanName", $Signal) | Select-Object -Last 1
+  #  $subSignal.SetJacket($ItemSignal) | Out-Null
 
     
     $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%" | Select-Object -Last 1

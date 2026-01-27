@@ -27,8 +27,8 @@ function Invoke-NetworkAdapter {
         "Start" {
             $AddressSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Addresses" | Select-Object -Last 1
             $ConductionPlanSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "ConductionPlan" | Select-Object -Last 1
-            $MaxMessagesSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "MaxMessages" -FailureLogLevel "Warning" | Select-Object -Last 1
-            $PollingIntervalSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "PollIntervalSeconds" -FailureLogLevel "Warning" | Select-Object -Last 1
+            $MaxMessagesSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "MaxMessages" -SignalLevel "Warning" | Select-Object -Last 1
+            $PollingIntervalSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "PollIntervalSeconds" -SignalLevel "Warning" | Select-Object -Last 1
             #$AddressSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Addresses" | Select-Object -Last 1
 
             $Address = $AddressSignal.GetResult()[0]

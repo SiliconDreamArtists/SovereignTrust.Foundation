@@ -51,11 +51,7 @@ function Register-AdapterToMappedSlot {
             return $opSignal.LogCritical("❌ MappedAdapter path '$mappedPath' not found in Conductor.")
         }
 
-        $mappedAdapterContainer = $mappedSignal.GetResult()
-
-        while ($mappedAdapterContainer -is [Signal]) {
-            $mappedAdapterContainer = $mappedAdapterContainer.GetResult()
-        }
+        $mappedAdapterContainer = $mappedSignal.GetResult($true)
 
         if ($null -eq $mappedAdapterContainer) {
             return $opSignal.LogCritical("❌ MappedAdapter container at '$mappedPath' is null.")

@@ -26,7 +26,28 @@ class FabCondenser {
         return $instance
     }
 
-    [Signal] Invoke([Signal]$ItemSignal, [object]$Proposal, [object]$Context = $null) {
+    [Signal]Invoke($Slot, $Activity, $Signal, $Plan, $ItemSignal) {
+        $opSignal = [Signal]::Start("FabCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
+
+        $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%" | Select-Object -Last 1
+        $JacketSignal = $JacketSignalWrapper.GetResult()
+        $ResolveAdapterSignal = Resolve-AdapterFromJacket -Signal $Signal -ConductionContext $Signal -Jacket $JacketSignal | Select-Object -Last 1
+
+        $Adapter = $ResolveAdapterSignal.GetResult() | Select-Object -Last 1
+
+        $opSignal.SetResult($Adapter)
+
+        $addSignal = Register-AdapterToMappedSlot -ConductorJacketSignal $Signal.GetJacket() -Adapter $ResolveAdapterSignal | Select-Object -Last 1
+
+        if ($opSignal.MergeSignalAndVerifyFailure($addSignal)) {
+            $opSignal.LogCritical("❌ Failed to add adapter to appropriate Mapped Adapter.")
+            return $opSignal
+        }
+
+        return $opSignal
+    }
+
+    [Signal] InvokeOld([Signal]$ItemSignal, [object]$Proposal, [object]$Context = $null) {
         $opSignal = [Signal]::Start("FabCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
 
         if ($null -eq $Proposal) {
@@ -39,7 +60,8 @@ class FabCondenser {
             $Context = $ContextSignal.GetResult()
         }
 
-        $resultSignal = Invoke-FabCondenser -Signal $ItemSignal -Proposal $Proposal -Context $Context | Select-Object -Last 1
+        # TODO: Invoke-FabricateAdapter should be split into Invoke-FabricateAdapter and Invoke-AttachFabricatedAdapter
+        $resultSignal = Invoke-FabricateAdapter -Signal $ItemSignal -Proposal $Proposal -Context $Context | Select-Object -Last 1
         $opSignal.MergeSignal($resultSignal)
 
         if ($resultSignal.HasResult()) {

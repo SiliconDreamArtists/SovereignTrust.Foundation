@@ -11,8 +11,23 @@ $abc = Get-Module -Name $sgModuleName
     $mapSharedPath = Join-Path $PSScriptRoot "Utilities/Adapters/Condenser/Map/MapCondenser.Shared.psm1"
     Import-Module (Resolve-Path $mapSharedPath).ProviderPath -Force
 
+        . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\SignalEntry.ps1"
+    . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\Signal.ps1"
+    . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\Graph.ps1"
 
 # Load all files (functions + classes)
+. "$PSScriptRoot/Wrappers/Adapters/Condenser/Invoke-ConductionCondenser.ps1"
+
+. "$PSScriptRoot/Wrappers/Adapters/Condenser/Invoke-FabCondenser.ps1"
+. "$PSScriptRoot/Wrappers/Adapters/Condenser/Invoke-TransformCondenser.ps1"
+. "$PSScriptRoot/Wrappers/Adapters/Condenser/Invoke-HydrationCondenser.ps1"
+
+. "$PSScriptRoot/Wrappers/Adapters/Condenser/Invoke-TokenCondenser.ps1"
+
+
+. "$PSScriptRoot/Wrappers/Adapters/Invoke-CondenserAdapter.ps1"
+. "$PSScriptRoot/Wrappers/Adapters/Invoke-MappedAdapter.ps1"
+
 . "$PSScriptRoot/Classes/Adapters/MappedStorageAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedTokenAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedAdapterTemplate.ps1"
@@ -20,39 +35,88 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Classes/Adapters/MappedCondenserAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedConduitAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedNetworkAdapter.ps1"
+. "$PSScriptRoot/Classes/Adapters/MappedQueueAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedQuantumAdapter.ps1"
+. "$PSScriptRoot/Classes/Adapters/MappedTelemetryAdapter.ps1"
 . "$PSScriptRoot/Classes/Conduction/Conduit.ps1"
 . "$PSScriptRoot/Classes/Conduction/Conductor.ps1"
 
+. "$PSScriptRoot/Classes/Adapters/Token/Token_System.ps1"
+. "$PSScriptRoot/Classes/Adapters/Token/Token_Memory.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Conduction.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Environment.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Formatter.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Generator.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Navigator.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Storage.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Rest/Resolve-BearerToken.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Rest/Invoke-RestCondenserCore.ps1"
 
-. "$PSScriptRoot/Utilities/Adapters/Storage/Invoke-StorageAdapter.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Conduction/Invoke-ConductionAdapter.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Storage/Invoke-MappedStorageAdapter.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Invoke-MappedAdapterCore.ps1"
 
 . "$PSScriptRoot/Utilities/Adapters/Network/Invoke-NetworkAdapter.ps1"
 
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Transform/Invoke-TransformCondenser.ps1"
-
 . "$PSScriptRoot/Classes/Adapters/BaseAdapter.ps1"
-. "$PSScriptRoot/Classes/Adapters/Conduit.ps1"
+#. "$PSScriptRoot/Classes/Adapters/Conduit.ps1"
+. "$PSScriptRoot/Classes/Adapters/Storage/Storage_EmbeddedFileSystem.ps1"
+
+. "$PSScriptRoot/Classes/Adapters/Telemetry/ConsoleLogger.ps1"
+. "$PSScriptRoot/Classes/Adapters/Telemetry/SignalTelemeter.ps1"
+
+
+. "$PSScriptRoot/Classes/Adapters/Condenser/RestCondenser.ps1"
+
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Format/Invoke-FormatJson.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Format/Invoke-FormatXml.ps1"
+
 . "$PSScriptRoot/Classes/Adapters/Condenser/FabCondenser.ps1"
+. "$PSScriptRoot/Classes/Adapters/Condenser/FormatCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/ConductionCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/GraphCondenser.ps1"
-. "$PSScriptRoot/Classes/Adapters/Condenser/GlobalCondenser.ps1"
-. "$PSScriptRoot/Classes/Adapters/Condenser/GridCondenser.ps1"
+#. "$PSScriptRoot/Classes/Adapters/Condenser/GlobalCondenser.ps1"
+#. "$PSScriptRoot/Classes/Adapters/Condenser/GridCondenser.ps1"
+. "$PSScriptRoot/Classes/Adapters/Condenser/ConduitCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/HydrationCondenser.ps1"
-. "$PSScriptRoot/Classes/Adapters/Condenser/MapCondenser.ps1"
+#. "$PSScriptRoot/Classes/Adapters/Condenser/MapCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/MemoryCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/MergeCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/TokenCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/TransformCondenser.ps1"
-. "$PSScriptRoot/Classes/Adapters/Storage/Storage_EmbeddedFileSystem.ps1"
-. "$PSScriptRoot/Classes/Adapters/UX/ConsoleLogger.ps1"
+
+#. "$PSScriptRoot/Utilities/Adapters/Condenser/Rest/Resolve-BearerToken.ps1"
+#. "$PSScriptRoot/Utilities/Adapters/Condenser/Rest/Invoke-RestApi.ps1"
+
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Transform/Invoke-TransformCondenserCore.ps1"
+
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-FabricateAdapter.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-GraphFabCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Resolve-ModuleFromAdapter.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Conduit/Invoke-ProcessConduitCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Conduit/Invoke-ConduitPool.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Grid/Invoke-GridCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-GraphCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-ConductionCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-GraphConductionCondenser.ps1"
+#. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-Graph.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Global/Invoke-GlobalCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Token/Invoke-JsonTokenCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Global/Resolve-GlobalTokenOverrideForProperty.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Convert-VirtualPathToWirePath.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Invoke-GraphHydrationCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Invoke-ApplyHydrationCondenser.ps1"
+#. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Read-HydrationFile.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Resolve-GraphHydrationQueue.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Resolve-HydrationSourcePath.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-HotPathResolution.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-MemoryCondenser.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-PathHydration.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Merge/Merge-CondenserCore.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Token/Invoke-HydrateTokenCondenser.ps1"
+
+
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Transform/Invoke-TransformSelect.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Transform/Invoke-TransformInject.ps1"
 
 #. "$PSScriptRoot/Utilities/New-Conductor.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Storage/Invoke-EmbeddedFileSystem_ReadObject.ps1"
@@ -67,36 +131,16 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Utilities/Adapters/Resolve-DependencyModuleFromGraph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Test-ModuleLoaded.ps1"
 
+. "$PSScriptRoot/Utilities/Invoke-ST.ps1"
 
-#Src\PowerShell\Utilities\Adapters\Condenser\Fab\Invoke-FabCondenser.ps1
-
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-FabCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Invoke-GraphFabCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Fab/Resolve-ModuleFromAdapter.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Grid/Invoke-GridCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-GraphCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-ConductionCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Conduction/Invoke-GraphConductionCondenser.ps1"
-#. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-Graph.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Global/Invoke-GlobalCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Token/Invoke-TokenCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Global/Resolve-GlobalTokenOverrideForProperty.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Convert-VirtualPathToWirePath.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Invoke-GraphHydrationCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Invoke-HydrationCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Read-HydrationFile.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Resolve-GraphHydrationQueue.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Resolve-HydrationSourcePath.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-HotPathResolution.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-MemoryCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Memory/Invoke-PathHydration.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Merge/Merge-CondenserCore.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Token/Invoke-HydrateTokenCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Storage/Resolve-ModulePathFromAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Storage/Resolve-PathWithExtensionFromPath.ps1"
 
-. "$PSScriptRoot/Utilities/Adapters/Invoke-MappedAdapter.ps1"
+#Turned off 1-3-26
+#. "$PSScriptRoot/Utilities/Adapters/Invoke-MappedAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-MappedTokenAdapter.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenSystem.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenMemory.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenEnvironment.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenFormatter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenStorage.ps1"
@@ -116,7 +160,8 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Utilities/Conduction/Start-Conduction.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Start-SovereignTrust.ps1"
 . "$PSScriptRoot/Utilities/Conduction/Start-BondingConduction.ps1"
-. "$PSScriptRoot/Utilities/Conduction/Start-BondingConductor.ps1"
+. "$PSScriptRoot/Utilities/Conduction/Resolve-Conduit.ps1"
+. "$PSScriptRoot/Utilities/Conduction/Resolve-Conductor.ps1"
 . "$PSScriptRoot/Utilities/Graph/Convert-GraphToJson.ps1"
 . "$PSScriptRoot/Utilities/Graph/Convert-JsonToGraph.ps1"
 . "$PSScriptRoot/Utilities/Graph/Resolve-PathGraph.ps1"
@@ -144,8 +189,24 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Utilities/Tooling/SovereignTrust.Foundation.Diagrams.ps1"
 . "$PSScriptRoot/Utilities/Tooling/Test-IsClassDefined.ps1"
 
+
 # Export public utility functions
+Export-ModuleMember -Function Invoke-ST
+
+
+# Previous set of public exports
+Export-ModuleMember -Function Resolve-Conduit
 Export-ModuleMember -Function Invoke-FabCondenser
+Export-ModuleMember -Function Invoke-HydrationCondenser
+Export-ModuleMember -Function Invoke-TokenCondenser
+
+Export-ModuleMember -Function Invoke-MappedAdapter
+Export-ModuleMember -Function Invoke-CondenserAdapter
+
+
+# TODO: Don't Export internal functions, only export wrappers and their subsequent invoker.
+#Export-ModuleMember -Function Invoke-FabricateAdapter
+
 Export-ModuleMember -Function Invoke-CloneItem
 Export-ModuleMember -Function New-MappedCondenserAdapterFromGraph
 Export-ModuleMember -Function Register-AdapterToMappedSlot
@@ -156,7 +217,7 @@ Export-ModuleMember -Function Resolve-ConductorAdapters
 Export-ModuleMember -Function Resolve-DependencyModuleFromGraph
 Export-ModuleMember -Function Test-ModuleLoaded
 Export-ModuleMember -Function Invoke-GridCondenser
-Export-ModuleMember -Function Invoke-TokenCondenser
+Export-ModuleMember -Function Invoke-JsonTokenCondenser
 Export-ModuleMember -Function Invoke-GraphCondenser
 Export-ModuleMember -Function Invoke-ConductionCondenser
 Export-ModuleMember -Function Invoke-GraphConductionCondenser
@@ -165,9 +226,9 @@ Export-ModuleMember -Function Invoke-Graph
 Export-ModuleMember -Function Convert-VirtualPathToWirePath
 ##Export-ModuleMember -Function Ensure-HydrationIntentInSignal
 Export-ModuleMember -Function Invoke-GraphHydrationCondenser
-Export-ModuleMember -Function Invoke-HydrationCondenser
+#Export-ModuleMember -Function Invoke-ApplyHydrationCondenser
 Export-ModuleMember -Function Invoke-GlobalCondenser
-Export-ModuleMember -Function Read-HydrationFile
+#Export-ModuleMember -Function Read-HydrationFile
 Export-ModuleMember -Function Resolve-GraphHydrationQueue
 Export-ModuleMember -Function Resolve-HydrationSourcePath
 Export-ModuleMember -Function Invoke-HotPathResolution
@@ -183,7 +244,7 @@ Export-ModuleMember -Function Invoke-Conduction
 Export-ModuleMember -Function Resolve-RelativePathFromWirePath-na
 Export-ModuleMember -Function Start-Conduction
 Export-ModuleMember -Function Start-BondingConduction
-Export-ModuleMember -Function Start-BondingConductor
+Export-ModuleMember -Function Resolve-Conductor
 Export-ModuleMember -Function Start-SovereignTrust
 Export-ModuleMember -Function Convert-GraphToJson
 Export-ModuleMember -Function Convert-JsonToGraph
@@ -214,7 +275,7 @@ Export-ModuleMember -Function New-Conductor
 Export-ModuleMember -Function Invoke-HydrateTokenCondenser
 #        $bondingConductor = New-Conductor -HostConductor $null
 
-Export-ModuleMember -Function Invoke-StorageAdapter
+Export-ModuleMember -Function Invoke-MappedStorageAdapter
 Export-ModuleMember -Function Invoke-NetworkAdapter
 Export-ModuleMember -Function Invoke-TokenStorage
 Export-ModuleMember -Function Invoke-MappedAdapter

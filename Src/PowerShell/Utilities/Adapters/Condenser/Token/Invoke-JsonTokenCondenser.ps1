@@ -1,5 +1,5 @@
 # =============================================================================
-# 🚦 Invoke-TokenCondenser
+# 🚦 Invoke-JsonTokenCondenser
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
 #  Authors: Shadow PhanTom ☚️🐝🤖/ • Neural Alchemist ⚗️☣️🐲 • Version: 2025.5.22
 # =============================================================================
@@ -8,19 +8,20 @@
 # Compatible with the SDA GridCondenser pipeline and sovereign runtime standards.
 # =============================================================================
 
-function Invoke-TokenCondenser {
+function Invoke-JsonTokenCondenser {
     [CmdletBinding()]
     param (
         [Signal]$Signal,
         [object]$Plan,
-        [object]$ItemSignal,
+        [Signal]$ItemSignal,
         [string]$RegexPattern = "(?s)\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]",
         [string]$HydrationStyle = ""
     )
 
-    $opSignal = [Signal]::Start("Invoke-TokenCondenser", $Signal) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-JsonTokenCondenser", $Signal) | Select-Object -Last 1
 
-    $result = $ItemSignal.GetResult()
+    # Require Result or Jacket to have value.
+    $result = $ItemSignal.HasResult() ? $ItemSignal.GetResult() : $ItemSignal.GetJacket().GetResult()
 
     if ($HydrationStyle -eq "Deferred") {
         $RegexPattern = "(?s)\[((?>[^\[\]|]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\|\]"
@@ -33,7 +34,12 @@ function Invoke-TokenCondenser {
     $ReturnRequiredValues = $true
 
     # Invoke recursive token crawl across the result object
+
+    # TODO: Change this to repeating until it's not making any replacements.
     $_result = Invoke-TokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
+        -Signal $Signal `
+        -ItemSignal $ItemSignal `
+        -Plan $Plan `
         -CurrentObject $result `
         -Dictionary $Dictionary `
         -DictionaryName $DictionaryName `
@@ -42,6 +48,9 @@ function Invoke-TokenCondenser {
 
     # Invoke recursive token crawl across the result object
     $_result = Invoke-TokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
+        -Signal $Signal `
+        -ItemSignal $ItemSignal `
+        -Plan $Plan `
         -CurrentObject $result `
         -Dictionary $Dictionary `
         -DictionaryName $DictionaryName `
@@ -51,7 +60,7 @@ function Invoke-TokenCondenser {
     #-RegexPattern '^@TKN:'
     #"\[([^\[\]=]+?)/\]"
 
-    $opSignal.LogInformation("✅ Global Condenser executed.")
+    $opSignal.LogInformation("✅ Token Condenser executed.")
     return $opSignal
 }
 
@@ -61,6 +70,9 @@ function Invoke-TokenCondenser {
 function Invoke-TokenCrawl {
     [CmdletBinding()]
     param (
+        [Signal]$Signal,
+        [object]$Plan,
+        [Signal]$ItemSignal,
         [object]$MergeCondenserFeedback,
         [object]$CurrentObject,
         [object]$Dictionary,
@@ -101,7 +113,9 @@ function Invoke-TokenCrawl {
 
     function _ResolveAndDeserializeProperty {
         param (
-            [Parameter(Mandatory)] [Signal]$Signal,
+            [Signal]$Signal,
+            [object]$Plan,
+            [Signal]$ItemSignal,
             [object]$MergeCondenserFeedback,
             [object]$Parent,
             [string]$Key,
@@ -124,9 +138,11 @@ function Invoke-TokenCrawl {
             -MergeCondenserFeedback $MergeCondenserFeedback `
             -Property $propObject `
             -Signal $Signal `
+            -ItemSignal $ItemSignal `
+            -Plan $Plan `
             -Dictionary $Dictionary `
             -DictionaryName $DictionaryName `
-                        -HydrationStyle $HydrationStyle `
+            -HydrationStyle $HydrationStyle `
             -RegexPattern $RegexPattern `
             -ReturnRequiredValues:$ReturnRequiredValues | Select-Object -Last 1 | Out-Null
 
@@ -144,8 +160,11 @@ function Invoke-TokenCrawl {
 
     function _Walk {
         param (
+            [Signal]$Signal,
+            [object]$Plan,
+            [Signal]$ItemSignal,
             [object]$Parent,
-            [string]$Key,
+            [object]$Key,
             [string]$RegexPattern
         )
 
@@ -162,28 +181,39 @@ function Invoke-TokenCrawl {
         switch ($value.GetType().Name) {
             'Hashtable' {
                 foreach ($subKey in $value.Keys) {
-                    _Walk -Parent $value -Key $subKey -RegexPattern $RegexPattern
+                    _Walk             -Signal $Signal `
+                        -ItemSignal $ItemSignal `
+                        -Plan $Plan `
+                        -Parent $value -Key $subKey -RegexPattern $RegexPattern
                 }
             }
             'PSCustomObject' {
                 foreach ($prop in $value.PSObject.Properties) {
-                    _Walk -Parent $value -Key $prop.Name -RegexPattern $RegexPattern
+                    _Walk             -Signal $Signal `
+                        -ItemSignal $ItemSignal `
+                        -Plan $Plan `
+                        -Parent $value -Key $prop.Name -RegexPattern $RegexPattern
                 }
             }
             'Object[]' {
                 for ($i = 0; $i -lt $value.Count; $i++) {
                     if ($value[$i] -is [hashtable] -or $value[$i] -is [pscustomobject]) {
-                        _Walk -Parent $value -Key $i -RegexPattern $RegexPattern
+                        _Walk             -Signal $Signal `
+                            -ItemSignal $ItemSignal `
+                            -Plan $Plan `
+                            -Parent $value -Key $i -RegexPattern $RegexPattern
                     }
                     elseif ($value[$i] -is [string] -and $value[$i] -match $RegexPattern) {
                         _ResolveAndDeserializeProperty `
+                            -Signal $Signal `
+                            -ItemSignal $ItemSignal `
+                            -Plan $Plan `
                             -MergeCondenserFeedback $MergeCondenserFeedback `
                             -Parent $value `
                             -Key "$i" `
-                            -Signal $Signal `
                             -Dictionary $Dictionary `
                             -DictionaryName $DictionaryName `
-                        -HydrationStyle $HydrationStyle `
+                            -HydrationStyle $HydrationStyle `
                             -ReturnRequiredValues:$ReturnRequiredValues `
                             -RegexPattern $RegexPattern
                     }
@@ -191,17 +221,13 @@ function Invoke-TokenCrawl {
             }
             'String' {
                 if ($value -match $RegexPattern) {
-
-                    if ($Key -like "Test2")
-                    {
-                        $Key = $Key
-                    }
-
                     _ResolveAndDeserializeProperty `
                         -MergeCondenserFeedback $MergeCondenserFeedback `
                         -Parent $Parent `
                         -Key $Key `
                         -Signal $Signal `
+                        -ItemSignal $ItemSignal `
+                        -Plan $Plan `
                         -Dictionary $Dictionary `
                         -DictionaryName $DictionaryName `
                         -HydrationStyle $HydrationStyle `
@@ -214,12 +240,18 @@ function Invoke-TokenCrawl {
 
     if ($CurrentObject -is [hashtable]) {
         foreach ($key in $CurrentObject.Keys) {
-            _Walk -Parent $CurrentObject -Key $key -RegexPattern $RegexPattern
+            _Walk             -Signal $Signal `
+                -ItemSignal $ItemSignal `
+                -Plan $Plan `
+                -Parent $CurrentObject -Key $key -RegexPattern $RegexPattern
         }
     }
     elseif ($CurrentObject -is [pscustomobject]) {
         foreach ($prop in $CurrentObject.PSObject.Properties) {
-            _Walk -Parent $CurrentObject -Key $prop.Name -RegexPattern $RegexPattern
+            _Walk             -Signal $Signal `
+                -ItemSignal $ItemSignal `
+                -Plan $Plan `
+                -Parent $CurrentObject -Key $prop.Name -RegexPattern $RegexPattern
         }
     }
 }

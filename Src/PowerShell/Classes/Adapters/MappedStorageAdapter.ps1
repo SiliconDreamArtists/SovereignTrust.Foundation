@@ -65,11 +65,45 @@ class MappedStorageAdapter {
         return $this.Invoke($Slot, $Context) | Select-Object -Last 1
     }
 
-    [Signal] Invoke([string]$Slot, [object]$Context, [object]$Plan = $null) {
+    [Signal]Invoke([string]$Slot, [string]$Activity, [Signal]$ConductionSignal, [object]$Plan, [Signal]$ItemSignal) {
+
+        $opSignal = [Signal]::Start("MappedStorageAdapter.Invoke:$Slot") | Select-Object -Last 1
+
+        # TODO: Add Rule System for managing when multiple slots should be tried and if results should be aggregated or return on exists.
+
+        $AdapterPath = "*.#.$Slot"
+        $adapterSignal = Resolve-PathFromDictionary -Dictionary $this.Signal -Path $AdapterPath | Select-Object -Last 1
+
+        $adapter = $adapterSignal.GetResult($true)
+        
+                $virtualPathSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.VirtualPath" -SignalLevel "Information" | Select-Object -Last 1
+        if (-not $virtualPathSignal.HasResult()) {
+            $ResourceSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Resource" | Select-Object -Last 1
+            $ContainerSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Container" | Select-Object -Last 1
+            $Container = $ContainerSignal.HasResult() ? $ContainerSignal.GetResult() : $null
+            $Name = $ResourceSignal.HasResult() ? $ResourceSignal.GetResult() : $null
+
+            $virtualPath = ( @($Container, $Name) -join '/')
+            Add-PathToDictionary -Dictionary $Plan -Path "VirtualPath" -Value $virtualPath 
+
+        }
+
+        $resultSignal = $adapter.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal)
+
+        if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
+            $opSignal.LogCritical("❌ MappedStorageAdapter failed to invoke against slot '$Slot'.")
+            return $opSignal
+        }
+
+        $opSignal.SetResult($resultSignal.GetResult())
+        return $opSignal
+    }
+
+    [Signal] InvokeWithPlan([string]$Slot, [object]$Context, [object]$Plan = $null) {
         $opSignal = [Signal]::Start("MappedStorageAdapter.Invoke:$Slot.$Context") | Select-Object -Last 1
 
         $conductor = $this.Signal.GetJacket()
-        $adapterSignal = Invoke-StorageAdapter -MappedAdapterSignal $this.Signal -Conduit $null -Conductor $this.Signal.GetJacket() -Path $Context -Slot $Slot | Select-Object -Last 1
+        $adapterSignal = Invoke-MappedStorageAdapter -MappedAdapterSignal $this.Signal -Path $Context -Slot $Slot | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
             $opSignal.LogCritical("❌ MappedStorageAdapter failed to invoke path '$Context' in slot '$Slot'.")
             return $opSignal

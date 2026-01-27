@@ -16,7 +16,7 @@ function Invoke-DirectMapCondenser {
     }
 
     $replacementType = "AtAt"
-    $replacementTypeSignal = Resolve-PathFromDictionary -Dictionary $ProposalSignal -Path "@.ReplacementType" -FailureLogLevel "Verbose" | Select-Object -Last 1
+    $replacementTypeSignal = Resolve-PathFromDictionary -Dictionary $ProposalSignal -Path "@.ReplacementType" -SignalLevel "Warning" -SignalTags @("Verbose") | Select-Object -Last 1
     if ($replacementTypeSignal.HasResult()) {
         $replacementType = $replacementTypeSignal.GetResult()
     }
@@ -31,7 +31,7 @@ function Invoke-DirectMapCondenser {
         
         
         
-        $valueSignal = Resolve-PathFromDictionary -Dictionary $Data -Path $token -FailureLogLevel "Verbose" | Select-Object -Last 1 
+        $valueSignal = Resolve-PathFromDictionary -Dictionary $Data -Path $token -SignalLevel "Warning" -SignalTags @("Verbose") | Select-Object -Last 1 
         $value = $null
         if ($valueSignal.HasResult()) {
             $value = $valueSignal.GetResult()

@@ -28,13 +28,16 @@ function Resolve-PathGraphCondenserAdapter {
         $graph = $graphSignal.GetResult() | Select-Object -Last 1
 
         $graph.RegisterResultAsSignal("FabCondenser",       [FabCondenser]::Start($mappedAdapter, $Conductor))       | Out-Null
+        $graph.RegisterResultAsSignal("RestCondenser",       [RestCondenser]::Start($mappedAdapter, $Conductor))       | Out-Null
+        $graph.RegisterResultAsSignal("FormatCondenser",       [FormatCondenser]::Start($mappedAdapter, $Conductor))       | Out-Null
         $graph.RegisterResultAsSignal("MergeCondenser",     [MergeCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
-        $graph.RegisterResultAsSignal("MapCondenser",       [MapCondenser]::Start($mappedAdapter, $Conductor))       | Out-Null
+#        $graph.RegisterResultAsSignal("MapCondenser",       [MapCondenser]::Start($mappedAdapter, $Conductor))       | Out-Null
         $graph.RegisterResultAsSignal("TokenCondenser",     [TokenCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
-        $graph.RegisterResultAsSignal("GlobalCondenser",     [GlobalCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
+#        $graph.RegisterResultAsSignal("GlobalCondenser",     [GlobalCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
         $graph.RegisterResultAsSignal("HydrationCondenser", [HydrationCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
         $graph.RegisterResultAsSignal("TransformCondenser", [TransformCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
-        $graph.RegisterResultAsSignal("GridCondenser",     [GridCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
+#        $graph.RegisterResultAsSignal("GridCondenser",     [GridCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
+        $graph.RegisterResultAsSignal("ConduitCondenser",     [ConduitCondenser]::Start($mappedAdapter, $Conductor))     | Out-Null
         $graph.RegisterResultAsSignal("MemoryCondenser", [MemoryCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
         $graph.RegisterResultAsSignal("GraphCondenser", [GraphCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null
         $graph.RegisterResultAsSignal("ConductionCondenser", [ConductionCondenser]::Start($mappedAdapter, $Conductor)) | Out-Null

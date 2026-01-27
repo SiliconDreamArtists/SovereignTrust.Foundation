@@ -82,10 +82,50 @@ class Storage_EmbeddedFileSystem {
             }
 
             $callSignal = Invoke-EmbeddedFileSystem_ReadObject -Signal $this.Signal -VirtualPath $virtualPath -Addresses $addressSignal.GetResult() | Select-Object -Last 1
-            if ($opSignal.MergeSignalAndVerifySuccess($callSignal))
-            {
-                 $opSignal.SetResult($callSignal.GetResult())
-                 $opSignal.LogInformation("📄 Successfully read object from virtual path: $virtualPath")   
+            if ($opSignal.MergeSignalAndVerifySuccess($callSignal)) {
+                $opSignal.SetResult($callSignal.GetResult())
+                $opSignal.LogInformation("📄 Successfully read object from virtual path: $virtualPath")   
+            }
+        }
+        catch {
+            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObject: $($_.Exception.Message)")
+        }
+
+        return $opSignal
+    }
+
+    [Signal]Invoke([string]$Slot, [string]$Activity, [Signal]$ConductionSignal, [object]$Plan, [Signal]$ItemSignal) {
+        $virtualPathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "VirtualPath" | Select-Object -Last 1
+        $virtualPath = $virtualPathSignal.GetResult()
+        $opSignal = [Signal]::Start("EmbeddedFileSystem.$slot.$activity.$virtualPath") | Select-Object -Last 1
+
+        try {
+            # ░▒▓█ RESOLVE ADDRESSES FROM %.@.Addresses █▓▒░
+            $addressSignal = Resolve-PathFromDictionary -Dictionary $this -Path '$.%.@.Addresses' | Select-Object -Last 1
+            if ($opSignal.MergeSignalAndVerifyFailure(@($addressSignal))) {
+                return $opSignal.LogCritical("❌ Could not resolve Jacket.Addresses path.")
+            }
+
+            $callSignal = $null
+            switch ($activity) {
+                "Read" {
+                    $callSignal = Invoke-EmbeddedFileSystem_ReadObject `
+                        -Signal $this.Signal `
+                        -VirtualPath $virtualPath `
+                        -Addresses @($addressSignal.GetResult()) |
+                    Select-Object -Last 1
+                    break
+                }
+
+                default {
+                    $opSignal.LogCritical("❌ Unsupported adapter activity '$activity'.")
+                    return $opSignal
+                }
+            }
+
+            if ($opSignal.MergeSignalAndVerifySuccess($callSignal)) {
+                $opSignal.SetResult($callSignal.GetResult())
+                $opSignal.LogInformation("📄 Successfully read object from virtual path: $virtualPath")   
             }
         }
         catch {
@@ -106,10 +146,9 @@ class Storage_EmbeddedFileSystem {
             }
 
             $callSignal = Invoke-EmbeddedFileSystem_ReadObject -Signal $this.Signal -VirtualPath $virtualPath -Addresses $addressSignal.GetResult() | Select-Object -Last 1
-            if ($opSignal.MergeSignalAndVerifySuccess($callSignal))
-            {
-                 $opSignal.SetResult($callSignal.GetResult())
-                 $opSignal.LogInformation("📄 Successfully read object from virtual path: $virtualPath")   
+            if ($opSignal.MergeSignalAndVerifySuccess($callSignal)) {
+                $opSignal.SetResult($callSignal.GetResult())
+                $opSignal.LogInformation("📄 Successfully read object from virtual path: $virtualPath")   
             }
         }
         catch {

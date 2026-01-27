@@ -1,18 +1,23 @@
 
-function Start-BondingConductor {
+function Resolve-Conductor {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
         [Signal]$Signal
     )
 
-    $opSignal = [Signal]::Start("Start-BondingConductor") | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Resolve-Conductor") | Select-Object -Last 1
 
     try {
         # ░▒▓█ INSTANTIATE CONDUCTOR █▓▒░
-        $bondingConductor = [Conductor]::Start($null, $Signal)
-        
-        Add-PathToDictionary -Dictionary $bondingConductor -Path "$.%.Status" -Value "Initializing" | Select-Object -Last 1
+        $conductorSignal = [Conductor]::Start($null, $Signal) | Select-Object -Last 1
+
+        if ($opSignal.MergeSignalAndVerifyFailure($conductorSignal)){
+            return $opSignal
+        }
+
+        $conductor = $conductorSignal.GetResult()
+      #Add-PathToDictionary -Dictionary $bondingConductor -Path "$.%.Status" -Value "Initializing" | Select-Object -Last 1
 
         $opSignal.LogInformation("✅ BondingConductor initialized from ConductionSignal.")
 
@@ -49,11 +54,11 @@ function Start-BondingConductor {
 #>
 
         # ░▒▓█ RETURN CONDUCTOR █▓▒░
-        $opSignal.SetResult($bondingConductor)
+        $opSignal.SetResult($conductor)
         $opSignal.LogInformation("🎯 BondingConductor started and ConductionPlan graph resolved.")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Start-BondingConductor: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception during Resolve-Conductor: $($_.Exception.Message)")
     }
 
     return $opSignal

@@ -1,4 +1,4 @@
-function Invoke-MappedAdapter {
+function Invoke-MappedAdapter-Obsolete {
     [CmdletBinding()]
     param (
         [Signal]$Signal,
@@ -17,10 +17,10 @@ function Invoke-MappedAdapter {
 
             $jacketSignal = $jacket
 
-            $settingsSignal = Resolve-PathFromDictionary -Dictionary $jacket -Path "@.Settings" -FailureLogLevel "Warning" | Select-Object -Last 1
+            $settingsSignal = Resolve-PathFromDictionary -Dictionary $jacket -Path "@.Settings" -SignalLevel "Warning" | Select-Object -Last 1
             if ($settingsSignal.Success() -and $settingsSignal.HasResult())
             {
-                #$virtualPathSignal = Resolve-PathFromDictionary -Dictionary $settingsSignal -Path "@.VirtualPath" -FailureLogLevel "Warning" | Select-Object -Last 1
+                #$virtualPathSignal = Resolve-PathFromDictionary -Dictionary $settingsSignal -Path "@.VirtualPath" -SignalLevel "Warning" | Select-Object -Last 1
                 
                 $commandsSignal = Resolve-PathFromDictionary -Dictionary $settingsSignal -Path "@.Commands" | Select-Object -Last 1
                 if ($commandsSignal.Success()) {
@@ -94,5 +94,3 @@ function Invoke-MappedAdapter {
 
     return $opSignal
 }
-
-Write-Host "Invoke-FabCondenser loaded." -ForegroundColor Green

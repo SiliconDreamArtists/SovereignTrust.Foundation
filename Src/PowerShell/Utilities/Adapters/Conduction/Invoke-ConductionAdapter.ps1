@@ -2,16 +2,18 @@ function Invoke-ConductionAdapter {
     [CmdletBinding()]
     param (
         [Signal]$MappedAdapterSignal,
-        [Conduit]$Conduit,
+#        [Conduit]$Conduit,
         [Conductor]$Conductor,
         [Signal]$ConductionSignal,
         [string]$Slot,
-        [object]$Plan  # Typically a small PSObject or Phase class in the future
+        [object]$Plan,  # Typically a small PSObject or Phase class in the future
+        $Activity,
+        $ItemSignal
     )
 
-    if ( $Conduit -and -not $Conduit.IsRunning) {
-        throw "Conduction is not running. Cannot invoke Phase."
-    }
+ #   if ( $Conduit -and -not $Conduit.IsRunning) {
+ ##       throw "Conduction is not running. Cannot invoke Phase."
+ #   }
 
     $opSignal = [Signal]::Start("Invoke-TokenConduction", $Conductor) | Select-Object -Last 1
 
@@ -28,7 +30,7 @@ function Invoke-ConductionAdapter {
         
         $adapter = $adapterSignal.GetResult()
         
-        $adapterIvokeSignal = $adapter.Invoke($Slot, $ConductionSignal, $Plan) | Select-Object -Last 1
+        $adapterIvokeSignal = $adapter.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterIvokeSignal)) {
             $opSignal.LogCritical("⚠️ Adapter failed to resolve path '$Path' with slot '$Slot'.")
             return $opSignal

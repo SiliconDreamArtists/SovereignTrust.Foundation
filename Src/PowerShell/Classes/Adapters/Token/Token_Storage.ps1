@@ -33,12 +33,13 @@ class Token_Storage {
         return $opSignal
     }
 
-    [Signal] Invoke([object]$Path, [object]$Plan) {
+    [Signal] Invoke([string]$Slot, [string]$Activity, $ConductionSignal, $Plan, $ItemSignal) {
         $opSignal = [Signal]::Start("Token_Storage.Invoke") | Select-Object -Last 1
 
         try {
+            $Path = $Plan.Path
             
-            $resultSignal = Invoke-TokenStorage -Conductor $this.Conductor -Conduit $null -Path $Path -Plan $Plan | Select-Object -Last 1
+            $resultSignal = Invoke-TokenStorage -Conductor $this.Conductor -Path $Path -Plan $Plan | Select-Object -Last 1
             $opSignal.MergeSignal($resultSignal)
 
             if ($resultSignal.Success()) {

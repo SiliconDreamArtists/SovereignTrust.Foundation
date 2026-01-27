@@ -43,7 +43,7 @@ function Invoke-GraphHydrationCondenser {
     $subSignal = [Signal]::Start("GraphPlan:$PlanName", $Signal) | Select-Object -Last 1
     $subSignal.SetJacket($ItemSignal) | Out-Null
 
-    $invokeResult = Invoke-HydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
+    $invokeResult = Invoke-ApplyHydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
 
 #    $JacketSignalWrapper = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "@.%" | Select-Object -Last 1
     

@@ -57,44 +57,16 @@ class MappedConductionAdapter {
         return $opSignal
     }
 
-    [Signal] Invoke([string]$Slot, [object]$Context, [object]$Plan) {
+    [Signal] Invoke([string]$Slot, [string]$Activity, [Signal]$ConductionSignal, [object]$Plan, [Signal]$ItemSignal) {
         $opSignal = [Signal]::Start("MappedConductionAdapter.Invoke:$Slot") | Select-Object -Last 1
 
-        $conductor = $this.Signal.GetJacket()
-        $opSignal = Invoke-ConductionAdapter -MappedAdapterSignal $this.Signal -Conduit $null -Conductor $this.Signal.GetJacket() -ConductionSignal $Context -Slot $Slot | Select-Object -Last 1
+        $resultSignal = Invoke-MappedAdapterCore -MappedAdapterSignal $this.Signal -ConductionSignal $ConductionSignal -Slot $Slot -Activity $Activity -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
 
-        return $opSignal
-    }
-
-    [Signal] InvokeAdapterMethod([string]$MethodName, [object[]]$Args) {
-        $opSignal = [Signal]::Start("MappedConductionAdapter.Invoke:$MethodName") | Select-Object -Last 1
-        $graph = $this.Signal.GetPointer()
-
-        foreach ($key in $graph.Grid.Keys) {
-            $adapterSignal = $graph.Grid[$key]
-            $adapter = $adapterSignal.GetResult()
-
-            if ($null -ne $adapter -and ($adapter | Get-Member -Name $MethodName)) {
-                $result = $adapter.InvokeMethod($MethodName, $Args)
-                $opSignal.MergeSignal($result)
-
-                if ($result.Success()) {
-                    $opSignal.SetResult($result.GetResult())
-                    $opSignal.LogInformation("🎯 Adapter '$key' successfully invoked '$MethodName'")
-                    break
-                } else {
-                    $opSignal.LogWarning("⚠️ Adapter '$key' failed on method '$MethodName'")
-                }
-            } else {
-                $opSignal.LogVerbose("⏭️ Adapter '$key' does not implement '$MethodName'")
-            }
+        if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)){
+            return $opSignal
         }
 
-        if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No adapter succeeded for method '$MethodName'")
-        }
-
-        $this.Signal.MergeSignal($opSignal)
+        $opSignal.GetResult($resultSignal.GetResult($true))
         return $opSignal
     }
 }

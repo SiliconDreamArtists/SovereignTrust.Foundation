@@ -1,14 +1,16 @@
 $TokenDispatch = @{
-    '*' = 'Invoke-GlobalCondenser'
-    '@' = 'Invoke-TokenCondenser'
-    '+' = 'Invoke-JsonCondenser'
-    '-' = 'Invoke-StringCondenser'
-    '~' = 'Invoke-NavigatorCondenser'
-    '#' = 'Invoke-MapCondenser'
-    '$' = 'Invoke-MergeCondenser'
+#    '*' = 'Global' # Replace with Conduction?
+    '*' = 'Conduction' # Runs Conduction Plan
+    '@' = 'Token' # Token Replacements (String and Json documents)
+#    '+' = 'Json'  # Replace with Content?
+    '+' = 'Content' 
+    '-' = 'String' # Replace with?
+    '~' = 'Navigator' # Xpath and json Lookups
+    '#' = 'Map' # Variable replacements?
+    '$' = 'Merge' # Merge documents (Json)
 }
 
-function Invoke-HydrationCondenser {
+function Invoke-ApplyHydrationCondenser {
     param (
         [Parameter(Mandatory)] [Signal]$Signal,
         [Parameter(Mandatory)] [object]$Plan,
@@ -39,14 +41,15 @@ function Invoke-HydrationCondenser {
                     $oldResult = $Signal.GetResult() | ConvertTo-Json -Depth 99
                     do {
                         $prev = $oldResult
-                        $stepSignal = Invoke-HydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
+                        $stepSignal = Invoke-ApplyHydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
                         $oldResult = $stepSignal.GetResult() | ConvertTo-Json -Depth 99
                     } while ($prev -ne $oldResult)
                     $stepSignal
                 }
                 default {
                     if ($TokenDispatch.ContainsKey([string]$step)) {
-                        $stepSignal = & $TokenDispatch[[string]$step] -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -HydrationStyle $HydrationStyle | Select-Object -Last 1
+                        $stepSignal = & Invoke-CondenserAdapter -Slot $TokenDispatch[[string]$step] -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
+                        #$stepSignal = & $TokenDispatch[[string]$step] -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -HydrationStyle $HydrationStyle | Select-Object -Last 1
                     } else {
                         $opSignal.LogWarning("⚠️ Unknown hydration step: $step")
                         continue
@@ -59,14 +62,15 @@ function Invoke-HydrationCondenser {
                 break
             }
 
-            if ($stepSignal.HasResult()) {
-                $opSignal.SetResult($stepSignal.GetResult())
-            }
+#            if ($stepSignal.HasResult()) {
+#                $opSignal.SetResult($stepSignal.GetResult())
+#            }
         }
     }
     catch {
         $opSignal.LogCritical("🔥 HydrationCondenser exception: $_")
     }
 
+    $opSignal.SetResult($ItemSignal.GetJacket().GetResult())
     return $opSignal
 }

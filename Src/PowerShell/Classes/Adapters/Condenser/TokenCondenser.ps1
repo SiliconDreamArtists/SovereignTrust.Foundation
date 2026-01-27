@@ -25,13 +25,21 @@ class TokenCondenser {
         return $instance
     }
 
-    [object] GetMergeCondenserSettings() {
-        if ($this.Conductor -and $this.Conductor.MappedCondenserAdapter -and $this.Conductor.MappedCondenserAdapter.MergeCondenser) {
-            return $this.Conductor.MappedCondenserAdapter.MergeCondenser.Settings
-        } else {
-            return [PSCustomObject]@{}
-        }
+        
+
+
+    [Signal] Invoke([string]$Slot, [string]$Activity, $ConductionSignal, $Plan, $ItemSignal) {
+        $opSignal = [Signal]::Start("TokenCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
+
+        $tokenResult = Invoke-JsonTokenCondenser -Signal $ConductionSignal -ItemSignal $ItemSignal -Plan $Plan | Select-Object -Last 1
+
+        $opSignal.SetResult($ItemSignal.GetJacket().GetResult());
+        return $opSignal
     }
+
+        
+    
+
 
     [Signal] GetToken([string]$Value, $CondenserSignal, [bool]$ThrowExceptionOnEmpty = $true, [int]$RetryAttempts = 2) {
         $opSignal = [Signal]::Start("GetToken:$Value") | Select-Object -Last 1

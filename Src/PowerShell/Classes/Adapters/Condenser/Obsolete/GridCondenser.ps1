@@ -53,10 +53,94 @@ class GridCondenser {
         $instance.Signal = [Signal]::Start("GridCondenser")
         return $instance
     }
+    
+    [Signal]Invoke([string]$Slot, [string]$Activity, [Signal]$ConductionSignal, [object]$Plan, [Signal]$ItemSignal) {
+        $opSignal = [Signal]::Start("TransformCondenser.Invoke") | Select-Object -Last 1
+
+        if ($Activity) {
+            switch ($Activity) {
+
+                # Process a Signal Graph's Grid 
+                "Process" {
+                    $opSignal = [Signal]::Start("GraphLauncher.Invoke", $this.Signal) | Select-Object -Last 1
+                    $SourcePathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "ForEachPath" | Select-Object -Last 1
+                    
+                    if ($opSignal.MergeSignalAndVerifyFailure($SourcePathSignal)) {
+                        return $opSignal
+                    }
+
+                    $sourceSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $SourcePathSignal.GetResult() | Select-Object -Last 1
+                    $opSignal.MergeSignal($sourceSignal) | Out-Null
+
+                    if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal)) {
+                        $opSignal.LogCritical("❌ Failed to resolve FlatFormulaSource.")
+                        return $opSignal
+                    }
+
+                    $cloneJson = $Plan | ConvertTo-Json -Depth 100
+                    $clonePlan = $cloneJson | ConvertFrom-Json -Depth 100
+
+                    $clonePlan.SourceAdapter = $clonePlan.ForEachSourceAdapter
+                    $clonePlan.SourceActivity = $clonePlan.ForEachSourceActivity
+                    
+                    # Call our declarative plan processor
+                    $resultSignal = Invoke-ProcessGridCondenser -Signal $ConductionSignal -ItemSignal $sourceSignal -Plan $clonePlan | Select-Object -Last 1
+                    $opSignal.MergeSignal($resultSignal) | Out-Null
+
+                    if ($resultSignal.HasResult()) {
+                        $opSignal.SetResult($resultSignal.GetResult())
+                    }
+
+                    break
+                }
+
+                # Converts a named object Array into a graph, or takes a graph and extends it with an array.  (Move to Graph Condenser and join with GridCondenser functionality like navigate grid?)
+                "Graph" {
+                    # Taken from Invoke-GridCondenser
+                    $opSignal = [Signal]::Start("Invoke-GridCondenser", $ConductionSignal) | Select-Object -Last 1
+                    $PlanName = $Plan.Name
+
+                    if ($PlanName -eq "ConductionGraphPerRole") {
+                        $opSignal.LogInformation("🔄 Executing Grid Condenser for plan: $($Plan.Name)")
+                    }
+
+                    $pathResultSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Path" | Select-Object -Last 1
+
+                    $Path = $pathResultSignal.GetResult()
+                    $segments = $Path -split '\.'
+                    $selectResult = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $Path | Select-Object -Last 1
+                    $graphName = $segments | Select-Object -Last 1
+
+                    $subSignal = [Signal]::Start("GraphPlan:$PlanName", $ConductionSignal) | Select-Object -Last 1
+                    $subSignal.SetJacket($selectResult) | Out-Null
+
+                    $graphSignal = Resolve-GraphForJsonArray -ConductionSignal $ConductionSignal -Plan $Plan  -GraphName $graphName -ItemSignal $subSignal | Select-Object -Last 1
+                    if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
+                        $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
+                        return $opSignal
+                    }
+
+                    # We leave the graph inside the resulting $opSignal because that's the reference for the Graph
+                    $opSignal.SetResult($graphSignal)
+                    $opSignal.LogInformation("✅ Graph plan '$PlanName' completed successfully.")
+                    return $opSignal
+                    break
+                }
+
+                default {
+                    $opSignal.LogWarning("⚠️ Unsupported Activity: $Activity")
+                    break
+                }
+            }
+        }
+
+        return $opSignal
+    }
+
 
     [Signal] Invoke([string]$Path, [object]$Plan) {
         $opSignal = [Signal]::Start("GraphLauncher.Invoke", $this.
-        Signal) | Select-Object -Last 1
+            Signal) | Select-Object -Last 1
 
         $sourceSignal = Resolve-PathFromDictionary -Dictionary $this.Conductor -Path "%.FlatFormulaSource" | Select-Object -Last 1
         $opSignal.MergeSignal($sourceSignal) | Out-Null

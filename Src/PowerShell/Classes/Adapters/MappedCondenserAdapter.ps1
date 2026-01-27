@@ -56,7 +56,36 @@ class MappedCondenserAdapter {
         return $opSignal
     }
 
-    [Signal] Invoke([object]$Context, [object]$Plan) {
+    [Signal] Invoke([string]$Slot, [string]$Activity, [Signal]$ConductionSignal, [object]$Plan, [Signal]$ItemSignal) {
+        $opSignal = [Signal]::Start("MappedCondenser.Invoke") | Select-Object -Last 1
+
+
+    try {
+        
+        $consdenserPath = "*.#.$($Slot)Condenser"
+        $consdenserSignal = Resolve-PathFromDictionary -Dictionary $this.Signal -Path $consdenserPath | Select-Object -Last 1
+
+        $consdenser = $consdenserSignal.GetResult($true)
+        
+        # ░▒▓█ Run the Conduction Condenser using the Config bits  █▓▒░
+        $consdenserIvokeSignal = $consdenser.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal) | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($consdenserIvokeSignal)) {
+            $opSignal.LogCritical("⚠️ Consdenser failed.")
+            return $opSignal
+        }
+        elseif ($consdenserIvokeSignal.HasResult()) {
+            $opSignal.SetResult($consdenserIvokeSignal.GetResult())
+        }
+    }
+    catch {
+        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)")
+        $this.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal)
+    }
+
+    return $opSignal
+    }
+
+    [Signal] InvokeOld([object]$Context, [object]$Plan) {
         $opSignal = [Signal]::Start("MappedCondenser.Invoke") | Select-Object -Last 1
         $graph = $this.Signal.GetResult() | Select-Object -Last 1
 

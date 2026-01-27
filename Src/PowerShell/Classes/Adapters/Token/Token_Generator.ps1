@@ -33,11 +33,12 @@ class Token_Generator {
         return $opSignal
     }
 
-    [Signal] Invoke([Object]$Path, [object]$Plan) {
+    [Signal] Invoke([string]$Slot, [string]$Activity, $ConductionSignal, $Plan, $ItemSignal) {
         $opSignal = [Signal]::Start("Token_Generator.Invoke") | Select-Object -Last 1
 
         try {
-            $resultSignal = Invoke-TokenGenerator -Conductor $this.Conductor -Conduit $null -Path $Path -Plan $Plan | Select-Object -Last 1
+            $Path = $Plan.Path
+            $resultSignal = Invoke-TokenGenerator -Conductor $this.Conductor -Path $Path -Plan $Plan | Select-Object -Last 1
             $opSignal.MergeSignal($resultSignal)
 
             if ($resultSignal.Success()) {

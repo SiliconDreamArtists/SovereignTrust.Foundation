@@ -2,15 +2,33 @@ function Invoke-MappedTokenAdapter {
     [CmdletBinding()]
     param (
         [MappedTokenAdapter]$MappedAdapter,
-        [Conduit]$Conduit,
-        [Conductor]$Conductor,
-        [object]$Path,
-        [object]$Plan  # Typically a small PSObject or Phase class in the future
+        [string]$Slot,
+                # Conductor / environment signal that contains adapters (mapped attachments)
+        [Parameter(Mandatory = $false)]
+        [Signal]$Signal,
+
+        [Parameter(Mandatory = $false)]
+        [Signal]$ItemSignal,
+
+        [object]$Plan,
+
+        # Routing + IO parameters
+#        [Parameter(Mandatory = $false)]
+#        [string]$Adapter,
+
+        [Parameter(Mandatory = $false)]
+        [string]$Activity,
+
+
+        [object]$Path
     )
 
     $opSignal = [Signal]::Start("Invoke-MappedTokenAdapter") | Select-Object -Last 1
 
     try {
+
+        if (-not $Path) { $Path = $Plan.Key}
+
         if (-not $MappedAdapter) {
             return $opSignal.LogCritical("❌ MappedAdapter is null.")
         }
@@ -50,7 +68,12 @@ function Invoke-MappedTokenAdapter {
         }
 
         if ($adapter -and ($adapter | Get-Member -Name "Invoke")) {
-            $invokeSignal = $adapter.Invoke($trimmed, $Plan) | Select-Object -Last 1
+            #$invokeSignal = $adapter.Invoke($trimmed, $Plan) | Select-Object -Last 1
+
+            $clonePlan = $Plan | ConvertTo-Json | ConvertFrom-Json
+            $clonePlan.Path = $trimmed
+
+            $invokeSignal = $adapter.Invoke($null, "Get", $Signal, $clonePlan, $ItemSignal) | Select-Object -Last 1
             $opSignal.MergeSignal($invokeSignal)
 
             if ($invokeSignal.Success()) {

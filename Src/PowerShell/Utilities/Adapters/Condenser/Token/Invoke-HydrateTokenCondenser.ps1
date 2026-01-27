@@ -1,5 +1,5 @@
 # =============================================================================
-# 📍 Invoke-TokenCondenser (Declarative Token Hydration Injector)
+# 📍 Invoke-JsonTokenCondenser (Declarative Token Hydration Injector)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
 #  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Generated: 07/10/2025
 # =============================================================================

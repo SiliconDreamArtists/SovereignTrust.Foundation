@@ -25,12 +25,13 @@ class HydrationCondenser {
         return $instance
     }
 
-    [object] GetMergeCondenserSettings() {
-        if ($this.Conductor -and $this.Conductor.MappedCondenserAdapter -and $this.Conductor.MappedCondenserAdapter.MergeCondenser) {
-            return $this.Conductor.MappedCondenserAdapter.MergeCondenser.Settings
-        } else {
-            return [PSCustomObject]@{}  # empty fallback
-        }
+    [Signal]Invoke($Slot, $Activity, $Signal, $Plan, $ItemSignal) {
+        $opSignal = [Signal]::Start("HydrationCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
+
+        # TODO: Review, do we want to clone $ItemSignal since hydration modifies in place?
+        $resultSignal = Invoke-ApplyHydrationCondenser -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal 
+        $opSignal.SetResult($resultSignal.GetResult())
+        return $opSignal
     }
 
     [Signal] GetToken([string]$Value, $CondenserSignal, [bool]$ThrowExceptionOnEmpty = $true, [int]$RetryAttempts = 2) {
@@ -67,7 +68,8 @@ class HydrationCondenser {
                     $opSignal.LogInformation("Token resolved: $Value → $($node.InnerXml)")
                     return $opSignal
                 }
-            } catch {
+            }
+            catch {
                 $opSignal.LogWarning("Navigator exception for path '$xpath': $_")
             }
         }
@@ -85,7 +87,8 @@ class HydrationCondenser {
 
             $tokenGraphsSignal = if ($TokenDocument -is [Newtonsoft.Json.Linq.JToken]) {
                 [Signal]::Start($TokenDocument.SelectToken($nodeName)) | Select-Object -Last 1
-            } else {
+            }
+            else {
                 Resolve-PathFromDictionary -Dictionary $TokenDocument -Path $nodeName
             }
 
@@ -146,7 +149,8 @@ class HydrationCondenser {
 
                 if ($opSignal.MergeSignalAndVerifySuccess($graphSignal)) {
                     $context.ContextNavigator[$relativePath] = $graphSignal.GetResult().CreateNavigator()
-                } else {
+                }
+                else {
                     $opSignal.LogCritical("Aborted graph loading: $relativePath")
                     return $opSignal
                 }

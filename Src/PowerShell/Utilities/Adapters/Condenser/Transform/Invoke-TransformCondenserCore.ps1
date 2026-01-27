@@ -1,4 +1,4 @@
-function Invoke-TransformCondenser {
+function Invoke-TransformCondenserCore {
     [CmdletBinding()]
     param (
         [Conduit]$Conduit,

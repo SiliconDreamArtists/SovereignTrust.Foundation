@@ -39,8 +39,10 @@ class Conductor {
         if ($conductor.Signal.MergeSignalAndVerifyFailure(@($conductor.InitializeMemory()    | Select-Object -Last 1))) { return $opSignal }
         if ($conductor.Signal.MergeSignalAndVerifyFailure(@($conductor.LoadMappedAdapters() | Select-Object -Last 1))) { return $opSignal }
 
+        if ($conductor.Signal.MergeSignalAndVerifyFailure(@($conductor.LoadEnvironmentAdapters()     | Select-Object -Last 1))) { return $opSignal }
 
-        if ($conductor.Signal.MergeSignalAndVerifyFailure(@($conductor.LoadAgentGraph()     | Select-Object -Last 1))) { return $opSignal }
+        # No longer load the agent graph into the conductor as we use the Environment Adapters for that.
+#        if ($conductor.Signal.MergeSignalAndVerifyFailure(@($conductor.LoadAgentGraph()     | Select-Object -Last 1))) { return $opSignal }
 
         $opSignal.SetResult($conductor)
         $opSignal.LogInformation("✅ Conductor initialized and ready.")
@@ -74,7 +76,9 @@ class Conductor {
             @{ Name = "MappedToken"; Instance = [MappedTokenAdapter]::Start($this) },
             @{ Name = "MappedConduction"; Instance = [MappedConductionAdapter]::Start($this) },
             @{ Name = "MappedStorage"; Instance = [MappedStorageAdapter]::Start($this) },
-            @{ Name = "MappedNetwork"; Instance = [MappedNetworkAdapter]::Start($this) }
+            @{ Name = "MappedNetwork"; Instance = [MappedNetworkAdapter]::Start($this) },
+            @{ Name = "MappedQueue"; Instance = [MappedQueueAdapter]::Start($this) },
+            @{ Name = "MappedTelemetry"; Instance = [MappedTelemetryAdapter]::Start($this) }
         )
 
         # 🔁 Load MappedCondenserAdapter and add to list
@@ -108,6 +112,54 @@ class Conductor {
         return $opSignal
     }
 
+    [Signal] LoadEnvironmentAdapters() {
+        $opSignal = [Signal]::Start("Conductor.LoadAgentGraph") | Select-Object -Last 1
+
+        try {
+            $memoryCondenserSignal = Resolve-PathFromDictionary -Dictionary $this -Path "$.*.#.Adapters.*.#.MappedCondenser.@.$.*.#.MemoryCondenser.@.@" | Select-Object -Last 1
+
+            # ░▒▓█ Resolve GraphCondenser from memory █▓▒░
+            $condenserSignal = Resolve-PathFromDictionary -Dictionary $this -Path "$.*.#.Adapters.*.#.MappedCondenser.@.$.*.#.GraphCondenser" | Select-Object -Last 1
+
+            if ($opSignal.MergeSignalAndVerifyFailure($condenserSignal)) {
+                return $opSignal.LogCritical("❌ Could not resolve GraphCondenser.")
+            }
+
+            $condenserGraphSignal = $condenserSignal.GetResult()
+            $condenser = $condenserGraphSignal.GetResult()
+
+            # ░▒▓█ Launch Agent graph formula processing █▓▒░
+
+            $agentPathSignal =  Resolve-PathFromDictionary -Dictionary $this.Signal -Path "%.%.%.@.GraphFormulas.Agents" -SignalLevel "Warning" -SignalTags @("Verbose") | Select-Object -Last 1
+
+            if (-not $opSignal.MergeSignalAndVerifySuccess($agentPathSignal) -or -not $agentPathSignal.HasResult()) {
+                return $opSignal.LogWarning("⚠️ No Agent Path Found.")
+            }
+
+            $graphPlanSignal = $condenser.InvokeFromPlanPath("%.%.%.@.GraphFormulas.Agents", $this.Signal) | Select-Object -Last 1
+            if ($opSignal.MergeSignalAndVerifyFailure($graphPlanSignal)) {
+                return $opSignal.LogCritical("❌ Failed to invoke Agent Graph plan from jacket.")
+            }
+
+            # ░▒▓█ Store result Graphs into Pointer Graph at *.#.Agents █▓▒░
+            $pointerGraphSignal = Resolve-PathFromDictionary -Dictionary $this -Path "$.*.#" | Select-Object -Last 1
+            $graph = $pointerGraphSignal.GetResult()
+
+            $agentGraphs = $graph.Agents
+            if ($null -eq $agentGraphs) {
+                return $opSignal.LogCritical("❌ No agent graphs returned in expected location: .Graphs.Agents")
+            }
+
+            $opSignal.LogInformation("✅ Agent graphs injected into pointer graph under 'Agents'.")
+
+        }
+        catch {
+            $opSignal.LogCritical("🔥 Exception during LoadAgentGraph: $($_.Exception.Message)")
+        }
+
+        return $opSignal
+    }
+
     [Signal] LoadAgentGraph() {
         $opSignal = [Signal]::Start("Conductor.LoadAgentGraph") | Select-Object -Last 1
 
@@ -125,6 +177,13 @@ class Conductor {
             $condenser = $condenserGraphSignal.GetResult()
 
             # ░▒▓█ Launch Agent graph formula processing █▓▒░
+
+            $agentPathSignal =  Resolve-PathFromDictionary -Dictionary $this.Signal -Path "%.%.%.@.GraphFormulas.Agents" -SignalLevel "Warning" -SignalTags @("Verbose") | Select-Object -Last 1
+
+            if (-not $opSignal.MergeSignalAndVerifySuccess($agentPathSignal) -or -not $agentPathSignal.HasResult()) {
+                return $opSignal.LogWarning("⚠️ No Agent Path Found.")
+            }
+
             $graphPlanSignal = $condenser.InvokeFromPlanPath("%.%.%.@.GraphFormulas.Agents", $this.Signal) | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure($graphPlanSignal)) {
                 return $opSignal.LogCritical("❌ Failed to invoke Agent Graph plan from jacket.")
@@ -174,7 +233,7 @@ class Conductor {
         return $opSignal
     }
 
-    [Signal] AttachSecondaryAgent([object]$agent) {
+    [Signal] AttachSecondaryAgentObsolete([object]$agent) {
         $opSignal = [Signal]::Start("Conductor.AttachSecondaryAgent") | Select-Object -Last 1
 
         $agentsPath = "$.*.SecondaryAgents"

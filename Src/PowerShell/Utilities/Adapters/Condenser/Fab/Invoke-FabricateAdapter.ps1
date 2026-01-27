@@ -1,11 +1,11 @@
-function Invoke-FabCondenser {
+function Invoke-FabricateAdapter  {
     [CmdletBinding()]
     param (
         [Signal]$Signal,
         [Conductor]$Conductor
     )
 
-    $opSignal = [Signal]::Start("Invoke-FabCondenser", $Signal) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-FabricateAdapter", $Signal) | Select-Object -Last 1
 
     $jacket = $Signal.GetJacket()
 
@@ -17,7 +17,7 @@ function Invoke-FabCondenser {
 
             $jacketSignal = $jacket
 
-            $settingsSignal = Resolve-PathFromDictionary -Dictionary $jacket -Path "@.Settings" -FailureLogLevel "Warning" | Select-Object -Last 1
+            $settingsSignal = Resolve-PathFromDictionary -Dictionary $jacket -Path "@.Settings" -SignalLevel "Warning" | Select-Object -Last 1
             if ($settingsSignal.Success() -and $settingsSignal.HasResult())
             {
 
@@ -29,17 +29,17 @@ function Invoke-FabCondenser {
 
 
                     foreach ($adapter in $adapters) {
-                        $adapterSignal = [Signal]::Start("Invoke-FabCondenser", $Signal) | Select-Object -Last 1
+                        $adapterSignal = [Signal]::Start("Invoke-FabricateAdapter", $Signal) | Select-Object -Last 1
                         $adapterSignal.SetResult($adapter) | Out-Null
 
-                        $conductorSignal = [Signal]::Start("Invoke-FabCondenser", $Signal) | Select-Object -Last 1
+                        $conductorSignal = [Signal]::Start("Invoke-FabricateAdapter", $Signal) | Select-Object -Last 1
                         $conductorSignal.SetResult($Conductor) | Out-Null
                         
                         $adapterSignal.SetJacket($conductorSignal) | Out-Null
-                        $adapterJacketSignal = [Signal]::Start("Invoke-FabCondenser", $adapterSignal) | Select-Object -Last 1
+                        $adapterJacketSignal = [Signal]::Start("Invoke-FabricateAdapter", $adapterSignal) | Select-Object -Last 1
                         $adapterJacketSignal.SetJacket($adapterSignal) | Out-Null
                         
-                        $invokeFabCondenserSignal = Invoke-FabCondenser -Signal $adapterJacketSignal -Conductor $Conductor | Select-Object -Last 1
+                        $invokeFabCondenserSignal = Invoke-FabricateAdapter -Signal $adapterJacketSignal -Conductor $Conductor | Select-Object -Last 1
                         $opSignal.MergeSignal($invokeFabCondenserSignal)
                     }
 
@@ -50,7 +50,7 @@ function Invoke-FabCondenser {
             }
             else {
 
-                $conductorSignal = [Signal]::Start("Invoke-FabCondenser", $Signal) | Select-Object -Last 1
+                $conductorSignal = [Signal]::Start("Invoke-FabricateAdapter", $Signal) | Select-Object -Last 1
                 $conductorSignal.SetJacket($Conductor.Signal) | Out-Null
 
                 $resolveSignal = Resolve-AdapterFromJacket -Signal $conductorSignal -ConductionContext $conductorSignal -Jacket $jacketSignal | Select-Object -Last 1
@@ -84,4 +84,4 @@ function Invoke-FabCondenser {
     return $opSignal
 }
 
-Write-Host "Invoke-FabCondenser loaded." -ForegroundColor Green
+Write-Host "Invoke-FabricateAdapter loaded." -ForegroundColor Green

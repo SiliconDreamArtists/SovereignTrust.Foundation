@@ -27,6 +27,8 @@ function Resolve-PathGraphTokenAdapter {
         $graphSignal = [Graph]::Start("MappedTokenAdapter.Graph", $Conductor, $false) | Select-Object -Last 1
         $graph = $graphSignal.GetResult() | Select-Object -Last 1
 
+        $graph.RegisterResultAsSignal("System",     [Token_System]::Start($mappedAdapter, $Conductor))     | Out-Null
+        $graph.RegisterResultAsSignal("Memory",     [Token_Memory]::Start($mappedAdapter, $Conductor))     | Out-Null
         $graph.RegisterResultAsSignal("Storage",       [Token_Storage]::Start($mappedAdapter, $Conductor))       | Out-Null
         $graph.RegisterResultAsSignal("Environment",     [Token_Environment]::Start($mappedAdapter, $Conductor))     | Out-Null
         $graph.RegisterResultAsSignal("Navigator",       [Token_Navigator]::Start($mappedAdapter, $Conductor))       | Out-Null

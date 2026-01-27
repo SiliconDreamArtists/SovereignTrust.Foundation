@@ -55,13 +55,39 @@ class MappedTokenAdapter {
         return $opSignal
     }
 
+
+    [Signal] Invoke([string]$Slot, [string]$Activity, [Signal]$ConductionSignal, [object]$Plan, [Signal]$ItemSignal) {
+        $opSignal = [Signal]::Start("MappedTokenAdapter.Invoke") | Select-Object -Last 1
+
+        try {
+        $Path = $Plan.Key
+
+            $resultSignal = Invoke-MappedTokenAdapter -MappedAdapter $this -Slot $Slot -Activity $Activity -Signal $ConductionSignal -Plan $Plan -ItemSignal $ItemSignal  | Select-Object -Last 1
+            $opSignal.MergeSignal($resultSignal)
+
+            if ($resultSignal.Success()) {
+                $opSignal.SetResult($resultSignal.GetResult())
+                $result = $resultSignal.GetResult()
+                $opSignal.LogInformation("✅ MappedTokenAdapter resolved path successfully: $Path -> $result")
+            }
+            else {
+                $opSignal.LogWarning("⚠️ MappedTokenAdapter failed to resolve path: $Path")
+            }
+        }
+        catch {
+            $opSignal.LogCritical("🔥 Exception in MappedTokenAdapter.Invoke: $($_.Exception.Message)")
+        }
+
+        return $opSignal
+    }
+
     [Signal] Invoke([object]$Path) {
         $opSignal = [Signal]::Start("MappedTokenAdapter.Invoke") | Select-Object -Last 1
 
         try {
             # Yes, this is a weird place to keep the Conductor, we played around with putting it in the Signal, 
             # but now we know it should be in Grid of the Signal or just include a $Conductor in the adapter
-            $resultSignal = Invoke-MappedTokenAdapter -MappedAdapter $this -Conductor $this.Signal.GetJacket() -Path $Path | Select-Object -Last 1
+            $resultSignal = Invoke-MappedTokenAdapter -MappedAdapter $this -Path $Path | Select-Object -Last 1
             $opSignal.MergeSignal($resultSignal)
 
             if ($resultSignal.Success()) {

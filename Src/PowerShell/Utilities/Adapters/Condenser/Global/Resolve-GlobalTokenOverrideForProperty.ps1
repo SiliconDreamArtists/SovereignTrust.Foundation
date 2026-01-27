@@ -28,6 +28,7 @@ Pattern: "\[([a-zA-Z0-9_]+)=""([^""]+)""\/\]"
 Matches: [environmentName="prod"/]
 Use: Used for XPath-like dynamic lookups.
 
+# TODO: Review: Remove Deferred Hydration, using Mappings removes that neccesity
 ─────────────────────────────────────────────────────────────
 #>
 
@@ -35,6 +36,8 @@ function Resolve-GlobalTokenOverrideForProperty {
     [CmdletBinding()]
     param (
         [Signal]$Signal,
+        [object]$Plan,
+        [Signal]$ItemSignal,
 
         [object]$MergeCondenserFeedback,
 
@@ -116,7 +119,11 @@ function Resolve-GlobalTokenOverrideForProperty {
                     $RegexPattern = "(?s)$RegexPattern"
                 }
 
-                $resultSignal = $adapter.Invoke($key);
+                $clonePlan = $Plan | ConvertTo-Json | ConvertFrom-Json
+                $clonePlan.Key = $key
+
+                #$resultSignal = $adapter.Invoke($key);
+                $resultSignal = $adapter.Invoke($key, "Get", $Signal, $clonePlan, $ItemSignal);
                 $lookupSignal = [Signal]::Start("Resolve-GlobalTokenOverrideForProperty:$($Property.Name)", $null) | Select-Object -Last 1
                 $lookupSignal.SetResult($resultSignal.GetResult())
             }

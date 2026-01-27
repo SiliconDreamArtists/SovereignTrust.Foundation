@@ -1,4 +1,4 @@
-<# This should be moved to be the core of the Invoke-FabCondenser method? #>
+<# This should be moved to be the core of the Invoke-FabricateAdapter method? #>
 function Resolve-AdapterFromJacket {
     param (
         [Parameter(Mandatory = $true)]
