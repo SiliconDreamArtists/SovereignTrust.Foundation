@@ -9,7 +9,7 @@ function Invoke-TransformSelect {
 
     $opSignal = [Signal]::Start("Invoke-TransformSelect") | Select-Object -Last 1
 
-        function ConvertFrom-Xml {
+    function ConvertFrom-Xml {
         param (
             [Parameter(Mandatory)]
             [System.Xml.XmlNode]$Node
@@ -45,6 +45,7 @@ function Invoke-TransformSelect {
         return [pscustomobject]$hash
     }
 
+    
     function Convert-VirtualPathToXPath {
         [CmdletBinding()]
         param(
@@ -82,13 +83,45 @@ function Invoke-TransformSelect {
             return "concat(" + ($parts -join ",") + ")"
         }
 
+        function Split-VirtualPathSegments {
+            param([Parameter(Mandatory)][string]$Text)
+
+            # Split on '.' but NOT inside [...]
+            $segments = New-Object System.Collections.Generic.List[string]
+            $sb = New-Object System.Text.StringBuilder
+            $depth = 0
+
+            foreach ($ch in $Text.ToCharArray()) {
+                switch ($ch) {
+                    '[' { $depth++; [void]$sb.Append($ch) }
+                    ']' { if ($depth -gt 0) { $depth-- }; [void]$sb.Append($ch) }
+                    '.' {
+                        if ($depth -eq 0) {
+                            $seg = $sb.ToString().Trim()
+                            if ($seg) { $segments.Add($seg) }
+                            [void]$sb.Clear()
+                        }
+                        else {
+                            [void]$sb.Append($ch)
+                        }
+                    }
+                    default { [void]$sb.Append($ch) }
+                }
+            }
+
+            $tail = $sb.ToString().Trim()
+            if ($tail) { $segments.Add($tail) }
+
+            return $segments.ToArray()
+        }
+
         try {
             if ([string]::IsNullOrWhiteSpace($VirtualPath)) {
                 $opSignal.LogWarning("⚠️ VirtualPath is empty. Nothing to convert.")
                 return $opSignal
             }
 
-            $segments = $VirtualPath -split '\.'
+            $segments = Split-VirtualPathSegments -Text $VirtualPath
             $xpathParts = @()
 
             foreach ($seg in $segments) {
@@ -146,7 +179,21 @@ function Invoke-TransformSelect {
                     }
 
                     $xpathLiteral = ConvertTo-XPathLiteral -Value $val
-                    $xpathNode = "$xpathNode[@$attr=$xpathLiteral]"
+
+                    # This is turned off because elements are broken up by periods and attributes are looked up in brackets
+                    # - If predicate key starts with '@' => attribute match (@Name='x')
+                    # - Else => child element match (Name='x')
+                    if ($true -or $attr.StartsWith('@')) {
+                        #$a = $attr.Substring(1)
+                        $a = $attr.Substring(0)
+                        if ([string]::IsNullOrWhiteSpace($a)) {
+                            throw "Invalid attribute predicate in segment '$seg': [$predicate]"
+                        }
+                        $xpathNode = "$xpathNode[@$a=$xpathLiteral]"
+                    }
+                    else {
+                        $xpathNode = "$xpathNode[$attr=$xpathLiteral]"                        
+                    }
                 }
 
                 $xpathParts += $xpathNode
@@ -154,7 +201,6 @@ function Invoke-TransformSelect {
 
             $result = '//' + ($xpathParts -join '/')
             $opSignal.SetResult($result)
-            $opSignal.MarkSuccess()
         }
         catch {
             $opSignal.LogCritical("🔥 Exception during Convert-VirtualPathToXPath: $_")
@@ -190,6 +236,11 @@ function Invoke-TransformSelect {
 
                 # 1) First hop (optional)
                 if ($SourcePath) {
+                    $xpathSignal = Convert-VirtualPathToXPath -VirtualPath $SourcePath
+                    if ($xpathSignal.HasResult()) {
+                        $SourcePath = $xpathSignal.GetResult()
+                    }
+
                     $nodes = $xmlDocument.SelectNodes($SourcePath)
 
                     if (-not $nodes -or $nodes.Count -eq 0) {
@@ -205,6 +256,7 @@ function Invoke-TransformSelect {
                         $result = ($nodes | ForEach-Object { ConvertFrom-Xml -Node $_ }) 
                     }
 
+                    $result = $result -is [string] -and $SourceHtmlDecode ? [System.Net.WebUtility]::HtmlDecode($result) : $result
                 }
 
                 <#

@@ -28,7 +28,7 @@ function Invoke-ST {
             Activity  = 'Read'
             Container = 'Plans'
             Format    = 'Json'
-            Key             = 'Plans'
+            Key       = 'Plans'
         }
 
         # ──────────────────────────────────────────────────────────────────────
@@ -50,18 +50,18 @@ function Invoke-ST {
         $ConductionPlanMapping = $mergeSignal.GetResult()
 
         $InvokeConductionMapping = [PSCustomObject]@{
-            Name                = "Process Grid"
-            Description         = "Uses the Conduit to run a Condenser.Conduction  on each item in the Graph made from previous step."
-            Adapter       = "Condenser.Conduit"
-            Activity      = "Process"
-            ForEachPath         = "*"
+            Name              = "Process Grid"
+            Description       = "Uses the Conduit to run a Condenser.Conduction  on each item in the Graph made from previous step."
+            Adapter           = "Condenser.Conduit"
+            Activity          = "Process"
+            ForEachPath       = "*"
 
             ForEachInTemplate = "*"
             ForEachIn         = ""
 
-            ForEachAdapter        = "Condenser.Conduction"
-            ForEachActivity       = "ST"
-            SourceFormat                = "Json"
+            ForEachAdapter    = "Condenser.Conduction"
+            ForEachActivity   = "ST"
+            SourceFormat      = "Json"
         }
 
 
@@ -90,7 +90,7 @@ function Invoke-ST {
             $opSignal.LogCritical("⚠️ Memory.Generate failed while resolving ConductionPlan.")
             return $opSignal
         }
-<#
+        <#
         # Extract resolved plan
         $planSignal = Resolve-PathFromDictionary `
             -Dictionary $sourceSignal `
@@ -156,8 +156,7 @@ function Invoke-ST {
 
         $ConductionPlanMapping = $mergeSignal.GetResult()
 
-        if (-not $GenerateMemory)
-        {
+        if (-not $GenerateMemory) {
             $opSignal.SetResult($mergeSignal.GetResult($true))
             return $opSignal
         }
@@ -186,7 +185,7 @@ function Invoke-ST {
             $opSignal.LogCritical("⚠️ Memory.Generate failed while resolving ConductionPlan.")
             return $opSignal
         }
-<#
+        <#
         # Extract resolved plan
         $planSignal = Resolve-PathFromDictionary `
             -Dictionary $sourceSignal `
@@ -206,57 +205,57 @@ function Invoke-ST {
         return $opSignal
     }
 
-function Resolve-ConductionContext {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [Signal]$Signal,
+    function Resolve-ConductionContext {
+        [CmdletBinding()]
+        param (
+            [Parameter(Mandatory)]
+            [Signal]$Signal,
 
-        [object]$ConductionContext,
-        [object]$ConductionContextOverlay
-    )
+            [object]$ConductionContext,
+            [object]$ConductionContextOverlay
+        )
 
-    # ░▒▓█ SIGNAL START █▓▒░
-    $opSignal = [Signal]::Start("Resolve-ConductionContext", $Signal) | Select-Object -Last 1
+        # ░▒▓█ SIGNAL START █▓▒░
+        $opSignal = [Signal]::Start("Resolve-ConductionContext", $Signal) | Select-Object -Last 1
 
-    try {
-        $opSignal.LogInformation("🧭 Resolving ConductionContext.")
+        try {
+            $opSignal.LogInformation("🧭 Resolving ConductionContext.")
 
-        # Start from provided context if present, otherwise an empty object
-        $context = if ($null -ne $ConductionContext) { $ConductionContext } else { [PSCustomObject]@{} }
+            # Start from provided context if present, otherwise an empty object
+            $context = if ($null -ne $ConductionContext) { $ConductionContext } else { [PSCustomObject]@{} }
 
-        # Apply overlay if provided
-        if ($null -ne $ConductionContextOverlay) {
-            $opSignal.LogInformation("🧩 Applying ConductionContextOverlay (Transform.Merge).")
+            # Apply overlay if provided
+            if ($null -ne $ConductionContextOverlay) {
+                $opSignal.LogInformation("🧩 Applying ConductionContextOverlay (Transform.Merge).")
 
-            $mergeSignal = Invoke-TransformCondenser `
-                -Signal $Signal `
-                -Activity "Merge" `
-                -Base $context `
-                -Overlay $ConductionContextOverlay `
-                -MergeArrayHandling "Merge" `
-            | Select-Object -Last 1
+                $mergeSignal = Invoke-TransformCondenser `
+                    -Signal $Signal `
+                    -Activity "Merge" `
+                    -Base $context `
+                    -Overlay $ConductionContextOverlay `
+                    -MergeArrayHandling "Merge" `
+                | Select-Object -Last 1
 
-            if ($opSignal.MergeSignalAndVerifyFailure(@($mergeSignal))) {
-                $opSignal.LogCritical("⚠️ Failed merging ConductionContextOverlay into ConductionContext.")
-                return $opSignal
+                if ($opSignal.MergeSignalAndVerifyFailure(@($mergeSignal))) {
+                    $opSignal.LogCritical("⚠️ Failed merging ConductionContextOverlay into ConductionContext.")
+                    return $opSignal
+                }
+
+                $context = $mergeSignal.GetResult()
+            }
+            else {
+                $opSignal.LogInformation("ℹ️ No ConductionContextOverlay provided; using base ConductionContext as-is.")
             }
 
-            $context = $mergeSignal.GetResult()
+            $opSignal.SetResult($context)
+            $opSignal.LogInformation("✅ ConductionContext resolved successfully.")
+            return $opSignal
         }
-        else {
-            $opSignal.LogInformation("ℹ️ No ConductionContextOverlay provided; using base ConductionContext as-is.")
+        catch {
+            $opSignal.LogCritical("❌ Exception in Resolve-ConductionContext: $($_.Exception.Message)")
+            return $opSignal
         }
-
-        $opSignal.SetResult($context)
-        $opSignal.LogInformation("✅ ConductionContext resolved successfully.")
-        return $opSignal
     }
-    catch {
-        $opSignal.LogCritical("❌ Exception in Resolve-ConductionContext: $($_.Exception.Message)")
-        return $opSignal
-    }
-}
 
     # ░▒▓█ START WRAPPER SIGNAL █▓▒░
     $opSignal = [Signal]::Start("Start-SovereignTrust") | Select-Object -Last 1
@@ -272,23 +271,69 @@ function Resolve-ConductionContext {
     #    [object]$ConductionContext
 
     $environmentSignal = [Signal]::Start("Environment", $opSignal) | Select-Object -Last 1
-    $environmentSignal.SetResult($Environment)
+    $environmentSignal.SetJacketResult($Environment)
 
-    $environmentJacketSignal = [Signal]::Start("Environment", $opSignal) | Select-Object -Last 1
-    $environmentJacketSignal.SetJacket($environmentSignal)
-
-    $conduitSignal = Resolve-Conduit -EnvironmentJacketSignal $environmentJacketSignal | Select-Object -Last 1
+    $conduitSignal = Resolve-Conduit -EnvironmentSignal $environmentSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure(@($conduitSignal))) {
         return $opSignal
     }
 
-
     $conductor = $conduitSignal.GetResult()
     $conductorSignal = $conductor.Signal
     
-    $conductorJacketSignal = [Signal]::Start("Conductor", $opSignal) | Select-Object -Last 1
+    $conductorJacketSignal = [Signal]::Start("Conductor", $environmentSignal) | Select-Object -Last 1
     $conductorJacketSignal.SetJacket($conductorSignal)
     
+    # Transfer the grid of content created during the environment generation to the base of the ConductorJacketSignal
+    $conductorJacketSignal.SetPointer($environmentSignal.GetPointer())
+
+
+    ###################### 
+    $TelemetryLevel = 1
+    $message = "ST Has Started"
+    $TelemetrySignal = [Signal]::Start("Event") | Select-Object -Last 1
+    $TelemetryResult = @{
+        TelemetryLevel      = $TelemetryLevel
+        TelemetryMessage    = $message
+        TelemetryType       = "Standard"
+        TelemetryDataType   = "Event"
+        TelemetryProperties = @{
+            serviceName = "[Memory.Signal.%.@.ServiceName|SDAFusion/]"
+        }
+    }
+
+    $TelemetrySignal.SetJacketResult($TelemetryResult) | Select-Object -Last 1
+    $TelemetrySignal.SetResult($opSignal)
+
+    $TelemetryPlan = [pscustomobject]@{
+        VirtualPath = "[Memory.Cache.TelemetryPlans.Telemetry.SignalEntries/]"
+        Mappings = [pscustomobject]@{
+            Adapter   = 'Storage.Content'
+            Activity  = 'Read'
+            Resource = 'System.Json'
+            Container = 'Plans'
+            Format    = 'Json'
+            Path       = 'Telemetry.RunEmitEntries'
+        }
+    }
+
+    # Call Adapter
+    #  Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignal" -Signal $conductorJacketSignal -Plan $Environment -ItemSignal $TelemetrySignal 
+
+    # Call Adapter
+    $testOpSignal = [Signal]::Start("TestOpSignal", $environmentSignal) | Select-Object -Last 1
+    $testOpEntriesHolderSignal = $testOpSignal.SetJacketResult("Test Container for Entries")
+    $testOpEntriesHolderSignal.LogInformation("Test Information Level");
+    $testOpEntriesHolderSignal.LogWarning("Test Warning Level");
+    $testOpEntriesHolderSignal.LogCritical("Test Critical Level");
+
+
+    Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitEntries" -Signal $conductorJacketSignal -Plan $TelemetryPlan -ItemSignal $testOpSignal
+    ###################### 
+
+
+
+
     $conductionPlanRouteSignal = $null
     if ($ConductionPlanRoute) {
         #$conductionPlanRouteSignal = Resolve-PlanContentGeneration -Signal $conductorJacketSignal -Overlay $ConductionPlanRoute -GenerateMemory $true | Select-Object -Last 1
@@ -323,31 +368,79 @@ function Resolve-ConductionContext {
     $ConductorSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
     $ConductorSignal.SetJacket($bondingConductor.Signal)
 
+    # TODO: Move these harded coded items into the mapping as config or something that gets passed in.
 
+    ###### System Content File Adapter
     # Hardwired initiation point of content adapter pointed to local storage - review pattern, should probably be passed in.
-    $ContentRootPathSignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "ContentRootPath" | Select-Object -Last 1
+    $ContentRootPathSignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "Config.ContentRootPath" | Select-Object -Last 1
     $virtualPath = "SovereignTrust.Adapters.Storage.EmbeddedFileSystem.Content.Persistent.Read"
 
-    $EmbeddedFileSystemConfig = [PSCustomObject]@{
+    $Config = [PSCustomObject]@{
 
         VirtualPath = $virtualPath
         Addresses   = @($ContentRootPathSignal.GetResult())
     }
 
-    $EmbeddedFabRequestSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
-    $EmbeddedFabRequestSignal.SetResult($EmbeddedFileSystemConfig)
-    $EmbeddedFabRequestSignal.SetJacket($bondingConductor.Signal)
+    $FabRequestSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
+    $FabRequestSignal.SetResult($Config)
+    $FabRequestSignal.SetJacket($bondingConductor.Signal)
 
     $ItemSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
-    $ItemSignal.SetJacket($EmbeddedFabRequestSignal)
+    $ItemSignal.SetJacket($FabRequestSignal)
 
-    $FabResult = Invoke-CondenserAdapter -Slot "Fab" -Signal $EmbeddedFabRequestSignal -ItemSignal $ItemSignal
+    $FabResult = Invoke-CondenserAdapter -Slot "Fab" -Signal $FabRequestSignal -ItemSignal $ItemSignal
+
+
+    # One for System
+    $virtualPath = "SovereignTrust.Adapters.Storage.EmbeddedFileSystem.System.Persistent.Read"
+
+    $Config = [PSCustomObject]@{
+
+        VirtualPath = $virtualPath
+        Addresses   = @($ContentRootPathSignal.GetResult())
+    }
+
+    $FabRequestSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
+    $FabRequestSignal.SetResult($Config)
+    $FabRequestSignal.SetJacket($bondingConductor.Signal)
+
+    $ItemSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
+    $ItemSignal.SetJacket($FabRequestSignal)
+
+    $FabResult = Invoke-CondenserAdapter -Slot "Fab" -Signal $FabRequestSignal -ItemSignal $ItemSignal
 
 
     $EnvironmentSignal = Resolve-Environment -ConductorSignal $ConductorSignal -Environment $Environment | Select-Object -Last 1
     $Environment = $EnvironmentSignal.GetResult()
     $ConductionPlanRoute = Resolve-ConductionPlanRoute -BondingConductor $bondingConductor -RouteOverlay $ConductionPlanRoute | Select-Object -Last 1
     $ConductionContext = Resolve-ConductionContext -BondingConductor $bondingConductor -ConductionContextOverlay $ConductionContext | Select-Object -Last 1
+
+
+    
+
+    <#
+        # Hardwired initiation point of Telemetry Service
+    $AppInsightsAddressSignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "Config.AppInsightsAddress" | Select-Object -Last 1
+    $AppInsightsKeySignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "Config.AppInsightsKey" | Select-Object -Last 1
+    $virtualPath = "SovereignTrust.Adapters.Network.AzureApplicationInsights.Telemetry.Persistent.Run"
+
+    $Config = [PSCustomObject]@{
+
+        VirtualPath = $virtualPath
+        Resource = $AppInsightsKeySignal.GetResult()
+        Addresses   = @($AppInsightsAddressSignal.GetResult())
+    }
+
+    $FabRequestSignal = [Signal]::Start("AppInsightsFabRequest", $opSignal) | Select-Object -Last 1
+    $FabRequestSignal.SetResult($Config)
+    $FabRequestSignal.SetJacket($bondingConductor.Signal)
+
+    $ItemSignal = [Signal]::Start("AppInsightsFabRequest", $opSignal) | Select-Object -Last 1
+    $ItemSignal.SetJacket($FabRequestSignal)
+
+    $FabResult = Invoke-CondenserAdapter -Slot "Fab" -Signal $FabRequestSignal -ItemSignal $ItemSignal
+#>
+
 
     Add-PathToDictionary -Dictionary $opSignal -Path "*.#.Environment" -Value $Environment
     Add-PathToDictionary -Dictionary $opSignal -Path "*.#.BondingConductor" -Value $bondingConductor

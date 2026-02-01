@@ -32,9 +32,7 @@ function Invoke-GlobalCondenser {
 
     Invoke-GlobalTokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
         -CurrentObject $result `
-        -Dictionary $Dictionary `
         -Signal $Signal `
-        -DictionaryName $DictionaryName `
         -HydrationStyle $HydrationStyle `
         -RegexPattern $RegexPattern `
         -ReturnRequiredValues:$ReturnRequiredValues
@@ -50,8 +48,6 @@ function Invoke-GlobalTokenCrawl {
         [Parameter(Mandatory)] [Signal]$Signal,
         [object]$MergeCondenserFeedback,
         [object]$CurrentObject,
-        [object]$Dictionary,
-        [string]$DictionaryName,
         [string]$RegexPattern,
         [string]$HydrationStyle = "",
         [bool]$ReturnRequiredValues = $true
@@ -94,11 +90,9 @@ function Invoke-GlobalTokenCrawl {
                         _Walk -Parent $value -Key $i -RegexPattern $RegexPattern -HydrationStyle $HydrationStyle
                     } elseif ($value[$i] -is [string] -and $value[$i] -match $RegexPattern) {
                         $propObject = [PSCustomObject]@{ Name = "$i"; Value = $value[$i] }
-                        Resolve-GlobalTokenOverrideForProperty -Signal $Signal `
+                        Resolve-TokenForProperty -Signal $Signal `
                             -MergeCondenserFeedback $MergeCondenserFeedback `
                             -Property $propObject `
-                            -Dictionary $Dictionary `
-                            -DictionaryName $DictionaryName `
                             -SplitMatchCharacter '=' `
                             -ReturnRequiredValues:$ReturnRequiredValues `
                             -HydrationStyle $HydrationStyle | Out-Null
@@ -109,11 +103,9 @@ function Invoke-GlobalTokenCrawl {
             'String' {
                 if ($value -match $RegexPattern) {
                     $propObject = [PSCustomObject]@{ Name = $Key; Value = $value }
-                    Resolve-GlobalTokenOverrideForProperty -Signal $Signal `
+                    Resolve-TokenForProperty -Signal $Signal `
                         -MergeCondenserFeedback $MergeCondenserFeedback `
                         -Property $propObject `
-                        -Dictionary $Dictionary `
-                        -DictionaryName $DictionaryName `
                         -SplitMatchCharacter '=' `
                         -ReturnRequiredValues:$ReturnRequiredValues `
                         -HydrationStyle $HydrationStyle | Out-Null

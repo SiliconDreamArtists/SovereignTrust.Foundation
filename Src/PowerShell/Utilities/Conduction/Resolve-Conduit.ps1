@@ -6,7 +6,7 @@
 function Resolve-Conduit {
     [CmdletBinding()]
     param (
-        [Signal]$EnvironmentJacketSignal#,
+        [Signal]$EnvironmentSignal#,
         #        [object]$ConductionPlanRoute,
         #        [object]$ConductionContext
     )
@@ -15,12 +15,12 @@ function Resolve-Conduit {
         [CmdletBinding()]
         param (
             [Signal]$ConductorSignal,
-            [Signal]$EnvironmentJacketSignal
+            [Signal]$EnvironmentSignal
         )
 
         $opSignal = [Signal]::Start("GenerateEnvironmentSignal", $Signal) | Select-Object -Last 1
 
-        $EnvironmentSourceSignal = Invoke-CondenserAdapter -Slot "Memory" -Activity "Generate" -Signal $ConductorSignal -Plan $Environment -ItemSignal $EnvironmentJacketSignal | Select-Object -Last 1
+        $EnvironmentSourceSignal = Invoke-CondenserAdapter -Slot "Memory" -Activity "Generate" -Signal $ConductorSignal -Plan $Environment -ItemSignal $EnvironmentSignal | Select-Object -Last 1
         # If the Environment is within the source object, resolve it.
         if ($EnvironmentSourceSignal.HasResult()) {
             $EnvironmentSource = $EnvironmentSourceSignal.GetResult()
@@ -65,7 +65,7 @@ function Resolve-Conduit {
 
 
     # Hardwired initiation point of content adapter pointed to local storage - review pattern, should probably be passed in.
-    $ContentRootPathSignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "ContentRootPath" | Select-Object -Last 1
+    $ContentRootPathSignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "Config.ContentRootPath" | Select-Object -Last 1
     $virtualPath = "SovereignTrust.Adapters.Storage.EmbeddedFileSystem.Content.Persistent.Read"
 
     $EmbeddedFileSystemConfig = [PSCustomObject]@{
@@ -87,8 +87,8 @@ function Resolve-Conduit {
     }
 
     # Attach the Environment base content to the ConductorSignal Jacket Result in order to be able to generate it again later.
-    Add-PathToDictionary -Dictionary $ConductorSignal -Path "%.@" -Value $EnvironmentJacketSignal.GetJacket().GetResult()
-    $EnvironmentConductorSignal = Resolve-Environment -ConductorSignal $ConductorSignal -EnvironmentJacketSignal $EnvironmentJacketSignal | Select-Object -Last 1
+    Add-PathToDictionary -Dictionary $ConductorSignal -Path "%.@" -Value $EnvironmentSignal.GetJacket().GetResult()
+    $EnvironmentConductorSignal = Resolve-Environment -ConductorSignal $ConductorSignal -EnvironmentSignal $EnvironmentSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($EnvironmentConductorSignal)) {
         return $opSignal
     }

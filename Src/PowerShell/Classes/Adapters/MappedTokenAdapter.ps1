@@ -60,12 +60,12 @@ class MappedTokenAdapter {
         $opSignal = [Signal]::Start("MappedTokenAdapter.Invoke") | Select-Object -Last 1
 
         try {
-        $Path = $Plan.Key
+            $Path = $Plan.Path
 
             $resultSignal = Invoke-MappedTokenAdapter -MappedAdapter $this -Slot $Slot -Activity $Activity -Signal $ConductionSignal -Plan $Plan -ItemSignal $ItemSignal  | Select-Object -Last 1
             $opSignal.MergeSignal($resultSignal)
 
-            if ($resultSignal.Success()) {
+            if ($resultSignal.Success() -and $resultSignal.HasResult()) {
                 $opSignal.SetResult($resultSignal.GetResult())
                 $result = $resultSignal.GetResult()
                 $opSignal.LogInformation("✅ MappedTokenAdapter resolved path successfully: $Path -> $result")

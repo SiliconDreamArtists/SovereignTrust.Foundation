@@ -34,24 +34,25 @@ class Token_Memory {
     }
 
     [Signal] Invoke([string]$Slot, [string]$Activity, $ConductionSignal, $Plan, $ItemSignal) {
-    $opSignal = [Signal]::Start("Token_Memory.Invoke") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("Token_Memory.Invoke") | Select-Object -Last 1
 
-    try {
+        try {
             $Path = $Plan.Path
-        $resultSignal = Invoke-TokenMemory -Slot $Slot -Activity $Activity -Signal $ConductionSignal -ItemSignal $ItemSignal -Plan $Plan | Select-Object -Last 1
-        $opSignal.MergeSignal($resultSignal)
+            $resultSignal = Invoke-TokenMemory -Slot $Slot -Activity $Activity -Signal $ConductionSignal -ItemSignal $ItemSignal -Plan $Plan | Select-Object -Last 1
+            $opSignal.MergeSignal($resultSignal)
 
-        if ($resultSignal.Success()) {
-            $opSignal.SetResult($resultSignal.GetResult())
-            $opSignal.LogInformation("✅ Token Memory path '$Path' resolved successfully.")
-        } else {
-            $opSignal.LogWarning("⚠️ Token Memory path '$Path' failed to resolve.")
+            if ($resultSignal.Success() -and $resultSignal.HasResult()) {
+                $opSignal.SetResult($resultSignal.GetResult())
+                $opSignal.LogInformation("✅ Token Memory path '$Path' resolved successfully.")
+            }
+            else {
+                $opSignal.LogWarning("⚠️ Token Memory path '$Path' failed to resolve.")
+            }
         }
-    }
-    catch {
-        $opSignal.LogCritical("🔥 Exception in Token_Memory.Invoke: $($_.Exception.Message)")
-    }
+        catch {
+            $opSignal.LogCritical("🔥 Exception in Token_Memory.Invoke: $($_.Exception.Message)")
+        }
 
-    return $opSignal
-}
+        return $opSignal
+    }
 }

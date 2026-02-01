@@ -28,6 +28,7 @@ $abc = Get-Module -Name $sgModuleName
 . "$PSScriptRoot/Wrappers/Adapters/Invoke-CondenserAdapter.ps1"
 . "$PSScriptRoot/Wrappers/Adapters/Invoke-MappedAdapter.ps1"
 
+. "$PSScriptRoot/Classes/Adapters/MappedDataAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedStorageAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedTokenAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedAdapterTemplate.ps1"
@@ -43,6 +44,7 @@ $abc = Get-Module -Name $sgModuleName
 
 . "$PSScriptRoot/Classes/Adapters/Token/Token_System.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Memory.ps1"
+. "$PSScriptRoot/Classes/Adapters/Token/Token_Dynamic.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Conduction.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Environment.ps1"
 . "$PSScriptRoot/Classes/Adapters/Token/Token_Formatter.ps1"
@@ -78,7 +80,7 @@ $abc = Get-Module -Name $sgModuleName
 #. "$PSScriptRoot/Classes/Adapters/Condenser/GridCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/ConduitCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/HydrationCondenser.ps1"
-#. "$PSScriptRoot/Classes/Adapters/Condenser/MapCondenser.ps1"
+. "$PSScriptRoot/Classes/Adapters/Condenser/MapCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/MemoryCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/MergeCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/TokenCondenser.ps1"
@@ -101,7 +103,7 @@ $abc = Get-Module -Name $sgModuleName
 #. "$PSScriptRoot/Utilities/Adapters/Condenser/Graph/Invoke-Graph.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Global/Invoke-GlobalCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Token/Invoke-JsonTokenCondenser.ps1"
-. "$PSScriptRoot/Utilities/Adapters/Condenser/Global/Resolve-GlobalTokenOverrideForProperty.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Global/Resolve-TokenForProperty.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Convert-VirtualPathToWirePath.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Invoke-GraphHydrationCondenser.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Hydration/Invoke-ApplyHydrationCondenser.ps1"
@@ -139,6 +141,8 @@ $abc = Get-Module -Name $sgModuleName
 #Turned off 1-3-26
 #. "$PSScriptRoot/Utilities/Adapters/Invoke-MappedAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-MappedTokenAdapter.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Token/Dynamic/Resolve-TokenDynamic.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenDynamic.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenSystem.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenMemory.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenEnvironment.ps1"

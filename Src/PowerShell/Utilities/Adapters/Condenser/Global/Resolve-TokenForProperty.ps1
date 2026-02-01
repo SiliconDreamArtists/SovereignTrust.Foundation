@@ -28,11 +28,11 @@ Pattern: "\[([a-zA-Z0-9_]+)=""([^""]+)""\/\]"
 Matches: [environmentName="prod"/]
 Use: Used for XPath-like dynamic lookups.
 
-# TODO: Review: Remove Deferred Hydration, using Mappings removes that neccesity
+# TODO: Review: Remove Deferred Hydration, using Mappings removes that neccesity?
 ─────────────────────────────────────────────────────────────
 #>
 
-function Resolve-GlobalTokenOverrideForProperty {
+function Resolve-TokenForProperty {
     [CmdletBinding()]
     param (
         [Signal]$Signal,
@@ -43,10 +43,6 @@ function Resolve-GlobalTokenOverrideForProperty {
 
         [object]$Property,  # A custom object or hashtable with .Name and .Value
 
-        [hashtable]$Dictionary,
-
-        [string]$DictionaryName,
-
         [bool]$ReturnRequiredValues = $true,
 
         [string]$RegexPattern = "(?s)\[[^\[@]*=[^\/]*\/\]",
@@ -55,7 +51,7 @@ function Resolve-GlobalTokenOverrideForProperty {
         [char]$SplitMatchCharacter
     )
 
-    $opSignal = [Signal]::Start("Resolve-GlobalTokenOverrideForProperty:$($Property.Name)", $null) | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Resolve-TokenForProperty:$($Property.Name)", $null) | Select-Object -Last 1
 
     if ($HydrationStyle -eq "Deferred") {
         $RegexPattern = "(?s)\[[^\[\]\|]*\|\]"
@@ -68,8 +64,6 @@ function Resolve-GlobalTokenOverrideForProperty {
         $propertyValue = $Property.Value.ToString()
         $pathSegments = $Property.Name -split '\.'
 
-        $Dictionary = @{ }
-
         $matches = [regex]::Matches($propertyValue, $RegexPattern)
 
         if ($matches.Count -eq 0) {
@@ -81,12 +75,12 @@ function Resolve-GlobalTokenOverrideForProperty {
             $matches = [regex]::Matches($propertyValue, $RegexPattern)
         }
 
-                if ($matches.Count -gt 100) {
+        if ($matches.Count -gt 100) {
 
-         $matches = $matches |
-                ForEach-Object { $_.Value } |
-                Select-Object -Unique
-                }
+            $matches = $matches |
+            ForEach-Object { $_.Value } |
+            Select-Object -Unique
+        }
                 
         foreach ($match in $matches) {
             $matchText = $match.Value.Trim()
@@ -119,24 +113,36 @@ function Resolve-GlobalTokenOverrideForProperty {
                     $RegexPattern = "(?s)$RegexPattern"
                 }
 
-                $clonePlan = $Plan | ConvertTo-Json | ConvertFrom-Json
-                $clonePlan.Key = $key
+#                $clonePlan = $Plan | ConvertTo-Json | ConvertFrom-Json
+#                $clonePlan.Path = $key
+
+                $TokenPlan = [PSCustomObject]@{
+                    Path = $Key
+                }
+
+                $configSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config" -SignalLevel "Information" | Select-Object -Last 1
+                if ($configSignal.HasResult())
+                {
+                    $null = Add-PathToDictionary -Dictionary $TokenPlan -Path "Config" -Value $configSignal.GetResult()
+                }
 
                 #$resultSignal = $adapter.Invoke($key);
-                $resultSignal = $adapter.Invoke($key, "Get", $Signal, $clonePlan, $ItemSignal);
-                $lookupSignal = [Signal]::Start("Resolve-GlobalTokenOverrideForProperty:$($Property.Name)", $null) | Select-Object -Last 1
-                $lookupSignal.SetResult($resultSignal.GetResult())
+                $resultSignal = $adapter.Invoke($key, "Get", $Signal, $TokenPlan, $ItemSignal);
+                $lookupSignal = [Signal]::Start("Resolve-TokenForProperty:$($Property.Name)", $null) | Select-Object -Last 1
+                
+                if ($resultSignal.HasResult()) {
+                    $lookupSignal.SetResult($resultSignal.GetResult())
+                }
             }
 
             $opSignal.MergeSignal($lookupSignal)
 
-            if ($lookupSignal.Success() -and -not [string]::IsNullOrWhiteSpace($lookupSignal.Result)) {
+            if ($lookupSignal.Success() -and $lookupSignal.HasResult()) {
 
-                $replacement = $lookupSignal.Result
+                $replacement = $lookupSignal.GetResult()
 
                 # When a replacement value is a json object, etc, we can't do a replacement and must assume the object is ready to be returned.
-                if ($replacement -is [PSCustomObject])
-                {
+                if ($replacement -is [PSCustomObject]) {
                     $propertyValue = $replacement
                 }
                 else {
@@ -158,13 +164,23 @@ function Resolve-GlobalTokenOverrideForProperty {
                     
                     $oldValue = $propertyValue
 
+                    if (-not $replacement -is [string])
+                    {
+                        $a = ""
+                    }
+
+                    try {
                     $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
+                    }
+                    catch {
+                        $a = ""
+                    }
 
                     if ($propertyValue -ne $oldValue) {
                         $opSignal.LogInformation("🔄 Replaced '$key' with '$replacement' in property '$($Property.Name)'")
                     }
                     else {
-                      #  $propertyValue = $propertyValue -replace $match.Value, $replacement
+                        #  $propertyValue = $propertyValue -replace $match.Value, $replacement
                         $opSignal.LogWarning("⚠️ No replacement made for '$key' in property '$($Property.Name)' — token may be malformed or missing. ($propertyValue)")
                     }
                 }

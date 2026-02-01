@@ -20,16 +20,11 @@ function Invoke-TokenMemory {
         [string]$Activity
     )
 
-    if ($Conduit -and -not $Conduit.IsRunning) {
-        throw "Conduction is not running. Cannot invoke Phase."
-    }
-
     $opSignal = [Signal]::Start("Invoke-TokenMemory", $ItemSignal) | Select-Object -Last 1
 
     try {
-        $Key = $Plan.Key
+        $Key = $Plan.Path
 
-    
         if ([string]::IsNullOrWhiteSpace($Key)) {
             $opSignal.LogWarning("⚠️ Path is empty. Nothing to resolve.")
             return $opSignal
@@ -41,7 +36,7 @@ function Invoke-TokenMemory {
 
         $segments = $Key -split '\.'
 
-        $scope = 'Signal'
+        $scope = 'Item'
         $path = $null
 
         if ($segments.Count -gt 1) {
@@ -56,29 +51,91 @@ function Invoke-TokenMemory {
         $dictionary = $null
 
         # Split path|default if present
-        if ($path -and $path -like '*|*')
-         {
+        if ($path -and $path -like '*|*') {
             $parts = $path -split '\|', 2
             $path = $parts[0]
             $default = $parts[1]
         }
 
+        $pathSuffix = ""
+
         switch ($scope.ToLowerInvariant()) {
-            'signal' { $dictionary = $Signal }
-            'item' { $dictionary = $ItemSignal }
-            'plan' { $dictionary = $Plan }
+            'cache' {
+                # Shortcut Path to cache items stored in the Conduction Signal
+                $dictionarySignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "*.#" | Select-Object -Last 1
+                if ($dictionarySignal.HasResult()) {
+                    $dictionary = $dictionarySignal.GetResult()
+                }
+
+                # Cache items are always in their result
+                $pathSuffix = ".@"
+                $pathInner = ".@."
+
+                break
+            }
+            'signal' {
+                $dictionary = $Signal 
+                break 
+            }
+            'generation' {
+                # Shortcut Path to items created by Memory Generation
+                $dictionarySignal = Resolve-PathFromDictionary -Dictionary $ItemSignal  -Path "*.#" | Select-Object -Last 1
+                if ($dictionarySignal.HasResult()) {
+                    $dictionary = $dictionarySignal.GetResult()
+                }
+
+                # Generation items are always in their result
+                $pathSuffix = ".@"
+                $pathInner = ".@."
+                break 
+            }
+            'item' {
+                $dictionary = $ItemSignal 
+                break 
+            }
+            'plan' {
+                $dictionary = $Plan 
+                break 
+            }
         }
 
+        # Clear PathSuffix if path already contain it.
+        if ($pathSuffix -and $path -like "*$pathSuffix*") {
+            $pathSuffix = ""
+        }
+        elseif ($pathSuffix) {
+            $delimeter = '.'
+
+            # xpath conversion, the @ should be placed after the first block regardless of if it's a . or a ^ (This is perhaps a reason to infer XmlDocument for a node instead of using a ^ since a . in the path would conform.)
+            if ($path -like "*^*") {
+                $delimeter = '^'
+            }
+
+            $pathParts = $delimeter -eq '^' ? ($path -split '\^') : ($path -split '\.')
+
+            if ($pathParts.Count -gt 1) {
+                $path = $pathParts[0] + $pathInner + ($pathParts[1..($pathParts.Count - 1)] -join $delimeter)
+            }
+            else {
+                $path = $path + $pathSuffix
+            }
+        }
+
+            
+        
+
         if ($null -ne $dictionary) {
-            $valueSignal = Resolve-PathFromDictionary -Dictionary $dictionary -Path $path -Default $default | Select-Object -Last 1
+            $valueSignal = Resolve-PathFromDictionary -Dictionary $dictionary -Path $path -Default $default -SignalLevel "Warning" | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure($valueSignal)) {
                 return $opSignal
             }
 
-            $opSignal.SetResult($valueSignal.GetResult())
+            if ($valueSignal.HasResult()) {
+                $opSignal.SetResult($valueSignal.GetResult())
+            }
         }
         else {
-            $opSignal.LogWarning("⚠️ Memory variable not found for key: $Path")
+            $opSignal.LogWarning("⚠️ Memory variable not found for key: $Key")
         }
     }
     catch {

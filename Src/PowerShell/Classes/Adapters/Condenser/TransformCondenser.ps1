@@ -41,6 +41,60 @@ class TransformCondenser {
             switch ($Activity) {
 
                 # Select using a path from an xml or json object.
+                "Project" {
+                    # This should generally be done after a mapping has pushed an adapter call into the Grid memory of the ItemSignal, attempt to use the Plan's Key to look for them.
+                    $KeySignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Key" -SignalLevel "Warning" | Select-Object -Last 1
+                    $result = @()
+
+                    if ($KeySignal.HasResult())
+                    {
+                        $SourceTransformNodesSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "*.#.$($KeySignal.GetResult())" | Select-Object -Last 1
+                        if ($SourceTransformNodesSignal.HasResult())
+                        {
+                            $ContentPlan = [PSCustomObject]@{
+                                Path = $Plan.Path
+#                                HydrationPlan = "@"
+                            }
+
+                            $SourceContentResultSignal = Invoke-MappedAdapter -Adapter "Token.Memory"  -Activity "Get" -Plan $ContentPlan -ItemSignal $ItemSignal -Signal $ConductionSignal | Select-Object -Last 1
+                            if ($SourceContentResultSignal.HasResult())
+                            {
+                                $null = Add-PathToDictionary -Dictionary $ContentPlan -Path "HydrationPlan" -Value "@"
+                                $content = $SourceContentResultSignal.GetResult()                             
+                                $nodes = @($SourceTransformNodesSignal.GetResult($true))
+
+                                foreach ($node in $nodes)
+                                {
+                                    $HydrationPlan = [PSCustomObject]@{
+                                        Path = "%.@"
+                                        HydrationPlan = "@"
+                                    }
+
+                                    #$null = Add-PathToDictionary -Dictionary $ContentPlan -Path "Config" -Value $node
+                                    $HydrationSignal = [Signal]::Start("TransformCondenser.Invoke.Hydration") | Select-Object -Last 1
+                                    $SourceContentResultSignal.SetResult($content)
+                                    $HydrationSignal.SetJacket($SourceContentResultSignal)
+                                    $HydrationSignal.SetPointer($ItemSignal.GetPointer())
+                                    $HydrationSignal.SetResult($node)
+                                    
+                                    # Perform Hydration
+                                    $MappingResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
+                                    #$this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
+                                    $signResult = "a"
+
+                                    
+                                    $result += $MappingResultSignal.GetResult()
+                                }
+                            }
+                            
+                        }
+                    }
+
+                    $opSignal.SetResult($result)
+                    break
+                }
+
+                # Select using a path from an xml or json object.
                 "Select" {
                     $sourceSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $DefaultPath | Select-Object -Last 1
 

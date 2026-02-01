@@ -1,7 +1,8 @@
 $TokenDispatch = @{
 #    '*' = 'Global' # Replace with Conduction?
     '*' = 'Conduction' # Runs Conduction Plan
-    '@' = 'Token' # Token Replacements (String and Json documents)
+#    '@' = 'Token' # Token Replacements (String and Json documents)
+    '@' = 'Map' # Token Replacements via Map (String and Json documents)
 #    '+' = 'Json'  # Replace with Content?
     '+' = 'Content' 
     '-' = 'String' # Replace with?
@@ -71,6 +72,9 @@ function Invoke-ApplyHydrationCondenser {
         $opSignal.LogCritical("🔥 HydrationCondenser exception: $_")
     }
 
-    $opSignal.SetResult($ItemSignal.GetJacket().GetResult())
+    # TODO: Review this pattern, because we don't pass through the stepSignal on each pass, the original $ItemSignal.Result is the thing that gets updated.
+#    $opSignal.SetResult($ItemSignal.GetJacket().GetResult())
+    $result = $ItemSignal.HasResult() ? $ItemSignal.GetResult() : $ItemSignal.GetJacket().GetResult()
+    $opSignal.SetResult($result)
     return $opSignal
 }

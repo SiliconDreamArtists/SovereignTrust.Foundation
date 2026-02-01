@@ -79,7 +79,8 @@ class MappedCondenserAdapter {
     }
     catch {
         $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)")
-        $this.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal)
+       $a = ""
+        #$this.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal)
     }
 
     return $opSignal

@@ -31,15 +31,54 @@ class TokenCondenser {
     [Signal] Invoke([string]$Slot, [string]$Activity, $ConductionSignal, $Plan, $ItemSignal) {
         $opSignal = [Signal]::Start("TokenCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
 
-        $tokenResult = Invoke-JsonTokenCondenser -Signal $ConductionSignal -ItemSignal $ItemSignal -Plan $Plan | Select-Object -Last 1
 
-        $opSignal.SetResult($ItemSignal.GetJacket().GetResult());
+        # Key is used in the plan to perform the token parsing, $ItemSignal contains the path as the result
+        $Path = $ItemSignal.HasResult() ? $ItemSignal.GetResult() : $ItemSignal.GetJacket().GetResult()
+        
+        $Slot = ($Path -Split '\.')[0]
+        $TokenAdapterPlan = [PSCustomObject]@{
+            Path = $Path
+        }
+
+        $TokenParseSignal = Invoke-MappedAdapter -Adapter "Token.$Slot" -Activity "Get" -Plan $TokenAdapterPlan -Signal $ConductionSignal -ItemSignal $ItemSignal | Select-Object -Last 1
+
+        if ($TokenParseSignal.HasResult())
+        {
+            $opSignal.SetResult($TokenParseSignal.GetResult())
+        }
+
+        return $opSignal
+
+        # Now in MapCondenser as Direct route.
+        # Require Result or Jacket to have value.
+        $result = $ItemSignal.HasResult() ? $ItemSignal.GetResult() : $ItemSignal.GetJacket().GetResult()
+
+        $ItemProxySignal = $ItemSignal
+
+        if ($result -is [string]) {
+            $resultObject = [pscustomobject]@{
+                Message = $result
+            }
+            # Generate a new object to act as the Signle to pass in as a proxy
+            $ItemSignal.SetResult($resultObject)
+
+        }
+
+        $condenserResult = Invoke-JsonTokenCondenser -Signal $ConductionSignal -ItemSignal $ItemSignal -Plan $Plan | Select-Object -Last 1
+
+        if ($result -is [string]) {
+            $messageObject = $condenserResult.GetResult()
+
+            $opSignal.SetResult($messageObject.Message);
+        }
+        else {
+            $opSignal.SetResult($condenserResult.GetResult());
+        }
+
+        # Need to overwrite the $ItemSignal result so the old one isn't used by the caller.
+        $ItemSignal.SetResult($opSignal.GetResult())
         return $opSignal
     }
-
-        
-    
-
 
     [Signal] GetToken([string]$Value, $CondenserSignal, [bool]$ThrowExceptionOnEmpty = $true, [int]$RetryAttempts = 2) {
         $opSignal = [Signal]::Start("GetToken:$Value") | Select-Object -Last 1
@@ -75,7 +114,8 @@ class TokenCondenser {
                     $opSignal.LogInformation("Token successfully resolved: $Value → $($node.InnerXml)")
                     return $opSignal
                 }
-            } catch {
+            }
+            catch {
                 $opSignal.LogWarning("Navigator exception for path '$xpath': $_")
             }
         }
@@ -93,7 +133,8 @@ class TokenCondenser {
 
             $tokenGraphsSignal = if ($TokenDocument -is [Newtonsoft.Json.Linq.JToken]) {
                 [Signal]::Start($TokenDocument.SelectToken($nodeName)) | Select-Object -Last 1
-            } else {
+            }
+            else {
                 Resolve-PathFromDictionary -Dictionary $TokenDocument -Path $nodeName
             }
 
@@ -155,7 +196,8 @@ class TokenCondenser {
 
                 if ($opSignal.MergeSignalAndVerifySuccess(@($graphSignal))) {
                     $context.ContextNavigator[$relativePath] = $graphSignal.GetResult().CreateNavigator()
-                } else {
+                }
+                else {
                     $opSignal.LogCritical("Aborted graph loading due to failed resolution of: $relativePath")
                     return $opSignal
                 }

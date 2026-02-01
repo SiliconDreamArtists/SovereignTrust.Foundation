@@ -27,8 +27,6 @@ class MemoryCondenser {
         # For the Content Condenser, the plan contains the steps to perform, similar to the steps in the FormulaGraphCondenser but 2 dimensional mappings
 
         $opSignal = [Signal]::Start("MemoryCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
-
-        $opSignal.SetJacket($ConductionSignal)
         
         # First Supported Activities -> Select, Merge, Project
         $DefaultPath = "%.@"
@@ -57,7 +55,7 @@ class MemoryCondenser {
                     foreach ($mapping in @($mappings)) {
 
                         $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "IsEnabled" -Default $true | Select-Object -Last 1
-                        if ($IsEnabledSignal.GetResult()) {
+                        if (-not $IsEnabledSignal.GetResult()) {
                             continue
                         }
 
@@ -104,9 +102,11 @@ class MemoryCondenser {
 
                             # Perform Document formatting, xml, json or leave txt
                             if ($Format) {
-                                $ItemSignal.SetJacket($MappingResultSignal)
+                                $FormatSignal = [Signal]::Start("MemoryCondenser.Invoke.Format", $ItemSignal) | Select-Object -Last 1
+                                $FormatSignal.SetJacket($MappingResultSignal)
+                                $FormatSignal.SetPointer($ItemSignal.GetPointer())
 
-                                $MappingResultSignal = Invoke-CondenserAdapter -Slot "Format" -Activity $Format -Plan $mapping -Signal $ConductionSignal -ItemSignal $ItemSignal | Select-Object -Last 1
+                                $MappingResultSignal = Invoke-CondenserAdapter -Slot "Format" -Activity $Format -Plan $mapping -Signal $ConductionSignal -ItemSignal $FormatSignal | Select-Object -Last 1
 
                                 $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
                             }
@@ -114,18 +114,27 @@ class MemoryCondenser {
                             # Optional Condenser-Based Transform Step
                             # Currently uses a CondenserAdapter and then uses the SourceType in the mapping to determine which one to use and SourceMode to determine which activity to run.
                             if ($Path) {
-                                $ItemSignal.SetJacket($MappingResultSignal)
+                                $TransformSignal = [Signal]::Start("MemoryCondenser.Invoke.Format", $ItemSignal) | Select-Object -Last 1
+                                $TransformSignal.SetJacket($MappingResultSignal)
+                                $TransformSignal.SetPointer($ItemSignal.GetPointer())
 
-                                $MappingResultSignal = Invoke-CondenserAdapter -Slot $TypeSignal.GetResult() -Activity $ModeSignal.GetResult() -Plan $mapping -Signal $ConductionSignal -ItemSignal $ItemSignal | Select-Object -Last 1
+                                $MappingResultSignal = Invoke-CondenserAdapter -Slot $TypeSignal.GetResult() -Activity $ModeSignal.GetResult() -Plan $mapping -Signal $ConductionSignal -ItemSignal $TransformSignal | Select-Object -Last 1
                                 $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
                             }
                 
                             # Optional Hydration Condenser Step
                             if ($HydrationPlanSignal.HasResult()) {
-                                $ItemSignal.SetJacket($MappingResultSignal)
-        
+                                $HydrationSignal= [Signal]::Start("MemoryCondenser.Invoke.Format", $ItemSignal) | Select-Object -Last 1
+                                $HydrationSignal.SetJacket($MappingResultSignal)
+                                $HydrationSignal.SetPointer($ItemSignal.GetPointer())
+
+                                $HydrationPlan = [PSCustomObject]@{
+                                        Path = "%.@"
+                                        HydrationPlan = $HydrationPlanSignal.GetResult()
+                                    }
+
                                 # Perform Hydration
-                                $MappingResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $mapping -Signal $ConductionSignal -ItemSignal $ItemSignal | Select-Object -Last 1
+                                $MappingResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
                                 $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
                             }
                             <#

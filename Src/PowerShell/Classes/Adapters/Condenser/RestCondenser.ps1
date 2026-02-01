@@ -34,18 +34,20 @@ class RestCondenser {
     ) {
         $opSignal = [Signal]::Start("RestCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
 
-        $bearerTokenSignal = $this.ResolveBearerToken($ConductionSignal, $Plan, $false)
+        $skipBearerTokenSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.SkipBearerToken" -Default $false | Select-Object -Last 1
+
+        $bearerTokenSignal = $skipBearerTokenSignal ? $null : $this.ResolveBearerToken($ConductionSignal, $Plan, $false)
         $headersSignal = $this.GetStorageVersionHeaders($ConductionSignal, $Plan)
 
         # Clone Plan before Mutate
         $Plan = $Plan | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
 
         if ($headersSignal.HasResult()){
-            Add-PathToDictionary -Dictionary $Plan -Path "Headers" -Value $headersSignal.GetResult()
+            Add-PathToDictionary -Dictionary $Plan -Path "Config.Headers" -Value $headersSignal.GetResult()
         }
 
-        if ($bearerTokenSignal.HasResult()){
-            Add-PathToDictionary -Dictionary $Plan -Path "BearerToken" -Value $bearerTokenSignal.GetResult()
+        if ($bearerTokenSignal -and $bearerTokenSignal.HasResult()){
+            Add-PathToDictionary -Dictionary $Plan -Path "Config.BearerToken" -Value $bearerTokenSignal.GetResult()
         }
 
         $resultSignal = Invoke-RestCondenserCore -Signal $ConductionSignal -Plan $Plan -ItemSignal $ItemSignal -Activity $Activity | Select-Object -Last 1
@@ -74,7 +76,7 @@ class RestCondenser {
         }
 
         # Resolve Url from plan
-        $urlSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Uri" -SignalLevel "Warning" | Select-Object -Last 1
+        $urlSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Uri" -SignalLevel "Warning" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure(@($urlSignal))) { return $opSignal }
 
         $url = $urlSignal.GetResult()
@@ -145,7 +147,7 @@ class RestCondenser {
             }
 
             # --- Host ---
-            $hostSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Host" -SignalLevel "Warning" | Select-Object -Last 1
+            $hostSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Host" -SignalLevel "Warning" | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure(@($hostSignal))) { return $opSignal }
 
             $hostAddress = $hostSignal.GetResult()

@@ -38,7 +38,27 @@ class FormatCondenser {
                     $content = $contentSignal.GetResult()
 
                     # Invoke-FormatJson should receive the JSON text (or object) directly, not via -Path unless it truly expects a file path
-                    $resultSignal = Invoke-FormatJson -Path $content | Select-Object -Last 1
+                    $resultSignal = Invoke-FormatJson -Path $content -Plan $Plan | Select-Object -Last 1
+                    if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
+                        $opSignal.LogCritical("❌ JSON formatting failed.")
+                        return $opSignal
+                    }
+
+                    $opSignal.SetResult($resultSignal.GetResult())
+                    break
+                }
+
+                "JsonArray" {
+                    $contentSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $DefaultPath | Select-Object -Last 1
+                    if ($opSignal.MergeSignalAndVerifyFailure($contentSignal)) {
+                        $opSignal.LogCritical("❌ Failed to resolve content at path: $DefaultPath")
+                        return $opSignal
+                    }
+
+                    $content = $contentSignal.GetResult()
+
+                    # Invoke-FormatJson should receive the JSON text (or object) directly, not via -Path unless it truly expects a file path
+                    $resultSignal = Invoke-FormatJson -Path $content -Plan $Plan | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
                         $opSignal.LogCritical("❌ JSON formatting failed.")
                         return $opSignal
@@ -56,12 +76,17 @@ class FormatCondenser {
                     }
 
                     $content = $contentSignal.GetResult()
-
-                    # Invoke-FormatXml should receive the Xml text (or object) directly, not via -Path unless it truly expects a file path
-                    $resultSignal = Invoke-FormatXml -Path $content | Select-Object -Last 1
-                    if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-                        $opSignal.LogCritical("❌ JSON formatting failed.")
-                        return $opSignal
+                    if ($content -is [System.Xml.XmlDocument])
+                    {
+                        $resultSignal = $contentSignal
+                    }
+                    else {
+                        # Invoke-FormatXml should receive the Xml text (or object) directly, not via -Path unless it truly expects a file path
+                        $resultSignal = Invoke-FormatXml -Path $content | Select-Object -Last 1
+                        if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
+                            $opSignal.LogCritical("❌ JSON formatting failed.")
+                            return $opSignal
+                        }
                     }
 
                     $opSignal.SetResult($resultSignal.GetResult())

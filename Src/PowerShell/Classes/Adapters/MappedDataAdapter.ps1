@@ -1,38 +1,38 @@
-class MappedNetworkAdapter {
+class MappedDataAdapter {
     [Signal]$Signal
 
-    MappedNetworkAdapter() {
+    MappedDataAdapter() {
         # Use static Start() instead
     }
 
     static [Signal] Start([object]$Conductor) {
-        $opSignal = [Signal]::Start("MappedNetworkAdapter.Start") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("MappedDataAdapter.Start") | Select-Object -Last 1
 
         if (-not $Conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to MappedNetworkAdapter.Start()")
+            $opSignal.LogCritical("❌ Null Conductor passed to MappedDataAdapter.Start()")
             return $opSignal
         }
 
         try {
-            $adapter = [MappedNetworkAdapter]::new()
-            $adapter.Signal = [Signal]::Start("MappedNetworkAdapter") | Select-Object -Last 1
+            $adapter = [MappedDataAdapter]::new()
+            $adapter.Signal = [Signal]::Start("MappedDataAdapter") | Select-Object -Last 1
             $adapter.Signal.SetJacket($Conductor)
             $adapter.Signal.SetReversePointer($Conductor)
 
-            $graphSignal = [Graph]::Start("MappedNetworkAdapter", $adapter, $false)
+            $graphSignal = [Graph]::Start("MappedDataAdapter", $adapter, $false)
             $adapter.Signal.SetPointer($graphSignal.GetResult())
 
             $opSignal.SetResult($adapter)
-            $opSignal.LogInformation("✅ MappedNetworkAdapter initialized.")
+            $opSignal.LogInformation("✅ MappedDataAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedNetworkAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedDataAdapter.Start(): $_")
         }
 
         return $opSignal
     }
 
-    [Signal] RegisterAdapter([object]$AdapterInstance, [string]$Key = "NetworkService") {
+    [Signal] RegisterAdapter([object]$AdapterInstance, [string]$Key = "QueueService") {
         $opSignal = [Signal]::Start("RegisterMappedAdapter:$Key") | Select-Object -Last 1
         if ($AdapterInstance -isnot [Signal]) {
             $adapterSignal = [Signal]::Start("Adapter:$Key") | Select-Object -Last 1
@@ -67,15 +67,6 @@ class MappedNetworkAdapter {
         }
 
         $opSignal.SetResult($resultSignal.GetResult($true))
-        return $opSignal
-    }
-
-    [Signal] Invoke([string]$Slot, [object]$Context, [object]$Plan) {
-        $opSignal = [Signal]::Start("MappedNetworkAdapter.Invoke:$Slot") | Select-Object -Last 1
-
-        $conductor = $this.Signal.GetJacket()
-        $opSignal = Invoke-NetworkAdapter -MappedAdapterSignal $this.Signal -NetworkSignal $Context -Slot $Slot | Select-Object -Last 1
-
         return $opSignal
     }
 }

@@ -3,7 +3,7 @@ function Invoke-MappedTokenAdapter {
     param (
         [MappedTokenAdapter]$MappedAdapter,
         [string]$Slot,
-                # Conductor / environment signal that contains adapters (mapped attachments)
+        # Conductor / environment signal that contains adapters (mapped attachments)
         [Parameter(Mandatory = $false)]
         [Signal]$Signal,
 
@@ -13,8 +13,8 @@ function Invoke-MappedTokenAdapter {
         [object]$Plan,
 
         # Routing + IO parameters
-#        [Parameter(Mandatory = $false)]
-#        [string]$Adapter,
+        #        [Parameter(Mandatory = $false)]
+        #        [string]$Adapter,
 
         [Parameter(Mandatory = $false)]
         [string]$Activity,
@@ -27,10 +27,19 @@ function Invoke-MappedTokenAdapter {
 
     try {
 
-        if (-not $Path) { $Path = $Plan.Key}
+        if (-not $Path) { $Path = $Plan.Path }
 
         if (-not $MappedAdapter) {
             return $opSignal.LogCritical("❌ MappedAdapter is null.")
+        }
+
+        # If the Container and Resource is being passed through the token adapter, it should be used to set the path (the path will be used later by the memory generator to do a select)
+        $ContainerSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Container" -SignalLevel "Information" | Select-Object -Last 1
+        $ResourceSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Resource" -SignalLevel "Information" | Select-Object -Last 1
+
+        if ($ContainerSignal.HasResult() -and $ResourceSignal.HasResult())
+        {
+            $Path = "Memory.$($ContainerSignal.GetResult()).$($ResourceSignal.GetResult())"
         }
 
         if (-not $Path -or -not ($Path -is [string])) {
@@ -38,7 +47,8 @@ function Invoke-MappedTokenAdapter {
         }
 
         # Remove enclosing [/] if present
-        $trimmed = $Path -replace '^\[\/|\]$', ''
+        #$trimmed = $Path -replace '^\[\/|\]$', ''
+        $trimmed = $Path -replace '^\[', '' -replace '\/\]$', ''
 
         # Split on period
         $parts = $trimmed -split '\.'
@@ -60,23 +70,21 @@ function Invoke-MappedTokenAdapter {
             return $opSignal.LogWarning("⚠️ Could not resolve adapter for key: $firstKey")
         }
 
-        $adapter = $adapterSignal
+        $adapter = $adapterSignal.GetResult($true)
 
-        while ($adapter -is [Signal])
-        {
-            $adapter = $adapter.GetResult()
-        }
+#        while ($adapter -is [Signal]) {
+#            $adapter = $adapter.GetResult()
+#        }
 
         if ($adapter -and ($adapter | Get-Member -Name "Invoke")) {
-            #$invokeSignal = $adapter.Invoke($trimmed, $Plan) | Select-Object -Last 1
+            $TokenPlan = [PSCustomObject]@{
+                Path = $trimmed
+            }
 
-            $clonePlan = $Plan | ConvertTo-Json | ConvertFrom-Json
-            $clonePlan.Path = $trimmed
-
-            $invokeSignal = $adapter.Invoke($null, "Get", $Signal, $clonePlan, $ItemSignal) | Select-Object -Last 1
+            $invokeSignal = $adapter.Invoke($null, "Get", $Signal, $TokenPlan, $ItemSignal) | Select-Object -Last 1
             $opSignal.MergeSignal($invokeSignal)
 
-            if ($invokeSignal.Success()) {
+            if ($invokeSignal.Success() -and $invokeSignal.HasResult()) {
                 $result = $invokeSignal.GetResult()
                 $opSignal.SetResult($result)
                 $opSignal.LogInformation("✅ MappedTokenAdapter successfully invoked path: $trimmed to $result")

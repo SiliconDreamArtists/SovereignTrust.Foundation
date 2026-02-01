@@ -18,7 +18,6 @@ function Invoke-RestCondenserCore {
 
     # Build headers based on if there's a body to send.
     $headers = @{
-        "Content-Type" = "application/json"        
     }
 
     if ($null -eq $Body -and $null -ne $JsonBody) {
@@ -27,24 +26,29 @@ function Invoke-RestCondenserCore {
 
     #$context = Resolve-PathFromDictionary -Dictionary $Config -Path "Context" | Select-Object -Last 1
     $retry = $true
-    $clearBearerToken = $false
     $attempts = 0
-    $pimChecks = 0
     $maxAttempts = 3
-    $maxPimChecks = 10
     $response = $null
     while ($retry) {
         $sw = [System.Diagnostics.Stopwatch]::new() 
         try {
-                $QuerystringSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Querystring" -SignalLevel "Information" | Select-Object -Last 1
-                $HeadersSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Headers" -Default $headers | Select-Object -Last 1
-                $UriSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Uri" | Select-Object -Last 1
-                $BearerTokenSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "BearerToken" | Select-Object -Last 1
+            $QuerystringSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Querystring" -Default "" -SignalLevel "Information" | Select-Object -Last 1
+            $HeadersSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Headers" -Default $headers | Select-Object -Last 1
+            $UriSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Uri" | Select-Object -Last 1
+            $BearerTokenSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.BearerToken" -Default $null | Select-Object -Last 1
+            $BodySignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Body" -Default $null | Select-Object -Last 1
+            $MethodSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Method" -Default $null | Select-Object -Last 1
 
-$Url = $UriSignal.GetResult()
-$Token = $BearerTokenSignal.GetResult()
-$Querystring = $QuerystringSignal.GetResult()
-$headers = $HeadersSignal.GetResult()
+            $Url = $UriSignal.GetResult()
+            $Token = $BearerTokenSignal.HasResult() ? $BearerTokenSignal.GetResult() : $null
+            $Querystring = $QuerystringSignal.HasResult() ? $QuerystringSignal.GetResult() : $null
+            $headers = $HeadersSignal.HasResult() ? $HeadersSignal.GetResult() : $null
+
+            $Body = $BodySignal.HasResult() ? $BodySignal.GetResult() : $null
+            $Method = $MethodSignal.HasResult() ? $MethodSignal.GetResult() : $null
+            if ($Body -and -not $Body -is [string]) {
+                $Body = $Body | ConvertTo-Json -Depth 100
+            }
 
             if ($Token) {
                 $headers["Authorization"] = "Bearer $Token"
@@ -56,12 +60,16 @@ $headers = $HeadersSignal.GetResult()
             }
 
             $sw.Start()
-            $Method = $Activity
             
             if ($null -ne $Body) {
                 if (-not $Method) {
                     $Method = "Post"
                 }
+
+#            if ($Token) {
+                $headers["Content-Type"] = "application/json; charset=utf-8"
+                $headers["Accept"] = "application/json"
+ #           }
 
                 $response = Invoke-RestMethod -Uri $FinalUrl -Method $Method -Headers $headers -Body $Body
             }
@@ -83,59 +91,27 @@ $headers = $HeadersSignal.GetResult()
                 Success             = $true
                 ElapsedMilliseconds = $sw.ElapsedMilliseconds
             }
-            <# Remove or fix so it doesn't corrupt the variables
-            $TelemetryLevel = "VerboseInformation"
-            if ($FinalUrl -like "*applicationinsights*")
-            {
-                $TelemetryLevel = "Silent"
-            }
-            Write-TelemetryWrapper -StepConfig $Config -Config @{
-                ResourceName         = $ResourceName
-                DurationMs           = $sw.ElapsedMilliseconds
-                RemoteDependencyName = "$($Method)-RestApi"
-                RemoteDependencyType = $Url
-                TelemetryLevel       = $TelemetryLevel
-                Success              = $true
-                TelemetryType      = "Dependency"
-                TelemetryDataType  = "RemoteDependencyData"
-            }
-#>
-            #return $response
-            $opSignal.SetResult($result)
 
+            $opSignal.SetResult($result)
             return $opSignal
-            $retry = $false
         }
         catch {
             if ($sw.IsRunning) { $sw.Stop() }
             $TelemetryLevel = "Critical"
             $attempts++
 
-$headersJson  = ConvertTo-Json -InputObject $headers
-
             $message = $_.ErrorDetails.Message ?? $_.Exception.Message
-            if (    $message -like "*not authorized to perform this operation using this permission*") {
-                if ($pimChecks -lt $maxPimChecks) {
-                    Write-Host "Check for Role Elevation in PIM, sleeping 30 seconds."
-                    $pimChecks++
-                    #Start-Sleep -Seconds 30
-                    $attempts--
-                    $TelemetryLevel = "VerboseCritical"
-                }
-            }
 
+            # Change this so that this sends the details back to the prior level in the $opSignal to alert it that a failure has happened and this is how you heal it. (ClearBearerToken)
             if ($message -like "*token is expired*" -or $message -like "*401 (Unauthorized)*" -or $message -like "*authenticate header*") {
-                $clearBearerToken = $true
-                $Url = $null
+                #clearBearerToken = $true
             }
             else {
                 #Start-Sleep -Milliseconds 10000
             }
 
-            #Clear URL because this call will happen in the same runspace as the current call which has different urls.
-            $Url = $null
-
-            & Write-TelemetryWrapper -StepConfig $Config -Config @{
+            $TelemetrySignal = [Signal]::Start("Exception") | Select-Object -Last 1
+            $TelemetryResult = @{
                 ResourceName        = $ResourceName
                 TelemetryLevel      = $TelemetryLevel
                 TelemetryMessage    = $message
@@ -144,8 +120,7 @@ $headersJson  = ConvertTo-Json -InputObject $headers
                 TelemetryType       = "Exception"
                 TelemetryDataType   = "ExceptionData"
                 TelemetryProperties = @{
-                    serviceName = "{(Context.Environment.ServiceName|sonar)}"
-                    RequestId   = "$($Config.RequestId)"
+                    serviceName = "[Memory.Signal.%.@.ServiceName|SDAFusion/]"
                     Method      = "$($Method)"
                     Url         = $FinalUrl
                     Attempt     = $attempts
@@ -153,8 +128,11 @@ $headersJson  = ConvertTo-Json -InputObject $headers
                 }
             }
 
-            $Url = $null
-            
+            $TelemetrySignal.SetJacketResult($TelemetryResult) | Select-Object -Last 1
+
+            # Call Adapter
+            Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "Emit" -Signal $Signal -Plan $TelemetryPlan -ItemSignal $TelemetrySignal 
+
             if ($attempts -gt $maxAttempts) {
                 $retry = $false
                 throw

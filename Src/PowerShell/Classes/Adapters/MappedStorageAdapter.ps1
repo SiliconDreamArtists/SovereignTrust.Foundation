@@ -76,7 +76,7 @@ class MappedStorageAdapter {
 
         $adapter = $adapterSignal.GetResult($true)
         
-                $virtualPathSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.VirtualPath" -SignalLevel "Information" | Select-Object -Last 1
+        $virtualPathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.VirtualPath" -SignalLevel "Information" -Default $null | Select-Object -Last 1
         if (-not $virtualPathSignal.HasResult()) {
             $ResourceSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Resource" | Select-Object -Last 1
             $ContainerSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Container" | Select-Object -Last 1
