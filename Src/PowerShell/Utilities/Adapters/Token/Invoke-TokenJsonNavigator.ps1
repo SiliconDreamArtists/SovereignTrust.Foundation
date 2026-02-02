@@ -62,7 +62,7 @@ function Invoke-TokenJsonNavigator {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-TokenNavigator: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-TokenNavigator: $_", $null, $_)
     }
 
     return $opSignal

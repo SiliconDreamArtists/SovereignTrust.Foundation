@@ -100,7 +100,7 @@ function Invoke-NetworkAdapter {
 
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-TokenStorage: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-TokenStorage: $_", $null, $_)
     }
 
     return $opSignal}

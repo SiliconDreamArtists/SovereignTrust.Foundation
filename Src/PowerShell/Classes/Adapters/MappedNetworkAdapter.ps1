@@ -26,7 +26,7 @@ class MappedNetworkAdapter {
             $opSignal.LogInformation("✅ MappedNetworkAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedNetworkAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedNetworkAdapter.Start(): $_", $null, $_)
         }
 
         return $opSignal

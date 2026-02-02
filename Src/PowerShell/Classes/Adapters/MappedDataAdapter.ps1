@@ -26,7 +26,7 @@ class MappedDataAdapter {
             $opSignal.LogInformation("✅ MappedDataAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedDataAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedDataAdapter.Start(): $_", $null, $_)
         }
 
         return $opSignal

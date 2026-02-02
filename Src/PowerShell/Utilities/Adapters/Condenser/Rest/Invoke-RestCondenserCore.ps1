@@ -36,8 +36,10 @@ function Invoke-RestCondenserCore {
             $HeadersSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Headers" -Default $headers | Select-Object -Last 1
             $UriSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Uri" | Select-Object -Last 1
             $BearerTokenSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.BearerToken" -Default $null | Select-Object -Last 1
-            $BodySignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Body" -Default $null | Select-Object -Last 1
             $MethodSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Method" -Default $null | Select-Object -Last 1
+
+            # TODO: This should be done in ItemSignal instead of Config.Body
+            $BodySignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Body" -Default $null | Select-Object -Last 1
 
             $Url = $UriSignal.GetResult()
             $Token = $BearerTokenSignal.HasResult() ? $BearerTokenSignal.GetResult() : $null
@@ -66,10 +68,11 @@ function Invoke-RestCondenserCore {
                     $Method = "Post"
                 }
 
-#            if ($Token) {
+                # TODO: Do Externally and pass in through config.
+            if ($Body) {
                 $headers["Content-Type"] = "application/json; charset=utf-8"
                 $headers["Accept"] = "application/json"
- #           }
+           }
 
                 $response = Invoke-RestMethod -Uri $FinalUrl -Method $Method -Headers $headers -Body $Body
             }

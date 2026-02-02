@@ -44,7 +44,7 @@ function Resolve-PathGraphTokenAdapter {
         $opSignal.LogInformation("✅ Token formula graph created and populated with condenser adapters.")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception while building condenser graph: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception while building condenser graph: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

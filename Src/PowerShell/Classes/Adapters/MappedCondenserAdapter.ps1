@@ -31,7 +31,7 @@ class MappedCondenserAdapter {
             $opSignal.LogInformation("✅ MappedCondenserAdapter initialized successfully.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception during adapter setup: $_")
+            $opSignal.LogCritical("💥 Exception during adapter setup: $_", $null, $_)
         }
 
         return $opSignal
@@ -78,7 +78,7 @@ class MappedCondenserAdapter {
         }
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)")
+        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
        $a = ""
         #$this.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal)
     }

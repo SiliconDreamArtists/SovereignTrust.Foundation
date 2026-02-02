@@ -99,7 +99,7 @@ function Resolve-ModulePathSignal {
         $opSignal.LogInformation("✅ Module signal prepared from WirePath: $WirePath")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Resolve-PathGraphForModule: $_")
+        $opSignal.LogCritical("🔥 Exception in Resolve-PathGraphForModule: $_", $null, $_)
     }
 
     return $opSignal

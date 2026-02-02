@@ -134,7 +134,7 @@ function Resolve-AdapterFromJacket {
         $opSignal.LogInformation("📦 Adapter '$($Jacket.Name)' resolved and returned successfully.")
     }
     catch {
-        $opSignal.LogCritical("🔥 Unhandled exception during adapter resolution: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception during adapter resolution: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

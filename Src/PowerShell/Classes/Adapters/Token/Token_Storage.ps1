@@ -51,7 +51,7 @@ class Token_Storage {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in Token_Storage.Invoke: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in Token_Storage.Invoke: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal

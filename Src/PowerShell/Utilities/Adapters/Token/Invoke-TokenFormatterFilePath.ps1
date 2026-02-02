@@ -45,7 +45,7 @@ function Invoke-TokenFormatterFilePath {
         $opSignal.LogInformation("✅ Formatted path: $formatted")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatterFilePath: $_")
+        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatterFilePath: $_", $null, $_)
     }
 
     return $opSignal

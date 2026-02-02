@@ -93,7 +93,7 @@ class MergeCondenser {
         return $opSignal
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Merge: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception during Merge: $($_.Exception.Message)", $null, $_)
         return $opSignal
     }
 }

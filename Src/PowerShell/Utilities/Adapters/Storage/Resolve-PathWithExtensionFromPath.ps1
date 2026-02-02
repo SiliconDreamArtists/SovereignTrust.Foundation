@@ -40,7 +40,7 @@ function Resolve-PathWithExtensionFromPath {
         $opSignal.SetResult($result)
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Resolve-PathWithExtensionFromPath: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception in Resolve-PathWithExtensionFromPath: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

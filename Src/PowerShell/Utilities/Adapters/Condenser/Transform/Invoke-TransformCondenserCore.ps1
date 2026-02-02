@@ -46,7 +46,7 @@ function Invoke-TransformCondenserCore {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatter: $_")
+        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatter: $_", $null, $_)
     }
 
     return $opSignal

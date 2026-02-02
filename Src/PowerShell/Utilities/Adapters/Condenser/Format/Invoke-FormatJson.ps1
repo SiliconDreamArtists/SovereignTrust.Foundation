@@ -32,7 +32,7 @@ function Invoke-FormatJson {
         $opSignal.LogInformation("✅ Json Created from Path")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatterJson: $_")
+        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatterJson: $_", $null, $_)
     }
 
     return $opSignal

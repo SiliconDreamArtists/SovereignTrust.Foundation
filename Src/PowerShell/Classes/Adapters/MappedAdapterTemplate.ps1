@@ -26,7 +26,7 @@ class MappedAdapterTemplate {
             $opSignal.LogInformation("✅ MappedAdapterTemplate initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception during MappedAdapterTemplate.Start(): $_")
+            $opSignal.LogCritical("💥 Exception during MappedAdapterTemplate.Start(): $_", $null, $_)
         }
 
         return $opSignal

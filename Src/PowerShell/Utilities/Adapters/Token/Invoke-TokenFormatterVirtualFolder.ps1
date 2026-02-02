@@ -16,7 +16,7 @@ function Invoke-TokenFormatterVirtualFolder {
         $opSignal.LogInformation("✅ Formatted path: $formatted")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatterVirtualFolder: $_")
+        $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatterVirtualFolder: $_", $null, $_)
     }
 
     return $opSignal

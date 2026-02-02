@@ -50,7 +50,7 @@ class Token_System {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in Token_System.Invoke: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in Token_System.Invoke: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal

@@ -61,7 +61,7 @@ class TransformCondenser {
                             {
                                 $null = Add-PathToDictionary -Dictionary $ContentPlan -Path "HydrationPlan" -Value "@"
                                 $content = $SourceContentResultSignal.GetResult()                             
-                                $nodes = @($SourceTransformNodesSignal.GetResult($true))
+                                $nodes = @($SourceTransformNodesSignal.GetResult().GetResult())
 
                                 foreach ($node in $nodes)
                                 {
@@ -176,24 +176,6 @@ class TransformCondenser {
             }
         }
 
-        return $opSignal
-    }
-
-
-    [Signal] InvokeByParameter([object]$Base, [object]$Overlay, [bool]$IgnoreInternalObjects = $true) {
-        $opSignal = [Signal]::Start("TransformCondenser.Invoke-ByParameter") | Select-Object -Last 1
-
-        $mergeSignal = Invoke-TransformCondenserUnifiedMemory -Base $Base -Overlay $Overlay | Select-Object -Last 1
-
-        if ($opSignal.MergeSignalAndVerifySuccess($mergeSignal)) {
-            $opSignal.SetResult($mergeSignal.GetResult())
-            $opSignal.LogInformation("✅ Merge completed successfully via unified invocation.")
-        }
-        else {
-            $opSignal.LogWarning("⚠️ Merge operation failed in Invoke-ByParameter.")
-        }
-
-        $this.Signal.MergeSignal($opSignal)
         return $opSignal
     }
 }

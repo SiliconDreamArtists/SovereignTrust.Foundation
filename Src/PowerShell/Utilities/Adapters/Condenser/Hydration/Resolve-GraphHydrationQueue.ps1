@@ -22,7 +22,7 @@ function Resolve-GraphHydrationQueue {
             $signal.LogWarning("⚠️ One or more hydration intents failed during processing.")
         }
     } catch {
-        $signal.LogCritical("🔥 Exception while processing hydration queue: $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception while processing hydration queue: $($_.Exception.Message)", $null, $_)
     }
     return $signal
 }

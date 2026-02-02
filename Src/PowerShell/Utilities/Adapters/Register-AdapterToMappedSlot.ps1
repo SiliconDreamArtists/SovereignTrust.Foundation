@@ -69,7 +69,7 @@ function Register-AdapterToMappedSlot {
         $opSignal.SetResult($mappedAdapterContainer)
     }
     catch {
-        $opSignal.LogCritical("🔥 Unhandled exception during MappedAdapter registration: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception during MappedAdapter registration: $($_.Exception.Message)", $null, $_)
     }
 
     # ░▒▓█ OPTIONAL: MERGE INTO CONDUCTOR CONTROL SIGNAL █▓▒░
@@ -134,7 +134,7 @@ function Register-AdapterToMappedSlot-NonGrid {
         $opSignal.SetResult($mappedAdapterContainer)
     }
     catch {
-        $opSignal.LogCritical("🔥 Unhandled exception during MappedAdapter registration: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception during MappedAdapter registration: $($_.Exception.Message)", $null, $_)
     }
 
     # ░▒▓█ OPTIONAL: MERGE INTO CONDUCTOR CONTROL SIGNAL █▓▒░

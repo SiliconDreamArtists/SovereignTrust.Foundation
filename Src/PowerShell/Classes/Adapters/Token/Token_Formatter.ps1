@@ -49,7 +49,7 @@ class Token_Formatter {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Token_Formatter.Invoke: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception in Token_Formatter.Invoke: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

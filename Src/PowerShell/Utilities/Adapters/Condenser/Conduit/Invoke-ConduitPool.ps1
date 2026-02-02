@@ -156,7 +156,7 @@ function Invoke-ConduitPool {
         }
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)")
+        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
     }
     finally {
         try { $pool.Close() } catch { }

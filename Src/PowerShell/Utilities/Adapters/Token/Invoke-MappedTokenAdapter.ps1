@@ -98,7 +98,7 @@ function Invoke-MappedTokenAdapter {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Invoke-MappedTokenAdapter: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception in Invoke-MappedTokenAdapter: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

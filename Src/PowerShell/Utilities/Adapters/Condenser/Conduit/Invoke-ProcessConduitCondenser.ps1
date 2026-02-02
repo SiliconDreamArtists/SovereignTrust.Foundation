@@ -146,7 +146,7 @@ function Remove-ReversePointersFromSignal {
         $opSignal.MarkSuccess()
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Remove-ReversePointersFromSignal: $_")
+        $opSignal.LogCritical("🔥 Exception during Remove-ReversePointersFromSignal: $_", $null, $_)
     }
 
     return $opSignal

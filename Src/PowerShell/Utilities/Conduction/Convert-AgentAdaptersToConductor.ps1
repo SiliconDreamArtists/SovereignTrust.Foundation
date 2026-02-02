@@ -83,7 +83,7 @@ function Convert-AgentAdaptersToConductor {
         $signal.SetResult($Conductor)
     }
     catch {
-        $signal.LogCritical("Unhandled critical failure in Convert-AgentAdaptersToConductor: $($_.Exception.Message)")
+        $signal.LogCritical("Exception: critical failure in Convert-AgentAdaptersToConductor: $($_.Exception.Message)", $null, $_)
     }
 
     return $signal

@@ -121,7 +121,7 @@ function Invoke-TransformInject {
             $opSignal.MarkSuccess()
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception during Convert-VirtualPathToXPath: $_")
+            $opSignal.LogCritical("🔥 Exception during Convert-VirtualPathToXPath: $_", $null, $_)
         }
 
         return $opSignal
@@ -181,7 +181,7 @@ function Invoke-TransformInject {
         $opSignal.LogInformation("✅ Transform from Inject Path Complete")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Invoke-TransformInject: $_")
+        $opSignal.LogCritical("🔥 Exception in Invoke-TransformInject: $_", $null, $_)
     }
 
     return $opSignal

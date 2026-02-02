@@ -31,7 +31,7 @@ class MappedConduitAdapter {
             $opSignal.LogInformation("✅ MappedConduitAdapter initialized successfully.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception during adapter setup: $_")
+            $opSignal.LogCritical("💥 Exception during adapter setup: $_", $null, $_)
         }
 
         return $opSignal

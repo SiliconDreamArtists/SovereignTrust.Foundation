@@ -62,7 +62,7 @@ function Invoke-TokenEnvironment {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-TokenEnvironment: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-TokenEnvironment: $_", $null, $_)
     }
 
     return $opSignal

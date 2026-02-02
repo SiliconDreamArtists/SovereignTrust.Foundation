@@ -45,7 +45,7 @@ function Register-MappedAdapter {
         $x = ""
     }
     catch {
-        $signal.LogCritical("🔥 Exception while registering $($Label): $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception while registering $($Label): $($_.Exception.Message)", $null, $_)
     }
 
     return $signal

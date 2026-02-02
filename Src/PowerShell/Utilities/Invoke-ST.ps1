@@ -252,7 +252,7 @@ function Invoke-ST {
             return $opSignal
         }
         catch {
-            $opSignal.LogCritical("❌ Exception in Resolve-ConductionContext: $($_.Exception.Message)")
+            $opSignal.LogCritical("❌ Exception in Resolve-ConductionContext: $($_.Exception.Message)", $null, $_)
             return $opSignal
         }
     }
@@ -321,14 +321,45 @@ function Invoke-ST {
     #  Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignal" -Signal $conductorJacketSignal -Plan $Environment -ItemSignal $TelemetrySignal 
 
     # Call Adapter
-    $testOpSignal = [Signal]::Start("TestOpSignal", $environmentSignal) | Select-Object -Last 1
-    $testOpEntriesHolderSignal = $testOpSignal.SetJacketResult("Test Container for Entries")
-    $testOpEntriesHolderSignal.LogInformation("Test Information Level");
-    $testOpEntriesHolderSignal.LogWarning("Test Warning Level");
-    $testOpEntriesHolderSignal.LogCritical("Test Critical Level");
+    $testOpSignal = [Signal]::Start("🎯 Start TestOpSignal", $environmentSignal) | Select-Object -Last 1
+    $testOpSignal.AddTag("Mine")
+    $testOpSignal.AddProperty("SignalId", ([guid]::NewGuid().ToString()))
+    #$testOpEntriesHolderSignal = $testOpSignal.SetJacketResult("Test Container for Entries")
+    $testOpSignal.LogInformation("✅ Test Information Level");
 
 
-    Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitEntries" -Signal $conductorJacketSignal -Plan $TelemetryPlan -ItemSignal $testOpSignal
+    $entry = $testOpSignal.Entries | Select-Object -Last 1
+    $entry.AddTag("Verbose")
+    $entry.AddTag("IngestionScheduled")
+    
+    $entry.AddProperty("SignalId", ([guid]::NewGuid().ToString()))
+    $testOpSignal.LogWarning("⚠️ Test Warning Level");
+    $entry = $testOpSignal.Entries | Select-Object -Last 1
+    $entry.AddTag("Verbose")
+
+    $testOpSignal.LogCritical("❌ Test Critical Level", @("Verbose"));
+
+    $signalMetaData = [PSCustomObject]@{
+        OperationId = [guid]::NewGuid().ToString()
+    }
+
+    $testOpSignal.SetMeta($signalMetaData)
+
+#    $testOpEntriesHolderSignal.AddTag("Mine2")
+#    $testOpEntriesHolderSignal.AddProperty("SignalId2", ([guid]::NewGuid().ToString()))
+
+    try
+    {
+        jid
+
+            }
+        catch {
+            $testOpSignal.LogCritical("❌ Exception in Invoke-ST: $($_.Exception.Message)", @("Urgent"), $_)
+#            $testOpEntriesHolderSignal.LogCritical("Exception in Invoke-ST: $($_.Exception.Message)", @("Urgent"), $_)
+        }
+
+   Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignalFull" -Signal $conductorJacketSignal -Plan $TelemetryPlan -ItemSignal $testOpSignal
+#    Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitEntries" -Signal $conductorJacketSignal -Plan $TelemetryPlan -ItemSignal $testOpSignal
     ###################### 
 
 

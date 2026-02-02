@@ -208,7 +208,7 @@ class TokenCondenser {
             return $opSignal
         }
         catch {
-            $opSignal.LogCritical("Unhandled exception in GetContext: $($_.Exception.Message)")
+            $opSignal.LogCritical("Exception in GetContext: $($_.Exception.Message)", $null, $_)
             return $opSignal
         }
     }

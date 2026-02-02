@@ -36,7 +36,7 @@ function Invoke-ConductionCondenser {
         return $opSignal
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)")
+        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
         return $opSignal
     }
 

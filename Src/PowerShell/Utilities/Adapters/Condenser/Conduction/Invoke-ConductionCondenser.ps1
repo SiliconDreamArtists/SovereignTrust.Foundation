@@ -51,7 +51,7 @@ function Invoke-ConductionCondenser {
                     $stepSignal.SetResult($result)
                     $stepSignal.LogInformation("✅ Command executed for phase: $phaseKey")
                 } catch {
-                    $stepSignal.LogCritical("🔥 Error in command phase '$phaseKey': $($_.Exception.Message)")
+                    $stepSignal.LogCritical("🔥 Exception in command phase '$phaseKey': $($_.Exception.Message)", $null, $_)
                 }
             }
             default {

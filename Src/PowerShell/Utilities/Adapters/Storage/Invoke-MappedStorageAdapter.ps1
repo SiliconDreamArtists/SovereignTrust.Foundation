@@ -51,7 +51,7 @@ function Invoke-MappedStorageAdapter {
 
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-TokenStorage: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-TokenStorage: $_", $null, $_)
     }
 
     return $opSignal}

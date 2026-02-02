@@ -26,7 +26,7 @@ class MappedConductionAdapter {
             $opSignal.LogInformation("✅ MappedConductionAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedConductionAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedConductionAdapter.Start(): $_", $null, $_)
         }
 
         return $opSignal

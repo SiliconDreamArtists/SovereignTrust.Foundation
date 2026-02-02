@@ -26,7 +26,7 @@ class MappedQueueAdapter {
             $opSignal.LogInformation("✅ MappedQueueAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedQueueAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedQueueAdapter.Start(): $_", $null, $_)
         }
 
         return $opSignal

@@ -37,7 +37,7 @@ function Get-JsonObjectFromFile {
         $signal.LogInformation("✅ JSON loaded successfully from $fullPath.")
     }
     catch {
-        $signal.LogCritical("🔥 Error parsing JSON file at $($fullPath): $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception: parsing JSON file at $($fullPath): $($_.Exception.Message)", $null, $_)
     }
 
     return $signal

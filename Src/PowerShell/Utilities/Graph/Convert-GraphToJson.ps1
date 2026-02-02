@@ -30,7 +30,7 @@ function Convert-GraphToJson {
         $signal.LogInformation("✅ Graph successfully serialized into JSON.")
     }
     catch {
-        $signal.LogCritical("🔥 Failed to convert Graph to JSON: $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception: Failed to convert Graph to JSON: $($_.Exception.Message)", $null, $_)
     }
 
     return $signal

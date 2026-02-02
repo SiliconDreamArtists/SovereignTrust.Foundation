@@ -35,7 +35,7 @@ function Convert-JsonToGraph {
         $signal.LogInformation("✅ Graph successfully reconstructed from JSON.")
     }
     catch {
-        $signal.LogCritical("🔥 Failed to convert JSON to Graph: $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception: Failed to convert JSON to Graph: $($_.Exception.Message)", $null, $_)
     }
 
     return $signal

@@ -82,8 +82,7 @@ function Invoke-MappedAdapter {
         $opSignal.SetResult($invokeSignal.GetResult())
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during storage adapter invoke: $($_.Exception.Message)")
-        Write-Host ("❌ Exception during storage adapter invoke: $($_.Exception.Message)")
+        $opSignal.LogCritical("❌ Exception during storage adapter invoke: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

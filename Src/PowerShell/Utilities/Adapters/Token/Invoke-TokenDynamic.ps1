@@ -44,7 +44,7 @@ function Invoke-TokenDynamic {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-TokenDynamic: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-TokenDynamic: $_", $null, $_)
     }
 
     return $opSignal

@@ -142,7 +142,7 @@ function Resolve-TokenForProperty {
                 $replacement = $lookupSignal.GetResult()
 
                 # When a replacement value is a json object, etc, we can't do a replacement and must assume the object is ready to be returned.
-                if ($replacement -is [PSCustomObject]) {
+                if ($replacement -is [PSCustomObject] -or ($replacement -is [array] -and (-not ($replacement -is [string])))) {
                     $propertyValue = $replacement
                 }
                 else {
@@ -191,7 +191,7 @@ function Resolve-TokenForProperty {
         $opSignal.MergeSignal((Add-PathToDictionary -Dictionary $Property -Path "Value" -Value $propertyValue | Select-Object -Last 1))
     }
     catch {
-        $opSignal.LogCritical("❌ Exception in global token resolution: $($_.Exception.Message)")
+        $opSignal.LogCritical("❌ Exception in global token resolution: $($_.Exception.Message)", $null, $_)
         # $null = $MergeCondenserFeedback.MissingWireGlobalFeedback.Invoke("", "", @())
     }
 

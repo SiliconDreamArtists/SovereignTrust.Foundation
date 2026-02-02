@@ -46,7 +46,7 @@ function Invoke-MergeJson {
         $opSignal.LogInformation("✅ Merge completed successfully (Array=$MergeArrayHandling, Nulls=$MergeNullValueHandling).")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Merge-JsonObjects: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception in Merge-JsonObjects: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal
@@ -245,7 +245,7 @@ function Invoke-TransformCondenserDictionaries {
         $signal.LogInformation("✅ Dictionary merge completed successfully (Recursive=$Recursive, ArrayHandling=$ArrayHandling, NullHandling=$NullHandling, CloneBase=$CloneBase).")
     }
     catch {
-        $signal.LogCritical("🔥 Exception in Invoke-TransformCondenserDictionaries: $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception in Invoke-TransformCondenserDictionaries: $($_.Exception.Message)", $null, $_)
     }
 
     return $signal
@@ -297,7 +297,7 @@ function Invoke-TransformCondenserUnifiedMemory {
         }
     }
     catch {
-        $signal.LogCritical("🔥 Exception during unified memory merge: $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception during unified memory merge: $($_.Exception.Message)", $null, $_)
     }
 
     return $signal

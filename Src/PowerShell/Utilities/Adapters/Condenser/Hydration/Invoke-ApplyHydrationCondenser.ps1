@@ -55,6 +55,8 @@ function Invoke-ApplyHydrationCondenser {
                         $opSignal.LogWarning("⚠️ Unknown hydration step: $step")
                         continue
                     }
+
+                    $opSignal.SetResult($stepSignal.GetResult())
                 }
             }
 
@@ -74,7 +76,7 @@ function Invoke-ApplyHydrationCondenser {
 
     # TODO: Review this pattern, because we don't pass through the stepSignal on each pass, the original $ItemSignal.Result is the thing that gets updated.
 #    $opSignal.SetResult($ItemSignal.GetJacket().GetResult())
-    $result = $ItemSignal.HasResult() ? $ItemSignal.GetResult() : $ItemSignal.GetJacket().GetResult()
-    $opSignal.SetResult($result)
+    #$result = $ItemSignal.HasResult() ? $ItemSignal.GetResult() : $ItemSignal.GetJacket().GetResult()
+    #$opSignal.SetResult($result)
     return $opSignal
 }

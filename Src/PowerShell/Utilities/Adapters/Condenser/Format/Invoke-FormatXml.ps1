@@ -51,7 +51,7 @@ function Invoke-FormatXml {
         $opSignal.LogInformation("✅ Xml Document Created from Path")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Invoke-FormatXml: $_")
+        $opSignal.LogCritical("🔥 Exception in Invoke-FormatXml: $_", $null, $_)
     }
 
     return $opSignal

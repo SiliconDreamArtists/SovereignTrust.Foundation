@@ -43,7 +43,7 @@ function Resolve-ModuleFromAdapter {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Resolve-ModuleFromAdapter: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception in Resolve-ModuleFromAdapter: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

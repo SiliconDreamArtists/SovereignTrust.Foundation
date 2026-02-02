@@ -26,7 +26,7 @@ class MappedQuantumAdapter {
             $opSignal.LogInformation("✅ MappedQuantumAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedQuantumAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedQuantumAdapter.Start(): $_", $null, $_)
         }
 
         return $opSignal

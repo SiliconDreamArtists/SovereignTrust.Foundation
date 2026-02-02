@@ -121,7 +121,7 @@ class RestCondenser {
         $opSignal.SetResult($headers)
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in RestCondenser.GetStorageVersionHeaders: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception in RestCondenser.GetStorageVersionHeaders: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal
@@ -222,7 +222,7 @@ class RestCondenser {
             $opSignal.LogInformation("✅ Bearer token resolved and cached for host: $hostAddress")
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in ResolveBearerToken: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in ResolveBearerToken: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal

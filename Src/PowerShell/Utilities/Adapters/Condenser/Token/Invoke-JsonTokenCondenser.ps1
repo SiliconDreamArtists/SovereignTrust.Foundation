@@ -56,6 +56,15 @@ function Invoke-JsonTokenCondenser {
         -ReturnRequiredValues:$ReturnRequiredValues `
         -RegexPattern $RegexPattern
 
+    # Invoke recursive token crawl across the result object
+    $_result = Invoke-TokenCrawl -MergeCondenserFeedback $MergeCondenserFeedback `
+        -Signal $Signal `
+        -ItemSignal $ItemSignal `
+        -Plan $Plan `
+        -CurrentObject $result `
+        -ReturnRequiredValues:$ReturnRequiredValues `
+        -RegexPattern $RegexPattern
+
     #-RegexPattern '^@TKN:'
     #"\[([^\[\]=]+?)/\]"
 

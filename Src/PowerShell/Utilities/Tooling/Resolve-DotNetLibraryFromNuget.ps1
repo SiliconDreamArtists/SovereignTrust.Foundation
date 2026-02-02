@@ -26,7 +26,7 @@ function Resolve-DotNetLibraryFromNuget {
                 Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile $nugetExe
                 $signal.LogInformation("⬇️ Downloaded nuget.exe")
             } catch {
-                $signal.LogCritical("❌ Failed to download nuget.exe: $($_.Exception.Message)")
+                $signal.LogCritical("❌ Failed to download nuget.exe: $($_.Exception.Message)", $null, $_)
                 return $signal
             }
         }
@@ -42,7 +42,7 @@ function Resolve-DotNetLibraryFromNuget {
 
                 $signal.LogInformation("📦 Installed $LibraryName@$LibraryVersion")
             } catch {
-                $signal.LogCritical("❌ Failed NuGet install: $($_.Exception.Message)")
+                $signal.LogCritical("❌ Failed NuGet install: $($_.Exception.Message)", $null, $_)
                 return $signal
             }
         }
@@ -63,7 +63,7 @@ function Resolve-DotNetLibraryFromNuget {
         }
     }
     catch {
-        $signal.LogCritical("🔥 Unexpected failure: $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Unexpected failure: $($_.Exception.Message)", $null, $_)
     }
 
     return $signal

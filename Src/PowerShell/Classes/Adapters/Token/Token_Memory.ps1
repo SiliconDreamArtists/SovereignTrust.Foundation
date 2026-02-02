@@ -50,7 +50,7 @@ class Token_Memory {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in Token_Memory.Invoke: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in Token_Memory.Invoke: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal

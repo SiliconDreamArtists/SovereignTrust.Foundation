@@ -49,7 +49,7 @@ class Token_Navigator {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Token_Navigator.Invoke: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception in Token_Navigator.Invoke: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

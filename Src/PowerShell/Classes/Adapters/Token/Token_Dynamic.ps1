@@ -27,7 +27,7 @@ class Token_Dynamic {
             $opSignal.LogInformation("Token_Dynamic constructed successfully with provided jacket.")
         }
         catch {
-            $opSignal.LogCritical("🔥 Error constructing Token_Dynamic: $_")
+            $opSignal.LogCritical("🔥 Error constructing Token_Dynamic: $_", $null, $_)
         }
 
         return $opSignal
@@ -49,7 +49,7 @@ class Token_Dynamic {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Token_Dynamic.Invoke: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception in Token_Dynamic.Invoke: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

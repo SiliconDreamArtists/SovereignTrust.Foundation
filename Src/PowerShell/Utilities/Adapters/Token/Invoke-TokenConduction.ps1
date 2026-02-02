@@ -59,7 +59,7 @@ function Invoke-TokenConduction {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-TokenConduction: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-TokenConduction: $_", $null, $_)
     }
 
     return $opSignal

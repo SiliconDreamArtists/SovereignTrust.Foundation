@@ -44,7 +44,7 @@ function Test-IsClassDefined {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Error while checking class: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception while checking class: $($_.Exception.Message)", $null, $_)
         #$opSignal.SetResult($false)
     }
 

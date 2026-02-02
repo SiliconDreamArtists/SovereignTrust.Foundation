@@ -63,7 +63,7 @@ function New-MappedCondenserAdapterFromGraph {
         $opSignal.LogInformation("🧪 MappedCondenserAdapter fully initialized and mounted.")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during MappedCondenserAdapter construction: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception during MappedCondenserAdapter construction: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

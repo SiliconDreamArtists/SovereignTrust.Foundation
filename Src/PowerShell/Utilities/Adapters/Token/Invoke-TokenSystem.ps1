@@ -62,7 +62,7 @@ function Invoke-TokenSystem {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-TokenSystem: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-TokenSystem: $_", $null, $_)
     }
 
     return $opSignal

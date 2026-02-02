@@ -203,7 +203,7 @@ function Invoke-TransformSelect {
             $opSignal.SetResult($result)
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception during Convert-VirtualPathToXPath: $_")
+            $opSignal.LogCritical("🔥 Exception during Convert-VirtualPathToXPath: $_", $null, $_)
         }
 
         return $opSignal
@@ -275,7 +275,7 @@ function Invoke-TransformSelect {
         $opSignal.LogInformation("✅ Transform from Select Path Complete")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Invoke-TransformSelect: $_")
+        $opSignal.LogCritical("🔥 Exception in Invoke-TransformSelect: $_", $null, $_)
     }
 
     return $opSignal

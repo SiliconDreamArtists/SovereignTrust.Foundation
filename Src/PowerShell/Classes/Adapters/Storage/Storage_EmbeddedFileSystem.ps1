@@ -54,7 +54,7 @@ class Storage_EmbeddedFileSystem {
                     $parsed = $jsonText | ConvertFrom-Json -Depth 20
                 }
                 catch {
-                    return $opSignal.LogCritical("❌ Failed to parse JSON content: $($_.Exception.Message)")
+                    return $opSignal.LogCritical("❌ Failed to parse JSON content: $($_.Exception.Message)", $null, $_)
                 }
 
                 $opSignal.SetResult($parsed)
@@ -65,7 +65,7 @@ class Storage_EmbeddedFileSystem {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObjectAsJson: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObjectAsJson: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal
@@ -88,7 +88,7 @@ class Storage_EmbeddedFileSystem {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObject: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObject: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal
@@ -129,7 +129,7 @@ class Storage_EmbeddedFileSystem {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObject: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObject: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal
@@ -152,7 +152,7 @@ class Storage_EmbeddedFileSystem {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObject: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in EmbeddedFileSystem.ReadObject: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal

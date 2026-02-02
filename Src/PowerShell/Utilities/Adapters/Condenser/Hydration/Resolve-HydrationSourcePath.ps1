@@ -25,7 +25,7 @@ function Resolve-HydrationSourcePath {
         $signal.SetResult($fullPath)
         $signal.LogInformation("📁 Resolved source path: $fullPath")
     } catch {
-        $signal.LogCritical("🔥 Unhandled exception in Resolve-HydrationSourcePath: $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception in Resolve-HydrationSourcePath: $($_.Exception.Message)", $null, $_)
     }
     return $signal
 }

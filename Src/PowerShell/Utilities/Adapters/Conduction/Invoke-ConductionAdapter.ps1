@@ -41,7 +41,7 @@ function Invoke-ConductionAdapter {
 
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-ConductionAdapter: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-ConductionAdapter: $_", $null, $_)
     }
 
     return $opSignal}

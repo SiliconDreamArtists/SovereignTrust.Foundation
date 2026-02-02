@@ -69,7 +69,7 @@ function Invoke-CondenserAdapter {
         return $opSignal
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during Invoke-CondenserAdapter: $($_.Exception.Message)")
+        $opSignal.LogCritical("❌ Exception during Invoke-CondenserAdapter: $($_.Exception.Message)", $null, $_)
         return $opSignal
     }
 }

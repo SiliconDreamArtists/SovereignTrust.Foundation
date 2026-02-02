@@ -59,7 +59,7 @@ function Invoke-TokenGenerator {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-TokenGenerator: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-TokenGenerator: $_", $null, $_)
     }
 
     return $opSignal

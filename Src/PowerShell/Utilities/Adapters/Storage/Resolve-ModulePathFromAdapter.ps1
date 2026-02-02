@@ -37,7 +37,7 @@ function Resolve-ModulePathFromAdapter {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception while resolving module path: $_")
+        $opSignal.LogCritical("🔥 Exception while resolving module path: $_", $null, $_)
     }
 
     return $opSignal

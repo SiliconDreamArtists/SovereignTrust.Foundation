@@ -58,7 +58,7 @@ function Resolve-Conductor {
         $opSignal.LogInformation("🎯 BondingConductor started and ConductionPlan graph resolved.")
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Resolve-Conductor: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception during Resolve-Conductor: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

@@ -29,7 +29,7 @@ class MappedTelemetryAdapter {
             $opSignal.LogInformation("✅ MappedTelemetryAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedTelemetryAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedTelemetryAdapter.Start(): $_", $null, $_)
         }
 
         return $opSignal
@@ -74,7 +74,7 @@ class MappedTelemetryAdapter {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in MappedTelemetryAdapter.Invoke: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in MappedTelemetryAdapter.Invoke: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal

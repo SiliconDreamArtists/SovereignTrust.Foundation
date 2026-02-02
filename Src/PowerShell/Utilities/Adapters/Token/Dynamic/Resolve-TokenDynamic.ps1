@@ -9,10 +9,6 @@ function Resolve-TokenDynamic {
         [Parameter(Mandatory = $false)]
         [psobject]$Dictionary,
 
-        # If true and expr starts with ':' return a forward-preserve token
-        [Parameter(Mandatory = $false)]
-        [bool]$RetainForwardDynamics = $false,
-
         # Dynamic expression, must start with ::   (e.g. ::utcNow(+1h))
         [Parameter(Mandatory)]
         [string]$Path
@@ -87,13 +83,6 @@ function Resolve-TokenDynamic {
         # 2) Extract expression after ::
         $expr = ($Path -replace '^\s*::', '').Trim()
 
-        # 3) Forward/passthrough rule (optional)
-        if ($RetainForwardDynamics -and $expr.StartsWith(':', [StringComparison]::Ordinal)) {
-            $opSignal.SetResult("{(:$expr)}")
-            $opSignal.MarkSuccess()
-            return $opSignal
-        }
-
         # 4) Parse dynamic function: name(args...)
         if ($expr -notmatch '^(?<fn>[A-Za-z_]\w*)\s*(?:\((?<rawArgs>.*)\))?$') {
             throw "Resolve-DynamicPath: invalid dynamic expression '$Path'"
@@ -141,7 +130,7 @@ function Resolve-TokenDynamic {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Resolve-DynamicPath ($Path): $_")
+        $opSignal.LogCritical("🔥 Exception during Resolve-DynamicPath ($Path): $_", $null, $_)
     }
 
     return $opSignal

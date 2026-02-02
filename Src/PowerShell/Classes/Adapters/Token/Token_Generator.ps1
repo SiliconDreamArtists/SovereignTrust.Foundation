@@ -50,7 +50,7 @@ class Token_Generator {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in Token_Generator.Invoke: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in Token_Generator.Invoke: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal

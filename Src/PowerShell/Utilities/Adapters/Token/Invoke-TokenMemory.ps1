@@ -125,13 +125,18 @@ function Invoke-TokenMemory {
         
 
         if ($null -ne $dictionary) {
-            $valueSignal = Resolve-PathFromDictionary -Dictionary $dictionary -Path $path -Default $default -SignalLevel "Warning" | Select-Object -Last 1
-            if ($opSignal.MergeSignalAndVerifyFailure($valueSignal)) {
-                return $opSignal
+            if (-not $path) {
+                $opSignal.SetResult($dictionary)
             }
+            else {
+                $valueSignal = Resolve-PathFromDictionary -Dictionary $dictionary -Path $path -Default $default -SignalLevel "Warning" | Select-Object -Last 1
+                if ($opSignal.MergeSignalAndVerifyFailure($valueSignal)) {
+                    return $opSignal
+                }
 
-            if ($valueSignal.HasResult()) {
-                $opSignal.SetResult($valueSignal.GetResult())
+                if ($valueSignal.HasResult()) {
+                    $opSignal.SetResult($valueSignal.GetResult())
+                }
             }
         }
         else {
@@ -139,7 +144,7 @@ function Invoke-TokenMemory {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception during Invoke-TokenMemory: $_")
+        $opSignal.LogCritical("🔥 Exception during Invoke-TokenMemory: $_", $null, $_)
     }
 
     return $opSignal

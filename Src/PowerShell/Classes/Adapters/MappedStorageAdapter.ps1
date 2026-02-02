@@ -27,7 +27,7 @@ class MappedStorageAdapter {
             $opSignal.LogInformation("✅ MappedStorageAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedStorageAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedStorageAdapter.Start(): $_", $null, $_)
         }
 
         return $opSignal

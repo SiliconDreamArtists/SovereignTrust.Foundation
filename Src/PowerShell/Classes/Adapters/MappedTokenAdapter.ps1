@@ -29,7 +29,7 @@ class MappedTokenAdapter {
             $opSignal.LogInformation("✅ MappedTokenAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedTokenAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedTokenAdapter.Start(): $_", $null, $_)
         }
 
         return $opSignal
@@ -75,7 +75,7 @@ class MappedTokenAdapter {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in MappedTokenAdapter.Invoke: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in MappedTokenAdapter.Invoke: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal
@@ -100,7 +100,7 @@ class MappedTokenAdapter {
             }
         }
         catch {
-            $opSignal.LogCritical("🔥 Exception in MappedTokenAdapter.Invoke: $($_.Exception.Message)")
+            $opSignal.LogCritical("🔥 Exception in MappedTokenAdapter.Invoke: $($_.Exception.Message)", $null, $_)
         }
 
         return $opSignal

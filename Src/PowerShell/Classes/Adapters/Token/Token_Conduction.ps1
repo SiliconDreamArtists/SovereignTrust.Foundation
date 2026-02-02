@@ -27,7 +27,7 @@ class Token_Conduction {
             $opSignal.LogInformation("EmbeddedFileSystem constructed successfully with provided jacket.")
         }
         catch {
-            $opSignal.LogCritical("Error constructing EmbeddedFileSystem: $_")
+            $opSignal.LogCritical("Error constructing EmbeddedFileSystem: $_", $null, $_)
         }
 
         return $opSignal
@@ -49,7 +49,7 @@ class Token_Conduction {
         }
     }
     catch {
-        $opSignal.LogCritical("🔥 Exception in Token_Conduction.Invoke: $($_.Exception.Message)")
+        $opSignal.LogCritical("🔥 Exception in Token_Conduction.Invoke: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

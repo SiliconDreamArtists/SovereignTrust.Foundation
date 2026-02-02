@@ -68,15 +68,13 @@ class MapCondenser {
 
                     if ($result -is [string]) {
                         $messageObject = $condenserResult.GetResult()
-
                         $opSignal.SetResult($messageObject.Message);
                     }
                     else {
                         $opSignal.SetResult($condenserResult.GetResult());
                     }
 
-                    # Need to overwrite the $ItemSignal result so the old one isn't used by the caller.
-                    $ItemSignal.SetResult($opSignal.GetResult())
+                    $null = Add-PathToDictionary -Dictionary $ItemSignal -Path $sourceContentPathSignal.GetResult() -Value $opSignal.GetResult() | Select-Object -Last 1
                     break
                 }
 
