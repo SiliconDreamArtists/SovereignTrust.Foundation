@@ -13,7 +13,7 @@ function Get-JsonObjectFromFile {
         $fullPath = Join-Path $RootFolder $VirtualPath
 
         if (-not (Test-Path $fullPath)) {
-            $signal.LogCritical("❌ JSON file not found: $fullPath")
+            $signal.LogCritical("JSON file not found: $fullPath")
             return $signal
         }
 
@@ -29,7 +29,7 @@ function Get-JsonObjectFromFile {
         $parsedJson = $rawJson | ConvertFrom-Json -Depth 20 -ErrorAction Stop
 
         if ($RequireArray -and ($parsedJson -isnot [System.Collections.IEnumerable] -or $parsedJson -is [string])) {
-            $signal.LogCritical("❌ Invalid JSON: Root must be an array of objects.")
+            $signal.LogCritical("Invalid JSON: Root must be an array of objects.")
             return $signal
         }
 

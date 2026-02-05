@@ -23,7 +23,7 @@ function Resolve-PathGraph {
     }
 
     if (-not $strategyTable.ContainsKey($StrategyType)) {
-        $signal.LogCritical("❌ Unknown strategy type: $StrategyType")
+        $signal.LogCritical("Unknown strategy type: $StrategyType")
         return $signal
     }
 
@@ -41,7 +41,7 @@ function Resolve-PathGraph {
 
         $signal.LogInformation("✅ Resolved graph using strategy '$StrategyType'.")
     } else {
-        $signal.LogCritical("❌ Failed to resolve graph using strategy '$StrategyType'.")
+        $signal.LogCritical("Failed to resolve graph using strategy '$StrategyType'.")
     }
 
     return $signal

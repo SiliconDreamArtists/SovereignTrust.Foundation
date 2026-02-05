@@ -28,13 +28,13 @@ function Resolve-Conductor {
         <#
         $adapterSignal = Convert-AgentAdaptersToConductor -Conductor $bondingConductor | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
-            $opSignal.LogCritical("❌ Adapter conversion failed during bonding process.")
+            $opSignal.LogCritical("Adapter conversion failed during bonding process.")
             return $opSignal
         }
 
         $resolveSignal = Resolve-ConductorAdapters -Conductor $bondingConductor | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($resolveSignal)) {
-            $opSignal.LogCritical("❌ Conductor adapter resolution failed.")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       n 
+            $opSignal.LogCritical("Conductor adapter resolution failed.")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       n 
             
             return $opSignal
         }
@@ -44,7 +44,7 @@ function Resolve-Conductor {
         # ░▒▓█ RESOLVE CONDUCTION PLAN GRAPH █▓▒░
         $vpSignal = Resolve-PathFromDictionary -Dictionary $bondingConductor -Path "$.%.VirtualPath" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($vpSignal)) {
-            $opSignal.LogCritical("❌ Missing VirtualPath in BondingConductor.")
+            $opSignal.LogCritical("Missing VirtualPath in BondingConductor.")
             return $opSignal
         }
 

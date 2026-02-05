@@ -126,14 +126,14 @@ function Invoke-ConvertToUnifiedHashtable {
         if ($converted -isnot [System.Collections.IDictionary]) {
             # Ensure the top-level result is dictionary-ish (your merge expects it)
             $converted = [ordered]@{ Value = $converted }
-            $signal.LogWarning("⚠️ Input normalized to scalar; wrapped in ordered dictionary under key 'Value'.")
+            $signal.LogWarning("Input normalized to scalar; wrapped in ordered dictionary under key 'Value'.")
         }
 
         $signal.SetResult($converted)
         $signal.LogInformation("✅ Object normalized to unified ordered dictionary (recursive).")
     }
     catch {
-        $signal.LogCritical("❌ Failed to convert object to unified ordered dictionary: $($_.Exception.Message)")
+        $signal.LogCritical("Failed to convert object to unified ordered dictionary: $($_.Exception.Message)")
     }
 
     return $signal
@@ -273,7 +273,7 @@ function Invoke-TransformCondenserUnifiedMemory {
         $overlayHash = Invoke-ConvertToUnifiedHashtable -InputObject $Overlay | Select-Object -Last 1
 
         if ($signal.MergeSignalAndVerifyFailure(@($baseHash, $overlayHash))) {
-            $signal.LogCritical("❌ Failed to normalize base/overlay into unified memory dictionaries.")
+            $signal.LogCritical("Failed to normalize base/overlay into unified memory dictionaries.")
             return $signal
         }
 
@@ -293,7 +293,7 @@ function Invoke-TransformCondenserUnifiedMemory {
             $signal.LogInformation("✅ Merge completed successfully using unified memory.")
         }
         else {
-            $signal.LogWarning("⚠️ Merge failed in unified memory flow.")
+            $signal.LogWarning("Merge failed in unified memory flow.")
         }
     }
     catch {

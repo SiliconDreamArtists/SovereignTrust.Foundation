@@ -104,7 +104,7 @@ class MapCondenser {
                 }
 
                 default {
-                    $opSignal.LogWarning("⚠️ Unsupported Activity: $Activity")
+                    $opSignal.LogWarning("Unsupported Activity: $Activity")
                     break
                 }
             }

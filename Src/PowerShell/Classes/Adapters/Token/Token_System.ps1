@@ -46,7 +46,7 @@ class Token_System {
                 $opSignal.LogInformation("✅ Token System path '$Path' resolved successfully.")
             }
             else {
-                $opSignal.LogWarning("⚠️ Token System path '$Path' failed to resolve.")
+                $opSignal.LogWarning("Token System path '$Path' failed to resolve.")
             }
         }
         catch {

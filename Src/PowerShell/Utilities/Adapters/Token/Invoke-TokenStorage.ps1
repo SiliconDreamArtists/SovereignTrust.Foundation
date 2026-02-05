@@ -16,7 +16,7 @@ function Invoke-TokenStorage {
 
     try {
         if ([string]::IsNullOrWhiteSpace($Path)) {
-            $opSignal.LogWarning("⚠️ Path is empty. Nothing to resolve.")
+            $opSignal.LogWarning("Path is empty. Nothing to resolve.")
             return $opSignal
         }
 
@@ -41,7 +41,7 @@ function Invoke-TokenStorage {
         $mappedAdapterPath = "$.*.#.Adapters.*.#.Mapped$key.@"
         $mappedAdapterSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path $mappedAdapterPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($mappedAdapterSignal)) {
-            $opSignal.LogCritical("⚠️ MappedAdapter path '$mappedAdapterPath' not found in Conductor.")
+            $opSignal.LogCritical("MappedAdapter path '$mappedAdapterPath' not found in Conductor.")
             return $opSignal
         }
 
@@ -49,7 +49,7 @@ function Invoke-TokenStorage {
 
         $resultSignal = $mappedAdapter.Invoke($slot, $PartialPath, $Plan) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-            $opSignal.LogCritical("⚠️ MappedAdapter failed to resolve key '$key' with scope '$scope'.")
+            $opSignal.LogCritical("MappedAdapter failed to resolve key '$key' with scope '$scope'.")
             return $opSignal
         }
         else {
@@ -60,7 +60,7 @@ function Invoke-TokenStorage {
             $opSignal.SetResult($value)
         }
         else {
-            $opSignal.LogWarning("⚠️ Storage variable not found for key: $Path")
+            $opSignal.LogWarning("Storage variable not found for key: $Path")
         }
     }
     catch {

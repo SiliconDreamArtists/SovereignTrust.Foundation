@@ -117,7 +117,7 @@ function Invoke-TransformSelect {
 
         try {
             if ([string]::IsNullOrWhiteSpace($VirtualPath)) {
-                $opSignal.LogWarning("⚠️ VirtualPath is empty. Nothing to convert.")
+                $opSignal.LogWarning("VirtualPath is empty. Nothing to convert.")
                 return $opSignal
             }
 

@@ -24,7 +24,7 @@ function Invoke-MappedAdapterCore {
         $adapterPath = "*.#.$($slotPathPart).@"
         $adapterSignal = Resolve-PathFromDictionary -Dictionary $MappedAdapterSignal -Path $adapterPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
-            $opSignal.LogCritical("⚠️ Adapter path '$adapterPath' not found in Conductor.")
+            $opSignal.LogCritical("Adapter path '$adapterPath' not found in Conductor.")
             return $opSignal
         }
         
@@ -32,7 +32,7 @@ function Invoke-MappedAdapterCore {
         
         $adapterIvokeSignal = $adapter.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterIvokeSignal)) {
-            $opSignal.LogCritical("⚠️ Adapter failed to resolve path '$Path' with slot '$Slot'.")
+            $opSignal.LogCritical("Adapter failed to resolve path '$Path' with slot '$Slot'.")
             return $opSignal
         }
         else {

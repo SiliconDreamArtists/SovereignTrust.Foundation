@@ -29,7 +29,7 @@ function Invoke-HydrationCondenser {
         # ░▒▓█ Run the Conduction Condenser using the Config bits  █▓▒░
         $consdenserIvokeSignal = $consdenser.Invoke($null, $null, $Signal, $Plan , $ItemSignal) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($consdenserIvokeSignal)) {
-            $opSignal.LogCritical("⚠️ Fab consdenser failed.")
+            $opSignal.LogCritical("Fab consdenser failed.")
             return $opSignal
         }
         else {
@@ -37,7 +37,7 @@ function Invoke-HydrationCondenser {
         }
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
+        $opSignal.LogCritical("Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

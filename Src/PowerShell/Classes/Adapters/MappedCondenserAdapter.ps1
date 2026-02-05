@@ -13,7 +13,7 @@ class MappedCondenserAdapter {
         $opSignal = [Signal]::Start("MappedCondenser.Start") | Select-Object -Last 1
 
         if (-not $conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to Start().")
+            $opSignal.LogCritical("Null Conductor passed to Start().")
             return $opSignal
         }
 
@@ -49,7 +49,7 @@ class MappedCondenserAdapter {
         if ($registerSignal.Success()) {
             $opSignal.LogInformation("✅ Registered Condenser adapter under key: '$Key'")
         } else {
-            $opSignal.LogWarning("⚠️ Failed to register adapter at key: '$Key'")
+            $opSignal.LogWarning("Failed to register adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)
@@ -64,13 +64,14 @@ class MappedCondenserAdapter {
         
         $consdenserPath = "*.#.$($Slot)Condenser"
         $consdenserSignal = Resolve-PathFromDictionary -Dictionary $this.Signal -Path $consdenserPath | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($consdenserSignal)) { return $opSignal }
 
         $consdenser = $consdenserSignal.GetResult($true)
         
         # ░▒▓█ Run the Conduction Condenser using the Config bits  █▓▒░
         $consdenserIvokeSignal = $consdenser.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($consdenserIvokeSignal)) {
-            $opSignal.LogCritical("⚠️ Consdenser failed.")
+            $opSignal.LogCritical("Consdenser failed.")
             return $opSignal
         }
         elseif ($consdenserIvokeSignal.HasResult()) {
@@ -78,9 +79,7 @@ class MappedCondenserAdapter {
         }
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
-       $a = ""
-        #$this.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal)
+        $opSignal.LogCritical("Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal
@@ -103,7 +102,7 @@ class MappedCondenserAdapter {
                     $opSignal.LogInformation("🎯 Adapter '$key' invoked successfully.")
                     break
                 } else {
-                    $opSignal.LogWarning("⚠️ Adapter '$key' failed to produce a result.")
+                    $opSignal.LogWarning("Adapter '$key' failed to produce a result.")
                 }
             } else {
                 $opSignal.LogVerbose("⏭️ Adapter '$key' does not support Invoke().")
@@ -111,7 +110,7 @@ class MappedCondenserAdapter {
         }
 
         if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No Condenser adapter produced a valid result.")
+            $opSignal.LogCritical("No Condenser adapter produced a valid result.")
         }
 
         $this.Signal.MergeSignal($opSignal)

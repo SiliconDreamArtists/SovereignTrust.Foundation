@@ -26,7 +26,7 @@ function Invoke-TokenMemory {
         $Key = $Plan.Path
 
         if ([string]::IsNullOrWhiteSpace($Key)) {
-            $opSignal.LogWarning("⚠️ Path is empty. Nothing to resolve.")
+            $opSignal.LogWarning("Path is empty. Nothing to resolve.")
             return $opSignal
         }
 
@@ -140,7 +140,7 @@ function Invoke-TokenMemory {
             }
         }
         else {
-            $opSignal.LogWarning("⚠️ Memory variable not found for key: $Key")
+            $opSignal.LogWarning("Memory variable not found for key: $Key")
         }
     }
     catch {

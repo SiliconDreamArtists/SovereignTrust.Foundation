@@ -40,7 +40,7 @@ class FabCondenser {
         $addSignal = Register-AdapterToMappedSlot -ConductorJacketSignal $Signal.GetJacket() -Adapter $ResolveAdapterSignal | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure($addSignal)) {
-            $opSignal.LogCritical("❌ Failed to add adapter to appropriate Mapped Adapter.")
+            $opSignal.LogCritical("Failed to add adapter to appropriate Mapped Adapter.")
             return $opSignal
         }
 

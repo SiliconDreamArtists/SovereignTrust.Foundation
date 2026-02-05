@@ -31,7 +31,7 @@ class FormatCondenser {
                 "Json" {
                     $contentSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $DefaultPath | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($contentSignal)) {
-                        $opSignal.LogCritical("❌ Failed to resolve content at path: $DefaultPath")
+                        $opSignal.LogCritical("Failed to resolve content at path: $DefaultPath")
                         return $opSignal
                     }
 
@@ -40,7 +40,7 @@ class FormatCondenser {
                     # Invoke-FormatJson should receive the JSON text (or object) directly, not via -Path unless it truly expects a file path
                     $resultSignal = Invoke-FormatJson -Path $content -Plan $Plan | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-                        $opSignal.LogCritical("❌ JSON formatting failed.")
+                        $opSignal.LogCritical("JSON formatting failed.")
                         return $opSignal
                     }
 
@@ -51,7 +51,7 @@ class FormatCondenser {
                 "JsonArray" {
                     $contentSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $DefaultPath | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($contentSignal)) {
-                        $opSignal.LogCritical("❌ Failed to resolve content at path: $DefaultPath")
+                        $opSignal.LogCritical("Failed to resolve content at path: $DefaultPath")
                         return $opSignal
                     }
 
@@ -60,7 +60,7 @@ class FormatCondenser {
                     # Invoke-FormatJson should receive the JSON text (or object) directly, not via -Path unless it truly expects a file path
                     $resultSignal = Invoke-FormatJson -Path $content -Plan $Plan | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-                        $opSignal.LogCritical("❌ JSON formatting failed.")
+                        $opSignal.LogCritical("JSON formatting failed.")
                         return $opSignal
                     }
 
@@ -71,7 +71,7 @@ class FormatCondenser {
                 "Xml" {
                     $contentSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $DefaultPath | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($contentSignal)) {
-                        $opSignal.LogCritical("❌ Failed to resolve content at path: $DefaultPath")
+                        $opSignal.LogCritical("Failed to resolve content at path: $DefaultPath")
                         return $opSignal
                     }
 
@@ -84,7 +84,7 @@ class FormatCondenser {
                         # Invoke-FormatXml should receive the Xml text (or object) directly, not via -Path unless it truly expects a file path
                         $resultSignal = Invoke-FormatXml -Path $content | Select-Object -Last 1
                         if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-                            $opSignal.LogCritical("❌ JSON formatting failed.")
+                            $opSignal.LogCritical("JSON formatting failed.")
                             return $opSignal
                         }
                     }
@@ -94,7 +94,7 @@ class FormatCondenser {
                 }
 
                 default {
-                    $opSignal.LogWarning("⚠️ Unsupported Activity: $Activity")
+                    $opSignal.LogWarning("Unsupported Activity: $Activity")
                     break
                 }
             }
@@ -117,7 +117,7 @@ class FormatCondenser {
         # 🔍 Step 1: Hot Path Resolution
         $hotPathSignal = Invoke-HotPathResolution -Path $Path -Signal $this.Signal -HotPathMapPath $HotPathMapPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($hotPathSignal)) {
-            $opSignal.LogCritical("❌ Hot path resolution failed.")
+            $opSignal.LogCritical("Hot path resolution failed.")
             return $opSignal
         }
 
@@ -126,7 +126,7 @@ class FormatCondenser {
         # 💧 Step 2: Path Hydration
         $hydratedSignal = Invoke-PathHydration -Path $resolvedHotPath -Signal $this.Signal -SignalFirst:$true | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($hydratedSignal)) {
-            $opSignal.LogCritical("❌ Path hydration failed.")
+            $opSignal.LogCritical("Path hydration failed.")
             return $opSignal
         }
 

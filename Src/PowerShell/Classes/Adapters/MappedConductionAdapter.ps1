@@ -9,7 +9,7 @@ class MappedConductionAdapter {
         $opSignal = [Signal]::Start("MappedConductionAdapter.Start") | Select-Object -Last 1
 
         if (-not $Conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to MappedConductionAdapter.Start()")
+            $opSignal.LogCritical("Null Conductor passed to MappedConductionAdapter.Start()")
             return $opSignal
         }
 
@@ -50,7 +50,7 @@ class MappedConductionAdapter {
         if ($registerSignal.Success()) {
             $opSignal.LogInformation("✅ Registered adapter at key: '$Key'")
         } else {
-            $opSignal.LogWarning("⚠️ Failed to register adapter at key: '$Key'")
+            $opSignal.LogWarning("Failed to register adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)

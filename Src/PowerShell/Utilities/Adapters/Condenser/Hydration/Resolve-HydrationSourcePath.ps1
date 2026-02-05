@@ -9,17 +9,17 @@ function Resolve-HydrationSourcePath {
     try {
         $relativePath = $Intent.RelativePath
         if (-not $relativePath) {
-            return $signal.LogCritical("❌ Missing RelativePath in HydrationIntent.")
+            return $signal.LogCritical("Missing RelativePath in HydrationIntent.")
         }
         $mappedPath = "Mapped${Kind}Adapters.$Slot"
         $adapterSignal = Resolve-PathFromDictionary -Dictionary $Graph -Path $mappedPath | Select-Object -Last 1
         if ($signal.MergeSignalAndVerifyFailure($adapterSignal)) {
-            return $signal.LogCritical("❌ Mapped adapter '$mappedPath' not found.")
+            return $signal.LogCritical("Mapped adapter '$mappedPath' not found.")
         }
         $adapter = $adapterSignal.GetResult()
         $base = $adapter.BasePath ?? $adapter.Address ?? $adapter.Path
         if (-not $base) {
-            return $signal.LogCritical("❌ No usable base path found in adapter.")
+            return $signal.LogCritical("No usable base path found in adapter.")
         }
         $fullPath = Join-Path $base $relativePath
         $signal.SetResult($fullPath)

@@ -9,7 +9,7 @@ class MappedNetworkAdapter {
         $opSignal = [Signal]::Start("MappedNetworkAdapter.Start") | Select-Object -Last 1
 
         if (-not $Conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to MappedNetworkAdapter.Start()")
+            $opSignal.LogCritical("Null Conductor passed to MappedNetworkAdapter.Start()")
             return $opSignal
         }
 
@@ -50,7 +50,7 @@ class MappedNetworkAdapter {
         if ($registerSignal.Success()) {
             $opSignal.LogInformation("✅ Registered adapter at key: '$Key'")
         } else {
-            $opSignal.LogWarning("⚠️ Failed to register adapter at key: '$Key'")
+            $opSignal.LogWarning("Failed to register adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)

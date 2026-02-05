@@ -25,36 +25,36 @@ function Register-AdapterToMappedSlot {
         # ░▒▓█ RESOLVE KIND FROM JACKET █▓▒░
         $kindSignal = Resolve-PathFromDictionary -Dictionary $resolvedAdapter -Path "$.%.@.Kind" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($kindSignal)) {
-            return $opSignal.LogCritical("❌ Adapter does not contain a resolvable '$.%.@.Kind' path.")
+            return $opSignal.LogCritical("Adapter does not contain a resolvable '$.%.@.Kind' path.")
         }
 
         $kind = $kindSignal.GetResult()
         if ([string]::IsNullOrWhiteSpace($kind)) {
-            return $opSignal.LogCritical("❌ Adapter $.%.@.Kind is empty or null.")
+            return $opSignal.LogCritical("Adapter $.%.@.Kind is empty or null.")
         }
 
         # ░▒▓█ RESOLVE KIND FROM JACKET █▓▒░
         $slotSignal = Resolve-PathFromDictionary -Dictionary $resolvedAdapter -Path "$.%.@.Slot" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($slotSignal)) {
-            return $opSignal.LogCritical("❌ Adapter does not contain a resolvable '$.%.@.Slot' path.")
+            return $opSignal.LogCritical("Adapter does not contain a resolvable '$.%.@.Slot' path.")
         }
 
         $slot = $slotSignal.GetResult()
         if ([string]::IsNullOrWhiteSpace($slot)) {
-            return $opSignal.LogCritical("❌ Adapter $.%.@.Slot is empty or null.")
+            return $opSignal.LogCritical("Adapter $.%.@.Slot is empty or null.")
         }
 
         # ░▒▓█ RESOLVE MAPPED ATTACHMENT CONTAINER █▓▒░
         $mappedPath = "*.#.Adapters.*.#.Mapped$kind"
         $mappedSignal = Resolve-PathFromDictionary -Dictionary $ConductorJacketSignal -Path $mappedPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($mappedSignal)) {
-            return $opSignal.LogCritical("❌ MappedAdapter path '$mappedPath' not found in Conductor.")
+            return $opSignal.LogCritical("MappedAdapter path '$mappedPath' not found in Conductor.")
         }
 
         $mappedAdapterContainer = $mappedSignal.GetResult($true)
 
         if ($null -eq $mappedAdapterContainer) {
-            return $opSignal.LogCritical("❌ MappedAdapter container at '$mappedPath' is null.")
+            return $opSignal.LogCritical("MappedAdapter container at '$mappedPath' is null.")
         }
 
         # ░▒▓█ REGISTER ATTACHMENT █▓▒░
@@ -62,7 +62,7 @@ function Register-AdapterToMappedSlot {
         if ($opSignal.MergeSignalAndVerifySuccess($registerSignal)) {
             $opSignal.LogInformation("✅ Adapter registered to MappedAdapter slot '$kind'.")
         } else {
-            $opSignal.LogWarning("⚠️ Adapter registration returned warning or soft failure.")
+            $opSignal.LogWarning("Adapter registration returned warning or soft failure.")
         }
 
         # ░▒▓█ RESULT █▓▒░
@@ -102,24 +102,24 @@ function Register-AdapterToMappedSlot-NonGrid {
         # ░▒▓█ RESOLVE KIND FROM JACKET █▓▒░
         $kindSignal = Resolve-PathFromDictionary -Dictionary $resolvedAdapter -Path "$.%.@.Kind" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($kindSignal)) {
-            return $opSignal.LogCritical("❌ Adapter does not contain a resolvable 'Jacket.Kind' path.")
+            return $opSignal.LogCritical("Adapter does not contain a resolvable 'Jacket.Kind' path.")
         }
 
         $kind = $kindSignal.GetResult()
         if ([string]::IsNullOrWhiteSpace($kind)) {
-            return $opSignal.LogCritical("❌ Adapter Jacket.Kind is empty or null.")
+            return $opSignal.LogCritical("Adapter Jacket.Kind is empty or null.")
         }
 
         # ░▒▓█ RESOLVE MAPPED ATTACHMENT CONTAINER █▓▒░
         $mappedPath = "$.*.#.Adapters.*.#.Mapped$($kind)"
         $mappedSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path $mappedPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($mappedSignal)) {
-            return $opSignal.LogCritical("❌ MappedAdapter path '$mappedPath' not found in Conductor.")
+            return $opSignal.LogCritical("MappedAdapter path '$mappedPath' not found in Conductor.")
         }
 
         $mappedAdapterContainer = $mappedSignal.GetResult()
         if ($null -eq $mappedAdapterContainer) {
-            return $opSignal.LogCritical("❌ MappedAdapter container at '$mappedPath' is null.")
+            return $opSignal.LogCritical("MappedAdapter container at '$mappedPath' is null.")
         }
 
         # ░▒▓█ REGISTER ATTACHMENT █▓▒░
@@ -127,7 +127,7 @@ function Register-AdapterToMappedSlot-NonGrid {
         if ($opSignal.MergeSignalAndVerifySuccess($registerSignal)) {
             $opSignal.LogInformation("✅ Adapter registered to MappedAdapter slot '$kind'.")
         } else {
-            $opSignal.LogWarning("⚠️ Adapter registration returned warning or soft failure.")
+            $opSignal.LogWarning("Adapter registration returned warning or soft failure.")
         }
 
         # ░▒▓█ RESULT █▓▒░

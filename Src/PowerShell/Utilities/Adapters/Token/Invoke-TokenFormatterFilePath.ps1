@@ -11,7 +11,7 @@ function Invoke-TokenFormatterFilePath {
         $segments = $Path -split '\.'
 
         if ($segments.Count -lt 3) {
-            $opSignal.LogWarning("⚠️ Not enough path segments to format: $Path")
+            $opSignal.LogWarning("Not enough path segments to format: $Path")
             return $opSignal
         }
 

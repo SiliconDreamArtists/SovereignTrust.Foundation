@@ -103,7 +103,7 @@ class TransformCondenser {
                     $SourceHtmlDecodeSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "HtmlDecode" -Default $true | Select-Object -Last 1
 
                     if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal) -or $opSignal.MergeSignalAndVerifyFailure($sourcePathSignal) -or $opSignal.MergeSignalAndVerifyFailure($sourceFormatSignal) -or $opSignal.MergeSignalAndVerifyFailure($SourceHtmlDecodeSignal)) {
-                        $opSignal.LogCritical("❌ Failed to resolve content for Transform")
+                        $opSignal.LogCritical("Failed to resolve content for Transform")
                         return $opSignal
                     }
 
@@ -112,7 +112,7 @@ class TransformCondenser {
                     # Invoke-FormatJson should receive the JSON text (or object) directly, not via -Path unless it truly expects a file path
                     $resultSignal = Invoke-TransformSelect -Source $source -SourcePath $sourcePathSignal.GetResult() -SourceFormat $sourceFormatSignal.GetResult() -SourceHtmlDecode $SourceHtmlDecodeSignal.GetResult() | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-                        $opSignal.LogCritical("❌ JSON formatting failed.")
+                        $opSignal.LogCritical("JSON formatting failed.")
                         return $opSignal
                     }
 
@@ -131,7 +131,7 @@ class TransformCondenser {
                     $htmlEncodeSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetHtmlEncode" -Default $false | Select-Object -Last 1
 
                     if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal) -or $opSignal.MergeSignalAndVerifyFailure($pathSignal) -or $opSignal.MergeSignalAndVerifyFailure($formatSignal) -or $opSignal.MergeSignalAndVerifyFailure($htmlEncodeSignal)) {
-                        $opSignal.LogCritical("❌ Failed to resolve content for Transform")
+                        $opSignal.LogCritical("Failed to resolve content for Transform")
                         return $opSignal
                     }
 
@@ -140,7 +140,7 @@ class TransformCondenser {
                     # Invoke-FormatJson should receive the JSON text (or object) directly, not via -Path unless it truly expects a file path
                     $resultSignal = Invoke-TransformInject -Target $source -Source $source -Path $pathSignal.GetResult() -Format $formatSignal.GetResult() -HtmlEncode $htmlEncodeSignal.GetResult() | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-                        $opSignal.LogCritical("❌ JSON formatting failed.")
+                        $opSignal.LogCritical("JSON formatting failed.")
                         return $opSignal
                     }
 
@@ -158,7 +158,7 @@ class TransformCondenser {
                     $DepthSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "$DefaultPath.Depth" -Default 100 | Select-Object -Last 1
 
                     if ($opSignal.MergeSignalAndVerifyFailure($BaseSignal) -or $opSignal.MergeSignalAndVerifyFailure($OverlaySignal)) {
-                        $opSignal.LogCritical("❌ Failed to resolve content for Transform")
+                        $opSignal.LogCritical("Failed to resolve content for Transform")
                         return $opSignal
                     }
 
@@ -170,7 +170,7 @@ class TransformCondenser {
                 }
 
                 default {
-                    $opSignal.LogWarning("⚠️ Unsupported Activity: $Activity")
+                    $opSignal.LogWarning("Unsupported Activity: $Activity")
                     break
                 }
             }

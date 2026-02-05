@@ -70,7 +70,7 @@ function Invoke-GraphFabCondenser {
     <# Done in Register-AdapterToMappedSlot
     $isMappedSignal = Resolve-PathFromDictionary -Dictionary $JacketSignal -Path "@.IsMapped" | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($isMappedSignal)) {
-        $opSignal.LogRecovery("⚠️ IsMapped status for jacket Not Required, Assumed False.")
+        $opSignal.LogRecovery("IsMapped status for jacket Not Required, Assumed False.")
     }
     else {
         $isMapped = $isMappedSignal.GetResult()
@@ -81,7 +81,7 @@ function Invoke-GraphFabCondenser {
             $adapterSlot = $adapterSlotSignal.GetResult()
             $mappedAdapterSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%.*.#.Adapters.*.#.Mapped$($adapterKind)" | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure($mappedAdapterSignal)) {
-                $opSignal.LogWarning("⚠️ Failed to resolve mapped adapter for '$PlanName'.")
+                $opSignal.LogWarning("Failed to resolve mapped adapter for '$PlanName'.")
             }
             else {
                 $mappedAdapter = $mappedAdapterSignal.GetResult()
@@ -111,7 +111,7 @@ function Invoke-GraphFabCondenser {
 
     $graphSignal = Resolve-PathGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
-        $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
+        $opSignal.LogWarning("Failed to resolve graph for plan: $PlanName")
         return $opSignal
     }
 

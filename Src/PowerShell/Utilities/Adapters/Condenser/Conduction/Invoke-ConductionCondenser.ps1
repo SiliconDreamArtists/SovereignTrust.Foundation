@@ -30,7 +30,7 @@ function Invoke-ConductionCondenser {
         
     $phaseDictSignal = Resolve-PathFromDictionary -Dictionary $conductionPlan -Path "PhaseDictionary" | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($phaseDictSignal)) {
-        return $opSignal.LogCritical("❌ PhaseDictionary not found in Graph.")
+        return $opSignal.LogCritical("PhaseDictionary not found in Graph.")
     }
 
     $phaseDict = $phaseDictSignal.GetResult()
@@ -55,7 +55,7 @@ function Invoke-ConductionCondenser {
                 }
             }
             default {
-                $stepSignal.LogWarning("⚠️ Unknown phase type '$stepType' in phase '$phaseKey'")
+                $stepSignal.LogWarning("Unknown phase type '$stepType' in phase '$phaseKey'")
             }
         }
 

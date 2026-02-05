@@ -48,7 +48,7 @@ function Invoke-TransformCondenser {
     | Select-Object -Last 1
 
     if ($opSignal.MergeSignalAndVerifyFailure(@($invokeSignal))) {
-        $opSignal.LogCritical("⚠️ Merge via Invoke-CondenserAdapter failed.")
+        $opSignal.LogCritical("Merge via Invoke-CondenserAdapter failed.")
         return $opSignal
     }
 

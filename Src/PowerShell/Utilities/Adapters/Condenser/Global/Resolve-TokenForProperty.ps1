@@ -128,6 +128,7 @@ function Resolve-TokenForProperty {
 
                 #$resultSignal = $adapter.Invoke($key);
                 $resultSignal = $adapter.Invoke($key, "Get", $Signal, $TokenPlan, $ItemSignal);
+                $opSignal.MergeSignal($resultSignal)
                 $lookupSignal = [Signal]::Start("Resolve-TokenForProperty:$($Property.Name)", $null) | Select-Object -Last 1
                 
                 if ($resultSignal.HasResult()) {
@@ -142,7 +143,7 @@ function Resolve-TokenForProperty {
                 $replacement = $lookupSignal.GetResult()
 
                 # When a replacement value is a json object, etc, we can't do a replacement and must assume the object is ready to be returned.
-                if ($replacement -is [PSCustomObject] -or ($replacement -is [array] -and (-not ($replacement -is [string])))) {
+                if ($replacement -is [PSCustomObject] -or ($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]])) {
                     $propertyValue = $replacement
                 }
                 else {
@@ -164,13 +165,13 @@ function Resolve-TokenForProperty {
                     
                     $oldValue = $propertyValue
 
-                    if (-not $replacement -is [string])
+                    if ($replacement -is [string[]])
                     {
-                        $a = ""
+                        $replacement = (@($replacement) | ForEach-Object { "`"$_`"" }) -join ", "
                     }
 
                     try {
-                    $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
+                        $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
                     }
                     catch {
                         $a = ""
@@ -181,7 +182,7 @@ function Resolve-TokenForProperty {
                     }
                     else {
                         #  $propertyValue = $propertyValue -replace $match.Value, $replacement
-                        $opSignal.LogWarning("⚠️ No replacement made for '$key' in property '$($Property.Name)' — token may be malformed or missing. ($propertyValue)")
+                        $opSignal.LogWarning("No replacement made for '$key' in property '$($Property.Name)' — token may be malformed or missing. ($propertyValue)")
                     }
                 }
 
@@ -191,7 +192,7 @@ function Resolve-TokenForProperty {
         $opSignal.MergeSignal((Add-PathToDictionary -Dictionary $Property -Path "Value" -Value $propertyValue | Select-Object -Last 1))
     }
     catch {
-        $opSignal.LogCritical("❌ Exception in global token resolution: $($_.Exception.Message)", $null, $_)
+        $opSignal.LogCritical("Exception in global token resolution: $($_.Exception.Message)", $null, $_)
         # $null = $MergeCondenserFeedback.MissingWireGlobalFeedback.Invoke("", "", @())
     }
 
@@ -232,7 +233,7 @@ function Scan-DictionaryForValue {
         }
     }
     catch {
-        $signal.LogCritical("❌ Failed to extract global '$Key' at path [$($PathSegments -join '.')]: $($_.Exception.Message)")
+        $signal.LogCritical("Failed to extract global '$Key' at path [$($PathSegments -join '.')]: $($_.Exception.Message)")
     }
 
     return $signal

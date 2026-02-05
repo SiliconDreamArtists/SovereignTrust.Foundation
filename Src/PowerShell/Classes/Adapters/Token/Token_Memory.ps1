@@ -46,7 +46,7 @@ class Token_Memory {
                 $opSignal.LogInformation("✅ Token Memory path '$Path' resolved successfully.")
             }
             else {
-                $opSignal.LogWarning("⚠️ Token Memory path '$Path' failed to resolve.")
+                $opSignal.LogWarning("Token Memory path '$Path' failed to resolve.")
             }
         }
         catch {

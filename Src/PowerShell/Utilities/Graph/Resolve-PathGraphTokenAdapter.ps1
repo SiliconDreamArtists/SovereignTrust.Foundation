@@ -12,7 +12,7 @@ function Resolve-PathGraphTokenAdapter {
     $adapterSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path "$.*.#.Adapters.*.#.MappedToken" | Select-Object -Last 1
 
     if ($opSignal.MergeSignalAndVerifyFailure(@($pointerSignal, $adapterSignal))) {
-        $opSignal.LogCritical("❌ Unable to resolve required context from Conductor.")
+        $opSignal.LogCritical("Unable to resolve required context from Conductor.")
         return $opSignal
     }
 

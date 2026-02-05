@@ -47,7 +47,7 @@ class Token_Storage {
                 $opSignal.LogInformation("✅ Token storage path '$Path' resolved successfully.")
             }   
             else {
-                $opSignal.LogWarning("⚠️ Token storage path '$Path' failed to resolve.")
+                $opSignal.LogWarning("Token storage path '$Path' failed to resolve.")
             }
         }
         catch {

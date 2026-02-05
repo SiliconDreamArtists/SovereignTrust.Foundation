@@ -54,7 +54,14 @@ class MemoryCondenser {
                     $ItemSignal.CreateGraph()
                     foreach ($mapping in @($mappings)) {
 
+                        $descriptionSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Description" -SignalLevel "Information" | Select-Object -Last 1
+                        if ($descriptionSignal.HasResult())
+                        {
+                            $opSignal.LogInformation($descriptionSignal.GetResult(), @("Verbose"))
+                        }
+
                         $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "IsEnabled" -Default $true | Select-Object -Last 1
+                        if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
                         if (-not $IsEnabledSignal.GetResult()) {
                             continue
                         }
@@ -93,6 +100,7 @@ class MemoryCondenser {
                             #                                -Container $Container `
                             | Select-Object -Last 1
 
+                            if ($opSignal.MergeSignalAndVerifyFailure($MappingResultSignal)) { return $opSignal }
                             $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
                         }
 
@@ -107,7 +115,7 @@ class MemoryCondenser {
                                 $FormatSignal.SetPointer($ItemSignal.GetPointer())
 
                                 $MappingResultSignal = Invoke-CondenserAdapter -Slot "Format" -Activity $Format -Plan $mapping -Signal $ConductionSignal -ItemSignal $FormatSignal | Select-Object -Last 1
-
+                                if ($opSignal.MergeSignalAndVerifyFailure($MappingResultSignal)) { return $opSignal }
                                 $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
                             }
 
@@ -119,6 +127,7 @@ class MemoryCondenser {
                                 $TransformSignal.SetPointer($ItemSignal.GetPointer())
 
                                 $MappingResultSignal = Invoke-CondenserAdapter -Slot $TypeSignal.GetResult() -Activity $ModeSignal.GetResult() -Plan $mapping -Signal $ConductionSignal -ItemSignal $TransformSignal | Select-Object -Last 1
+                                if ($opSignal.MergeSignalAndVerifyFailure($MappingResultSignal)) { return $opSignal }
                                 $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
                             }
                 
@@ -135,6 +144,7 @@ class MemoryCondenser {
 
                                 # Perform Hydration
                                 $MappingResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
+                                if ($opSignal.MergeSignalAndVerifyFailure($MappingResultSignal)) { return $opSignal }
                                 $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
                             }
                             <#
@@ -162,7 +172,7 @@ class MemoryCondenser {
                 }
 
                 default {
-                    $opSignal.LogWarning("⚠️ Unsupported Activity: $Activity")
+                    $opSignal.LogWarning("Unsupported Activity: $Activity")
                     break
                 }
             }
@@ -186,40 +196,5 @@ class MemoryCondenser {
         }
 
         return $itemSignal
-    }
-
-    [Signal] InvokeByParameter(
-        [string]$Action,
-        [string]$Path,
-        [object]$Value,
-        [object]$TargetMemory,
-        [hashtable]$HydrationPlan,
-        [string]$HotPathMapPath = "%.HotPaths"
-    ) {
-        $opSignal = [Signal]::Start("MemoryCondenser.InvokeByParameter", $this.Signal) | Select-Object -Last 1
-
-        # 🔍 Step 1: Hot Path Resolution
-        $hotPathSignal = Invoke-HotPathResolution -Path $Path -Signal $this.Signal -HotPathMapPath $HotPathMapPath | Select-Object -Last 1
-        if ($opSignal.MergeSignalAndVerifyFailure($hotPathSignal)) {
-            $opSignal.LogCritical("❌ Hot path resolution failed.")
-            return $opSignal
-        }
-
-        $resolvedHotPath = $hotPathSignal.GetResult()
-
-        # 💧 Step 2: Path Hydration
-        $hydratedSignal = Invoke-PathHydration -Path $resolvedHotPath -Signal $this.Signal -SignalFirst:$true | Select-Object -Last 1
-        if ($opSignal.MergeSignalAndVerifyFailure($hydratedSignal)) {
-            $opSignal.LogCritical("❌ Path hydration failed.")
-            return $opSignal
-        }
-
-        $finalPath = $hydratedSignal.GetResult()
-
-        # 🧠 Step 3: Memory I/O Delegation
-        $memorySignal = Invoke-MemoryCondenser -Action $Action -Path $finalPath -Value $Value -HostSignal $this.Signal -TargetMemory $TargetMemory -HydrationPlan @{ Skip = $true } | Select-Object -Last 1
-        $opSignal.MergeSignal($memorySignal)
-
-        return $opSignal
     }
 }

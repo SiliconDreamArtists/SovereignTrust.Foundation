@@ -9,7 +9,7 @@ class MappedTokenAdapter {
         $opSignal = [Signal]::Start("MappedTokenAdapter.Start") | Select-Object -Last 1
 
         if (-not $Conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to MappedTokenAdapter.Start()")
+            $opSignal.LogCritical("Null Conductor passed to MappedTokenAdapter.Start()")
             return $opSignal
         }
 
@@ -48,7 +48,7 @@ class MappedTokenAdapter {
             $opSignal.LogInformation("✅ Registered adapter at key: '$Key'")
         }
         else {
-            $opSignal.LogWarning("⚠️ Failed to register adapter at key: '$Key'")
+            $opSignal.LogWarning("Failed to register adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)
@@ -71,7 +71,7 @@ class MappedTokenAdapter {
                 $opSignal.LogInformation("✅ MappedTokenAdapter resolved path successfully: $Path -> $result")
             }
             else {
-                $opSignal.LogWarning("⚠️ MappedTokenAdapter failed to resolve path: $Path")
+                $opSignal.LogWarning("MappedTokenAdapter failed to resolve path: $Path")
             }
         }
         catch {
@@ -96,7 +96,7 @@ class MappedTokenAdapter {
                 $opSignal.LogInformation("✅ MappedTokenAdapter resolved path successfully: $Path -> $result")
             }
             else {
-                $opSignal.LogWarning("⚠️ MappedTokenAdapter failed to resolve path: $Path")
+                $opSignal.LogWarning("MappedTokenAdapter failed to resolve path: $Path")
             }
         }
         catch {
@@ -124,7 +124,7 @@ class MappedTokenAdapter {
                     break
                 }
                 else {
-                    $opSignal.LogWarning("⚠️ Adapter '$key' failed on method '$MethodName'")
+                    $opSignal.LogWarning("Adapter '$key' failed on method '$MethodName'")
                 }
             }
             else {
@@ -133,7 +133,7 @@ class MappedTokenAdapter {
         }
 
         if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No adapter succeeded for method '$MethodName'")
+            $opSignal.LogCritical("No adapter succeeded for method '$MethodName'")
         }
 
         $this.Signal.MergeSignal($opSignal)

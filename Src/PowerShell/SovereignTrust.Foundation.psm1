@@ -11,9 +11,23 @@ $abc = Get-Module -Name $sgModuleName
     $mapSharedPath = Join-Path $PSScriptRoot "Utilities/Adapters/Condenser/Map/MapCondenser.Shared.psm1"
     Import-Module (Resolve-Path $mapSharedPath).ProviderPath -Force
 
-        . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\SignalEntry.ps1"
+    . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\SignalEntry.ps1"
     . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\Signal.ps1"
     . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\Graph.ps1"
+
+    function Start-SignalWrapper(
+         [string]$Name,
+        [object]$ReversePointer = $null
+   ) {
+    return Start-Signal -Name $Name -ReversePointer $ReversePointer
+}
+
+function Invoke-Telemetry(
+    [Signal]$Signal,
+    [Signal]$ItemSignal
+){
+    Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignalFull" -Signal $Signal -Plan [pscustomobject]@{} -ItemSignal $ItemSignal
+}
 
 # Load all files (functions + classes)
 . "$PSScriptRoot/Wrappers/Adapters/Condenser/Invoke-ConductionCondenser.ps1"
@@ -283,3 +297,10 @@ Export-ModuleMember -Function Invoke-MappedStorageAdapter
 Export-ModuleMember -Function Invoke-NetworkAdapter
 Export-ModuleMember -Function Invoke-TokenStorage
 Export-ModuleMember -Function Invoke-MappedAdapter
+Export-ModuleMember -Function Start-SignalWrapper
+#Export-ModuleMember -Function Invoke-LogMessage
+#Export-ModuleMember -Function Invoke-LogInformation
+#Export-ModuleMember -Function Invoke-LogWarning
+#Export-ModuleMember -Function Invoke-LogCritical
+Export-ModuleMember -Function Invoke-Telemetry
+

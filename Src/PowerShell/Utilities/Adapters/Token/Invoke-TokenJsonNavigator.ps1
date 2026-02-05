@@ -18,7 +18,7 @@ function Invoke-TokenJsonNavigator {
 
     try {
         if ([string]::IsNullOrWhiteSpace($Path)) {
-            $opSignal.LogWarning("⚠️ Path is empty. Nothing to resolve.")
+            $opSignal.LogWarning("Path is empty. Nothing to resolve.")
             return $opSignal
         }
 
@@ -58,7 +58,7 @@ function Invoke-TokenJsonNavigator {
             $opSignal.MarkSuccess()
         }
         else {
-            $opSignal.LogWarning("⚠️ Navigator variable not found for key: $Path")
+            $opSignal.LogWarning("Navigator variable not found for key: $Path")
         }
     }
     catch {

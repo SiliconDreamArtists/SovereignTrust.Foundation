@@ -27,7 +27,7 @@ function Invoke-RestCondenserCore {
     #$context = Resolve-PathFromDictionary -Dictionary $Config -Path "Context" | Select-Object -Last 1
     $retry = $true
     $attempts = 0
-    $maxAttempts = 3
+    $maxAttempts = 2
     $response = $null
     while ($retry) {
         $sw = [System.Diagnostics.Stopwatch]::new() 
@@ -86,6 +86,7 @@ function Invoke-RestCondenserCore {
         
             if ($sw.IsRunning) { $sw.Stop() }
 
+            $opSignal.LogInformation("Rest $Method Successful against $FinalUrl", @("Verbose"))
             $result = @{
                 Response            = $Response
                 Url                 = $FinalUrl
@@ -100,9 +101,7 @@ function Invoke-RestCondenserCore {
         }
         catch {
             if ($sw.IsRunning) { $sw.Stop() }
-            $TelemetryLevel = "Critical"
             $attempts++
-
             $message = $_.ErrorDetails.Message ?? $_.Exception.Message
 
             # Change this so that this sends the details back to the prior level in the $opSignal to alert it that a failure has happened and this is how you heal it. (ClearBearerToken)
@@ -113,34 +112,12 @@ function Invoke-RestCondenserCore {
                 #Start-Sleep -Milliseconds 10000
             }
 
-            $TelemetrySignal = [Signal]::Start("Exception") | Select-Object -Last 1
-            $TelemetryResult = @{
-                ResourceName        = $ResourceName
-                TelemetryLevel      = $TelemetryLevel
-                TelemetryMessage    = $message
-                ExceptionType       = $_.CategoryInfo.Reason
-                StackTrace          = $_.ScriptStackTrace
-                TelemetryType       = "Exception"
-                TelemetryDataType   = "ExceptionData"
-                TelemetryProperties = @{
-                    serviceName = "[Memory.Signal.%.@.ServiceName|SDAFusion/]"
-                    Method      = "$($Method)"
-                    Url         = $FinalUrl
-                    Attempt     = $attempts
-                    MaxAttempts = $maxAttempts
-                }
-            }
-
-            $TelemetrySignal.SetJacketResult($TelemetryResult) | Select-Object -Last 1
-
-            # Call Adapter
-            Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "Emit" -Signal $Signal -Plan $TelemetryPlan -ItemSignal $TelemetrySignal 
-
             if ($attempts -gt $maxAttempts) {
-                $retry = $false
-                throw
+                $opSignal.LogCritical("Exception during attempt $($attempts) on call to '$FinalUrl' $message", $null, $_)
+                return $opSignal
             }
 
+            $opSignal.LogWarning("Attempt $($attempts) Error during call to '$FinalUrl' $message", @("Retry"))
         }
     } 
 

@@ -9,7 +9,7 @@ class MappedStorageAdapter {
         $opSignal = [Signal]::Start("MappedStorageAdapter.Start") | Select-Object -Last 1
 
         if (-not $Conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to MappedStorageAdapter.Start()")
+            $opSignal.LogCritical("Null Conductor passed to MappedStorageAdapter.Start()")
             return $opSignal
         }
 
@@ -50,7 +50,7 @@ class MappedStorageAdapter {
         if ($registerSignal.Success()) {
             $opSignal.LogInformation("✅ Registered adapter at key: '$Key'")
         } else {
-            $opSignal.LogWarning("⚠️ Failed to register adapter at key: '$Key'")
+            $opSignal.LogWarning("Failed to register adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)
@@ -91,7 +91,7 @@ class MappedStorageAdapter {
         $resultSignal = $adapter.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal)
 
         if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-            $opSignal.LogCritical("❌ MappedStorageAdapter failed to invoke against slot '$Slot'.")
+            $opSignal.LogCritical("MappedStorageAdapter failed to invoke against slot '$Slot'.")
             return $opSignal
         }
 
@@ -105,7 +105,7 @@ class MappedStorageAdapter {
         $conductor = $this.Signal.GetJacket()
         $adapterSignal = Invoke-MappedStorageAdapter -MappedAdapterSignal $this.Signal -Path $Context -Slot $Slot | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
-            $opSignal.LogCritical("❌ MappedStorageAdapter failed to invoke path '$Context' in slot '$Slot'.")
+            $opSignal.LogCritical("MappedStorageAdapter failed to invoke path '$Context' in slot '$Slot'.")
             return $opSignal
         }
 
@@ -130,7 +130,7 @@ class MappedStorageAdapter {
                     $opSignal.LogInformation("🎯 Adapter '$key' successfully invoked '$MethodName'")
                     break
                 } else {
-                    $opSignal.LogWarning("⚠️ Adapter '$key' failed on method '$MethodName'")
+                    $opSignal.LogWarning("Adapter '$key' failed on method '$MethodName'")
                 }
             } else {
                 $opSignal.LogVerbose("⏭️ Adapter '$key' does not implement '$MethodName'")
@@ -138,7 +138,7 @@ class MappedStorageAdapter {
         }
 
         if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No adapter succeeded for method '$MethodName'")
+            $opSignal.LogCritical("No adapter succeeded for method '$MethodName'")
         }
 
         $this.Signal.MergeSignal($opSignal)

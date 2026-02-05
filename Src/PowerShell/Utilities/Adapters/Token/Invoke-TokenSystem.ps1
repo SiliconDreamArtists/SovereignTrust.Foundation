@@ -15,7 +15,7 @@ function Invoke-TokenSystem {
 
     try {
         if ([string]::IsNullOrWhiteSpace($Path)) {
-            $opSignal.LogWarning("⚠️ Path is empty. Nothing to resolve.")
+            $opSignal.LogWarning("Path is empty. Nothing to resolve.")
             return $opSignal
         }
 
@@ -58,7 +58,7 @@ function Invoke-TokenSystem {
             $opSignal.SetResult($value)
         }
         else {
-            $opSignal.LogWarning("⚠️ Environment variable not found for key: $Path")
+            $opSignal.LogWarning("Environment variable not found for key: $Path")
         }
     }
     catch {

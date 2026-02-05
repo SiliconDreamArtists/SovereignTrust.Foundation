@@ -9,7 +9,7 @@ class MappedTelemetryAdapter {
         $opSignal = [Signal]::Start("MappedTelemetryAdapter.Start") | Select-Object -Last 1
 
         if (-not $Conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to MappedTelemetryAdapter.Start()")
+            $opSignal.LogCritical("Null Conductor passed to MappedTelemetryAdapter.Start()")
             return $opSignal
         }
 
@@ -48,7 +48,7 @@ class MappedTelemetryAdapter {
             $opSignal.LogInformation("✅ Registered adapter at key: '$Key'")
         }
         else {
-            $opSignal.LogWarning("⚠️ Failed to register adapter at key: '$Key'")
+            $opSignal.LogWarning("Failed to register adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)
@@ -70,7 +70,7 @@ class MappedTelemetryAdapter {
                 $opSignal.LogInformation("✅ MappedTelemetryAdapter resolved path successfully: $Path -> $result")
             }
             else {
-                $opSignal.LogWarning("⚠️ MappedTelemetryAdapter failed to resolve path: $Path")
+                $opSignal.LogWarning("MappedTelemetryAdapter failed to resolve path: $Path")
             }
         }
         catch {
@@ -98,7 +98,7 @@ class MappedTelemetryAdapter {
                     break
                 }
                 else {
-                    $opSignal.LogWarning("⚠️ Adapter '$key' failed on method '$MethodName'")
+                    $opSignal.LogWarning("Adapter '$key' failed on method '$MethodName'")
                 }
             }
             else {
@@ -107,7 +107,7 @@ class MappedTelemetryAdapter {
         }
 
         if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No adapter succeeded for method '$MethodName'")
+            $opSignal.LogCritical("No adapter succeeded for method '$MethodName'")
         }
 
         $this.Signal.MergeSignal($opSignal)

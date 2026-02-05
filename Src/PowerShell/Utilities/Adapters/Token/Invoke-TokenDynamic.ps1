@@ -33,7 +33,7 @@ function Invoke-TokenDynamic {
         }
 
         if ([string]::IsNullOrWhiteSpace($path)) {
-            $opSignal.LogWarning("⚠️ Dynamic path is empty. Nothing to resolve.")
+            $opSignal.LogWarning("Dynamic path is empty. Nothing to resolve.")
             return $opSignal
         }
 

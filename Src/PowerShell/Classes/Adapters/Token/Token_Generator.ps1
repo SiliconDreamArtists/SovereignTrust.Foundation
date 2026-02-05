@@ -46,7 +46,7 @@ class Token_Generator {
                 $opSignal.LogInformation("✅ Token generator path '$Path' resolved successfully.")
             }
             else {
-                $opSignal.LogWarning("⚠️ Token generator path '$Path' failed to resolve.")
+                $opSignal.LogWarning("Token generator path '$Path' failed to resolve.")
             }
         }
         catch {

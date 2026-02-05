@@ -45,7 +45,7 @@ class Token_Environment {
             $opSignal.SetResult($resultSignal.GetResult())
             $opSignal.LogInformation("✅ Token environment path '$Path' resolved successfully.")
         } else {
-            $opSignal.LogWarning("⚠️ Token environment path '$Path' failed to resolve.")
+            $opSignal.LogWarning("Token environment path '$Path' failed to resolve.")
         }
     }
     catch {

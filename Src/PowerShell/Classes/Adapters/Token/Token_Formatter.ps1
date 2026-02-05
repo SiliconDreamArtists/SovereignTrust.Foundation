@@ -45,7 +45,7 @@ class Token_Formatter {
             $opSignal.SetResult($resultSignal.GetResult())
             $opSignal.LogInformation("✅ Token formatter path '$Path' resolved successfully.")
         } else {
-            $opSignal.LogWarning("⚠️ Token formatter path '$Path' failed to resolve.")
+            $opSignal.LogWarning("Token formatter path '$Path' failed to resolve.")
         }
     }
     catch {

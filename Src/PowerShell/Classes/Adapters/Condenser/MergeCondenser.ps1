@@ -64,7 +64,7 @@ class MergeCondenser {
         $baseSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.Base" -SignalLevel "Critical" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure(@($baseSignal))) { return $opSignal }
         if (-not $baseSignal.HasResult()) {
-            $opSignal.LogCritical("❌ Missing required merge input: Base")
+            $opSignal.LogCritical("Missing required merge input: Base")
             return $opSignal
         }
         $Base = $baseSignal.GetResult()
@@ -72,7 +72,7 @@ class MergeCondenser {
         $overlaySignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.Overlay" -SignalLevel "Critical" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure(@($overlaySignal))) { return $opSignal }
         if (-not $overlaySignal.HasResult()) {
-            $opSignal.LogCritical("❌ Missing required merge input: Overlay")
+            $opSignal.LogCritical("Missing required merge input: Overlay")
             return $opSignal
         }
         $Overlay = $overlaySignal.GetResult()
@@ -115,7 +115,7 @@ class MergeCondenser {
             $opSignal.LogInformation("✅ Merge completed successfully via unified invocation.")
         }
         else {
-            $opSignal.LogWarning("⚠️ Merge operation failed in Invoke-ByParameter.")
+            $opSignal.LogWarning("Merge operation failed in Invoke-ByParameter.")
         }
 
         $this.Signal.MergeSignal($opSignal)

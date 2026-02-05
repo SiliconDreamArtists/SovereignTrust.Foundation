@@ -27,6 +27,6 @@ function Wait-ForFileUnlock {
     }
 
     $signal.SetResult($false)
-    $signal.LogWarning("⚠️ Timeout reached. File is still locked: $FilePath")
+    $signal.LogWarning("Timeout reached. File is still locked: $FilePath")
     return $signal
 }

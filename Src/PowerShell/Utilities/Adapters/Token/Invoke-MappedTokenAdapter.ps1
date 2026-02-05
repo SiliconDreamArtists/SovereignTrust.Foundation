@@ -30,7 +30,7 @@ function Invoke-MappedTokenAdapter {
         if (-not $Path) { $Path = $Plan.Path }
 
         if (-not $MappedAdapter) {
-            return $opSignal.LogCritical("❌ MappedAdapter is null.")
+            return $opSignal.LogCritical("MappedAdapter is null.")
         }
 
         # If the Container and Resource is being passed through the token adapter, it should be used to set the path (the path will be used later by the memory generator to do a select)
@@ -43,7 +43,7 @@ function Invoke-MappedTokenAdapter {
         }
 
         if (-not $Path -or -not ($Path -is [string])) {
-            return $opSignal.LogCritical("❌ Invalid or missing path: $Path")
+            return $opSignal.LogCritical("Invalid or missing path: $Path")
         }
 
         # Remove enclosing [/] if present
@@ -54,7 +54,7 @@ function Invoke-MappedTokenAdapter {
         $parts = $trimmed -split '\.'
 
         if ($parts.Count -eq 0) {
-            return $opSignal.LogWarning("⚠️ No valid path parts found in: $Path")
+            return $opSignal.LogWarning("No valid path parts found in: $Path")
         }
 
         $firstKey = $parts[0]
@@ -67,7 +67,7 @@ function Invoke-MappedTokenAdapter {
         $opSignal.MergeSignal($adapterSignal)
 
         if ($adapterSignal.Failure()) {
-            return $opSignal.LogWarning("⚠️ Could not resolve adapter for key: $firstKey")
+            return $opSignal.LogWarning("Could not resolve adapter for key: $firstKey")
         }
 
         $adapter = $adapterSignal.GetResult($true)
@@ -90,11 +90,11 @@ function Invoke-MappedTokenAdapter {
                 $opSignal.LogInformation("✅ MappedTokenAdapter successfully invoked path: $trimmed to $result")
             }
             else {
-                $opSignal.LogWarning("⚠️ Invocation failed for path: $trimmed")
+                $opSignal.LogWarning("Invocation failed for path: $trimmed")
             }
         }
         else {
-            $opSignal.LogWarning("⚠️ Resolved adapter for '$firstKey' does not implement Invoke().")
+            $opSignal.LogWarning("Resolved adapter for '$firstKey' does not implement Invoke().")
         }
     }
     catch {

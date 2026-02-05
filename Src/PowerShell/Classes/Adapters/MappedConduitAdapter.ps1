@@ -13,7 +13,7 @@ class MappedConduitAdapter {
         $opSignal = [Signal]::Start("MappedConduitAdapter.Start") | Select-Object -Last 1
 
         if (-not $conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to Start().")
+            $opSignal.LogCritical("Null Conductor passed to Start().")
             return $opSignal
         }
 
@@ -49,7 +49,7 @@ class MappedConduitAdapter {
         if ($registerSignal.Success()) {
             $opSignal.LogInformation("✅ Registered Conduit adapter under key: '$Key'")
         } else {
-            $opSignal.LogWarning("⚠️ Failed to register adapter at key: '$Key'")
+            $opSignal.LogWarning("Failed to register adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)
@@ -73,7 +73,7 @@ class MappedConduitAdapter {
                     $opSignal.LogInformation("🎯 Adapter '$key' invoked successfully.")
                     break
                 } else {
-                    $opSignal.LogWarning("⚠️ Adapter '$key' failed to produce a result.")
+                    $opSignal.LogWarning("Adapter '$key' failed to produce a result.")
                 }
             } else {
                 $opSignal.LogVerbose("⏭️ Adapter '$key' does not support Invoke().")
@@ -81,7 +81,7 @@ class MappedConduitAdapter {
         }
 
         if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No Conduit adapter produced a valid result.")
+            $opSignal.LogCritical("No Conduit adapter produced a valid result.")
         }
 
         $this.Signal.MergeSignal($opSignal)

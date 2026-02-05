@@ -15,14 +15,14 @@ function Invoke-TokenFormatter {
 
     try {
         if ([string]::IsNullOrWhiteSpace($Path)) {
-            $opSignal.LogWarning("⚠️ Formatter path is empty.")
+            $opSignal.LogWarning("Formatter path is empty.")
             return $opSignal
         }
 
         # Formatter.XYZ.Path → get 'XYZ'
         $segments = $Path -split '\.'
         if ($segments.Count -lt 2) {
-            $opSignal.LogCritical("❌ Invalid Formatter path: '$Path'")
+            $opSignal.LogCritical("Invalid Formatter path: '$Path'")
             return $opSignal
         }
 
@@ -30,7 +30,7 @@ function Invoke-TokenFormatter {
         $subInvokeName = "Invoke-TokenFormatter$formatterKey"
 
         if (-not (Get-Command $subInvokeName -ErrorAction SilentlyContinue)) {
-            $opSignal.LogCritical("❌ Formatter handler '$subInvokeName' not found.")
+            $opSignal.LogCritical("Formatter handler '$subInvokeName' not found.")
             return $opSignal
         }
 
@@ -42,7 +42,7 @@ function Invoke-TokenFormatter {
             $opSignal.SetResult($subSignal.GetResult())
             $opSignal.LogInformation("✅ Formatter '$formatterKey' resolved successfully.")
         } else {
-            $opSignal.LogWarning("⚠️ Formatter '$formatterKey' failed to resolve.")
+            $opSignal.LogWarning("Formatter '$formatterKey' failed to resolve.")
         }
     }
     catch {

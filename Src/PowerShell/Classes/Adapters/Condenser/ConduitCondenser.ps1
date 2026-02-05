@@ -73,7 +73,7 @@ class ConduitCondenser {
                     $opSignal.MergeSignal($sourceSignal) | Out-Null
 
                     if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal)) {
-                        $opSignal.LogCritical("❌ Failed to resolve FlatFormulaSource.")
+                        $opSignal.LogCritical("Failed to resolve FlatFormulaSource.")
                         return $opSignal
                     }
 
@@ -116,7 +116,7 @@ class ConduitCondenser {
 
                     $graphSignal = Resolve-GraphForJsonArray -ConductionSignal $ConductionSignal -Plan $Plan  -GraphName $graphName -ItemSignal $subSignal | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
-                        $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
+                        $opSignal.LogWarning("Failed to resolve graph for plan: $PlanName")
                         return $opSignal
                     }
 
@@ -128,7 +128,7 @@ class ConduitCondenser {
                 }
 
                 default {
-                    $opSignal.LogWarning("⚠️ Unsupported Activity: $Activity")
+                    $opSignal.LogWarning("Unsupported Activity: $Activity")
                     break
                 }
             }

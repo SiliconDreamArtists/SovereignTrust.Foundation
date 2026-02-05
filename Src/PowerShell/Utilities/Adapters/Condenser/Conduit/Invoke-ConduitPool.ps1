@@ -156,7 +156,7 @@ function Invoke-ConduitPool {
         }
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
+        $opSignal.LogCritical("Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
     }
     finally {
         try { $pool.Close() } catch { }
@@ -186,7 +186,7 @@ function Invoke-ConduitPool {
     }
 
     $opSignal.LogInformation("🧾 RunspacePool finished. Completed=$completed Failed=$failed Total=$($WorkDict.Count)")
-    if ($failed -gt 0) { $opSignal.LogWarning("⚠️ One or more work items failed.") }
+    if ($failed -gt 0) { $opSignal.LogWarning("One or more work items failed.") }
 
     $opSignal.SetResult([pscustomobject]@{
             Completed = $completed

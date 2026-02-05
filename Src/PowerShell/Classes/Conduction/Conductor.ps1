@@ -94,7 +94,7 @@ class Conductor {
             $path = "*.#.Adapters.*.$( $entry.Name)"
             $regSignal = Add-PathToDictionary -Dictionary $this.Signal -Path $path -Value $entry.Instance | Select-Object -Last 1
             if ($regSignal.Failure()) {
-                $opSignal.LogWarning("⚠️ Failed to register adapter '$($entry.Name)'")
+                $opSignal.LogWarning("Failed to register adapter '$($entry.Name)'")
             }
             else {
                 $opSignal.LogInformation("🔌 Registered adapter '$($entry.Name)'")
@@ -134,7 +134,7 @@ class Conductor {
             $agentPathSignal =  Resolve-PathFromDictionary -Dictionary $this.Signal -Path "%.%.%.@.GraphFormulas.Agents" -SignalLevel "Warning" -SignalTags @("Verbose") | Select-Object -Last 1
 
             if (-not $opSignal.MergeSignalAndVerifySuccess($agentPathSignal) -or -not $agentPathSignal.HasResult()) {
-                return $opSignal.LogWarning("⚠️ No Agent Path Found.")
+                return $opSignal.LogWarning("No Agent Path Found.")
             }
 
             $graphPlanSignal = $condenser.InvokeFromPlanPath("%.%.%.@.GraphFormulas.Agents", $this.Signal) | Select-Object -Last 1
@@ -182,7 +182,7 @@ class Conductor {
             $agentPathSignal =  Resolve-PathFromDictionary -Dictionary $this.Signal -Path "%.%.%.@.GraphFormulas.Agents" -SignalLevel "Warning" -SignalTags @("Verbose") | Select-Object -Last 1
 
             if (-not $opSignal.MergeSignalAndVerifySuccess($agentPathSignal) -or -not $agentPathSignal.HasResult()) {
-                return $opSignal.LogWarning("⚠️ No Agent Path Found.")
+                return $opSignal.LogWarning("No Agent Path Found.")
             }
 
             $graphPlanSignal = $condenser.InvokeFromPlanPath("%.%.%.@.GraphFormulas.Agents", $this.Signal) | Select-Object -Last 1

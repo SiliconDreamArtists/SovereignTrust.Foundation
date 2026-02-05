@@ -15,7 +15,7 @@ function Invoke-TokenConduction {
 
     try {
         if ($null -eq $Path) {
-            $opSignal.LogWarning("⚠️ Path is empty. Nothing to resolve.")
+            $opSignal.LogWarning("Path is empty. Nothing to resolve.")
             return $opSignal
         }
 
@@ -55,7 +55,7 @@ function Invoke-TokenConduction {
             $opSignal.MarkSuccess()
         }
         else {
-            $opSignal.LogWarning("⚠️ Conduction variable not found for key: $Path")
+            $opSignal.LogWarning("Conduction variable not found for key: $Path")
         }
     }
     catch {

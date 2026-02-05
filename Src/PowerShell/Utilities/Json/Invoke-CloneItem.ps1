@@ -25,7 +25,7 @@ function Invoke-CloneItem {
         return $opSignal
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during cloning: $($_.Exception.Message)", $null, $_)
+        $opSignal.LogCritical("Exception during cloning: $($_.Exception.Message)", $null, $_)
         return $opSignal
     }
 }

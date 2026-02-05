@@ -39,7 +39,7 @@ function Resolve-PathGraphForConduction {
             $graph.RegisterSignal($name, $sig) | Out-Null
             $signalMap[$part.Name] = $sig
         } else {
-            $opSignal.LogWarning("⚠️ Missing part '$($part.Name)' in conduction object.")
+            $opSignal.LogWarning("Missing part '$($part.Name)' in conduction object.")
         }
     }
 

@@ -26,7 +26,7 @@ function Invoke-ConductionCondenser {
         # ░▒▓█ Run the Conduction Condenser using the Config bits  █▓▒░
         $consdenserIvokeSignal = $consdenser.Invoke($Slot, $ConductionSignal, $Plan) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($consdenserIvokeSignal)) {
-            $opSignal.LogCritical("⚠️ Conduction consdenser failed.")
+            $opSignal.LogCritical("Conduction consdenser failed.")
             return $opSignal
         }
         else {
@@ -36,7 +36,7 @@ function Invoke-ConductionCondenser {
         return $opSignal
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
+        $opSignal.LogCritical("Exception during conduction condenser run: $($_.Exception.Message)", $null, $_)
         return $opSignal
     }
 

@@ -9,7 +9,7 @@ class MappedQuantumAdapter {
         $opSignal = [Signal]::Start("MappedQuantumAdapter.Start") | Select-Object -Last 1
 
         if (-not $Conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to MappedQuantumAdapter.Start()")
+            $opSignal.LogCritical("Null Conductor passed to MappedQuantumAdapter.Start()")
             return $opSignal
         }
 
@@ -44,7 +44,7 @@ class MappedQuantumAdapter {
         if ($registerSignal.Success()) {
             $opSignal.LogInformation("✅ Registered quantum provider at key: '$Key'")
         } else {
-            $opSignal.LogWarning("⚠️ Failed to register quantum provider at key: '$Key'")
+            $opSignal.LogWarning("Failed to register quantum provider at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)
@@ -68,7 +68,7 @@ class MappedQuantumAdapter {
                     $opSignal.LogInformation("⚛️ Quantum provider '$key' successfully submitted circuit '$CircuitName'")
                     break
                 } else {
-                    $opSignal.LogWarning("⚠️ Provider '$key' failed to submit circuit '$CircuitName'")
+                    $opSignal.LogWarning("Provider '$key' failed to submit circuit '$CircuitName'")
                 }
             } else {
                 $opSignal.LogVerbose("⏭️ Provider '$key' does not implement SubmitCircuit")
@@ -76,7 +76,7 @@ class MappedQuantumAdapter {
         }
 
         if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No quantum provider succeeded for circuit '$CircuitName'")
+            $opSignal.LogCritical("No quantum provider succeeded for circuit '$CircuitName'")
         }
 
         $this.Signal.MergeSignal($opSignal)

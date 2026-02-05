@@ -18,14 +18,14 @@ function Invoke-MappedStorageAdapter {
 
     try {
         if ([string]::IsNullOrWhiteSpace($Path)) {
-            $opSignal.LogWarning("⚠️ Path is empty. Nothing to resolve.")
+            $opSignal.LogWarning("Path is empty. Nothing to resolve.")
             return $opSignal
         }
 
         $adapterPath = "*.#.$Slot.@"
         $adapterSignal = Resolve-PathFromDictionary -Dictionary $MappedAdapterSignal -Path $adapterPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
-            $opSignal.LogCritical("⚠️ Adapter path '$adapterPath' not found in Conductor.")
+            $opSignal.LogCritical("Adapter path '$adapterPath' not found in Conductor.")
             return $opSignal
         }
 
@@ -34,7 +34,7 @@ function Invoke-MappedStorageAdapter {
         $resolvedPathSignal = Resolve-PathWithExtensionFromPath -Signal $opSignal -Path $Path | Select-Object -Last 1
         
         if ($opSignal.MergeSignalAndVerifyFailure($resolvedPathSignal)) {
-            $opSignal.LogCritical("⚠️ Could not resolve path with extension for '$Path'.")
+            $opSignal.LogCritical("Could not resolve path with extension for '$Path'.")
             return $opSignal
         } 
         
@@ -42,7 +42,7 @@ function Invoke-MappedStorageAdapter {
 
         $adapterIvokeSignal = $adapter.Invoke($Path, $Plan) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterIvokeSignal)) {
-            $opSignal.LogCritical("⚠️ Adapter failed to resolve path '$Path' with slot '$Slot'.")
+            $opSignal.LogCritical("Adapter failed to resolve path '$Path' with slot '$Slot'.")
             return $opSignal
         }
         else {

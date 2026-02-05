@@ -73,7 +73,7 @@ class GridCondenser {
                     $opSignal.MergeSignal($sourceSignal) | Out-Null
 
                     if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal)) {
-                        $opSignal.LogCritical("❌ Failed to resolve FlatFormulaSource.")
+                        $opSignal.LogCritical("Failed to resolve FlatFormulaSource.")
                         return $opSignal
                     }
 
@@ -116,7 +116,7 @@ class GridCondenser {
 
                     $graphSignal = Resolve-GraphForJsonArray -ConductionSignal $ConductionSignal -Plan $Plan  -GraphName $graphName -ItemSignal $subSignal | Select-Object -Last 1
                     if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
-                        $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
+                        $opSignal.LogWarning("Failed to resolve graph for plan: $PlanName")
                         return $opSignal
                     }
 
@@ -128,7 +128,7 @@ class GridCondenser {
                 }
 
                 default {
-                    $opSignal.LogWarning("⚠️ Unsupported Activity: $Activity")
+                    $opSignal.LogWarning("Unsupported Activity: $Activity")
                     break
                 }
             }
@@ -146,7 +146,7 @@ class GridCondenser {
         $opSignal.MergeSignal($sourceSignal) | Out-Null
 
         if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal)) {
-            $opSignal.LogCritical("❌ Failed to resolve FlatFormulaSource.")
+            $opSignal.LogCritical("Failed to resolve FlatFormulaSource.")
             return $opSignal
         }
 
@@ -182,7 +182,7 @@ class GridCondenser {
         # Extract graph plans using WirePath
         $planSignal = Resolve-PathFromDictionary -Dictionary $condenserSignal -Path $PlanWirePath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($planSignal)) {
-            $opSignal.LogCritical("❌ Failed to resolve GraphPlans from path: $PlanWirePath")
+            $opSignal.LogCritical("Failed to resolve GraphPlans from path: $PlanWirePath")
             return $opSignal
         }
 

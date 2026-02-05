@@ -25,133 +25,6 @@
 #   - Returns the wrapped Signal with .Pointer to the constructed graph
 #
 
-################################# THIS FUNCTION IS NOT TESTED, IT HASN'T BEEN REMOVED IN CASE IT'S USEFUL, IT IS IN A SINFUL PLACE
-# All operations respect sovereign memory principles:
-# - No raw object mutation
-# - All lineage is tracked through Signals
-# - Memory injection is explicit and symbolic
-function Remove-ReversePointersFromSignal {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [Signal]$RootSignal
-    )
-
-    $opSignal = [Signal]::Start("Remove-ReversePointersFromSignal", $RootSignal) | Select-Object -Last 1
-
-    # Track visited objects by reference to prevent infinite recursion on cycles.
-    $visited = New-Object 'System.Collections.Generic.HashSet[int]'
-
-    $signalsVisited = 0
-    $reverseCleared = 0
-    $objectsVisited = 0
-
-    function Get-RefId {
-        param([object]$obj)
-        if ($null -eq $obj) { return $null }
-        return [System.Runtime.CompilerServices.RuntimeHelpers]::GetHashCode($obj)
-    }
-
-    function Visit {
-        param([object]$obj)
-
-        if ($null -eq $obj) { return }
-
-        $id = Get-RefId $obj
-        if ($null -ne $id) {
-            if (-not $visited.Add($id)) { return } # already visited
-        }
-
-        $script:objectsVisited++
-
-        # If it's a Signal, clear ReversePointer and continue into its surfaces.
-        if ($obj -is [Signal]) {
-            $script:signalsVisited++
-
-            if ($null -ne $obj.ReversePointer) {
-                $obj.ReversePointer = $null
-                $script:reverseCleared++
-            }
-
-            # Traverse the other known Signal surfaces that can hold graph/memory
-            Visit $obj.Pointer
-            Visit $obj.Jacket
-            Visit $obj.Result
-
-            # Traverse entries (they hold references to the SignalEntry objects, which may reference Signal)
-            # If SignalEntry has a back-reference to Signal, visited tracking prevents loops.
-            if ($null -ne $obj.Entries) {
-                foreach ($e in $obj.Entries) { Visit $e }
-            }
-
-            return
-        }
-
-        # Traverse dictionaries
-        if ($obj -is [System.Collections.IDictionary]) {
-            foreach ($k in @($obj.Keys)) { Visit $k }
-            foreach ($v in @($obj.Values)) { Visit $v }
-            return
-        }
-
-        # Traverse enumerables (but not strings)
-        if ($obj -is [System.Collections.IEnumerable] -and -not ($obj -is [string])) {
-            foreach ($item in $obj) { Visit $item }
-            return
-        }
-
-        # Traverse PSCustomObject/PSObject properties
-        # NOTE: This is a generic walk to reach nested Signals inside Graph/Grid objects, etc.
-        try {
-            $psObj = $obj.PSObject
-            if ($null -ne $psObj -and $psObj.Properties.Count -gt 0) {
-                foreach ($p in @($psObj.Properties)) {
-                    # Avoid triggering expensive/indexer properties by just reading Value
-                    Visit $p.Value
-                }
-                return
-            }
-        }
-        catch {
-            # ignore
-        }
-
-        # Traverse reflected public instance properties for .NET classes (Graph etc.)
-        try {
-            $t = $obj.GetType()
-            foreach ($prop in $t.GetProperties([System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::Public)) {
-                if (-not $prop.CanRead) { continue }
-                if ($prop.GetIndexParameters().Count -gt 0) { continue } # skip indexers
-
-                $val = $null
-                try { $val = $prop.GetValue($obj) } catch { continue }
-                Visit $val
-            }
-        }
-        catch {
-            # ignore
-        }
-    }
-
-    try {
-        Visit $RootSignal
-
-        $opSignal.SetResult([pscustomobject]@{
-                SignalsVisited = $signalsVisited
-                ReverseCleared = $reverseCleared
-                ObjectsVisited = $objectsVisited
-            })
-
-        $opSignal.LogInformation("✅ ReversePointer cleared on $reverseCleared Signal(s). Signals visited: $signalsVisited. Objects visited: $objectsVisited.")
-        $opSignal.MarkSuccess()
-    }
-    catch {
-        $opSignal.LogCritical("🔥 Exception during Remove-ReversePointersFromSignal: $_", $null, $_)
-    }
-
-    return $opSignal
-}
-
 function Invoke-ProcessConduitCondenser {
     param (
         [Signal]$Signal,
@@ -180,11 +53,12 @@ function Invoke-ProcessConduitCondenser {
                 break
             }
 
+            $plan = ($item.Value).HasResult() ? ($item.Value).GetResult() : $Plan
             $MappingResultSignal = Invoke-MappedAdapter `
                 -Signal $Signal `
                 -Adapter $SourceAdapter `
                 -Activity $SourceActivity `
-                -Plan $Plan `
+                -Plan $plan `
                 -ItemSignal $item.Value
             | Select-Object -Last 1
 

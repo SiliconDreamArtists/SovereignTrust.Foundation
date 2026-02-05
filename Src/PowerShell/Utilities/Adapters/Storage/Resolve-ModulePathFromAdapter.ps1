@@ -12,7 +12,7 @@ function Resolve-ModulePathFromAdapter {
     try {
         $root = Resolve-PathFromDictionary -Dictionary $Adapter -Path "$.*.#.$Slot" | Select-Object -Last 1
         if (-not $root.Success()) {
-            return $opSignal.MergeSignal($root).LogCritical("❌ Could not resolve root address from adapter.")
+            return $opSignal.MergeSignal($root).LogCritical("Could not resolve root address from adapter.")
         }
 
         $rootAdapter  = $root.GetResult()
@@ -33,7 +33,7 @@ function Resolve-ModulePathFromAdapter {
         }
 
         if (-not $opSignal.HasResult()) {
-            $opSignal.LogCritical("❌ Could not resolve module path for '$RelativePath' in slot '$Slot'.")
+            $opSignal.LogCritical("Could not resolve module path for '$RelativePath' in slot '$Slot'.")
         }
     }
     catch {

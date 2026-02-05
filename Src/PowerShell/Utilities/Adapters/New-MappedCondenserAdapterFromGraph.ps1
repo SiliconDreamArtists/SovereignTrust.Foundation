@@ -10,7 +10,7 @@ function New-MappedCondenserAdapterFromGraph {
         # ░▒▓█ INIT EMPTY MAPPED CONDENSER █▓▒░
         $mappedAdapterSignal = [MappedCondenserAdapter]::Start($Conductor) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($mappedAdapterSignal)) {
-            $opSignal.LogCritical("❌ Failed to initialize empty MappedCondenserAdapter.")
+            $opSignal.LogCritical("Failed to initialize empty MappedCondenserAdapter.")
             return $opSignal
         }
 
@@ -20,27 +20,27 @@ function New-MappedCondenserAdapterFromGraph {
         # ░▒▓█ MOUNT MAPPED CONDENSER ON CONDUCTOR'S GRAPH █▓▒░
         $conductorGraphSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path "$.*.#.Adapters.*" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($conductorGraphSignal)) {
-            $opSignal.LogCritical("❌ Could not resolve Conductor pointer graph.")
+            $opSignal.LogCritical("Could not resolve Conductor pointer graph.")
             return $opSignal
         }
 
         $conductorGraph = $conductorGraphSignal.GetResult() | Select-Object -Last 1
         $registerMountSignal = $conductorGraph.RegisterResultAsSignal("MappedCondenser", $mappedAdapter) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($registerMountSignal)) {
-            $opSignal.LogCritical("❌ Failed to register MappedCondenser on Conductor.")
+            $opSignal.LogCritical("Failed to register MappedCondenser on Conductor.")
             return $opSignal
         }
 
         # ░▒▓█ RESOLVE CONDENSER POPULATION GRAPH █▓▒░
         $graphSourceSignal = Resolve-PathGraphCondenserAdapter -Conductor $Conductor | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($graphSourceSignal)) {
-            $opSignal.LogCritical("❌ Failed to resolve Condenser adapter source graph.")
+            $opSignal.LogCritical("Failed to resolve Condenser adapter source graph.")
             return $opSignal
         }
 
         $graphSignal = Resolve-PathFromDictionary -Dictionary $graphSourceSignal -Path "@.#" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
-            $opSignal.LogCritical("❌ Condenser adapter graph missing from resolved source.")
+            $opSignal.LogCritical("Condenser adapter graph missing from resolved source.")
             return $opSignal
         }
 
@@ -55,7 +55,7 @@ function New-MappedCondenserAdapterFromGraph {
                 $registerAdapterSignal = $adapterGraph.RegisterSignal($key, $adapterSignal) | Select-Object -Last 1
                 $opSignal.MergeSignal($registerAdapterSignal)
             } else {
-                $opSignal.LogWarning("⚠️ Null condenser '$key' encountered during registration.")
+                $opSignal.LogWarning("Null condenser '$key' encountered during registration.")
             }
         }
 

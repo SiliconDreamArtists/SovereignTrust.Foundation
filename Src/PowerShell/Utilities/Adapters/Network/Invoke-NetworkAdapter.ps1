@@ -54,7 +54,7 @@ function Invoke-NetworkAdapter {
                 continue
             }
             else {
-                $opSignal.LogWarning("❌ Expected Signal for *Pointer, got $($current.GetType().Name)")
+                $opSignal.LogWarning("Expected Signal for *Pointer, got $($current.GetType().Name)")
             }
         }
         "Result" {
@@ -65,7 +65,7 @@ function Invoke-NetworkAdapter {
                 continue
             }
             else {
-                $opSignal.LogWarning("❌ Expected Signal for @Result, got $($current.GetType().Name)")
+                $opSignal.LogWarning("Expected Signal for @Result, got $($current.GetType().Name)")
             }
         }
     }
@@ -74,7 +74,7 @@ function Invoke-NetworkAdapter {
         $adapterPath = "@.#.$Slot.@"
         $adapterSignal = Resolve-PathFromDictionary -Dictionary $MappedAdapterSignal -Path $adapterPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
-            $opSignal.LogCritical("⚠️ Adapter path '$adapterPath' not found in Conductor.")
+            $opSignal.LogCritical("Adapter path '$adapterPath' not found in Conductor.")
             return $opSignal
         }
 
@@ -83,7 +83,7 @@ function Invoke-NetworkAdapter {
         $resolvedPathSignal = Resolve-PathWithExtensionFromPath -Signal $opSignal -Path $Path | Select-Object -Last 1
         
         if ($opSignal.MergeSignalAndVerifyFailure($resolvedPathSignal)) {
-            $opSignal.LogCritical("⚠️ Could not resolve path with extension for '$Path'.")
+            $opSignal.LogCritical("Could not resolve path with extension for '$Path'.")
             return $opSignal
         } 
         
@@ -91,7 +91,7 @@ function Invoke-NetworkAdapter {
 
         $adapterIvokeSignal = $adapter.Invoke($ConductionSignal, $Plan) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterIvokeSignal)) {
-            $opSignal.LogCritical("⚠️ Adapter failed to resolve path '$Path' with slot '$Slot'.")
+            $opSignal.LogCritical("Adapter failed to resolve path '$Path' with slot '$Slot'.")
             return $opSignal
         }
         else {

@@ -21,7 +21,7 @@ function Resolve-RelativePathFromWirePath {
 
         "Publisher" {
             # TODO: Add artifact translation chain
-            $signal.LogWarning("⚠️ Publisher strategy not implemented yet.")
+            $signal.LogWarning("Publisher strategy not implemented yet.")
         }
 
         default {

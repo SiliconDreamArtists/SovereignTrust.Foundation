@@ -46,14 +46,14 @@ function Invoke-MappedAdapter {
         $adapterPath = "%.*.#.Adapters.*.#.Mapped$adapterName"
         $adapterSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path $adapterPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
-            $opSignal.LogCritical("❌ Cannot resolve storage adapter '$Adapter' from signal (path: $adapterPath).")
+            $opSignal.LogCritical("Cannot resolve storage adapter '$Adapter' from signal (path: $adapterPath).")
             return $opSignal
         }
 
         $mappedAdapter = $adapterSignal.GetResult($true)
 
         if ($null -eq $mappedAdapter) {
-            $opSignal.LogCritical("❌ Resolved storage adapter '$Adapter' is null.")
+            $opSignal.LogCritical("Resolved storage adapter '$Adapter' is null.")
             return $opSignal
         }
 
@@ -76,13 +76,13 @@ function Invoke-MappedAdapter {
         # Contract: .Invoke($opSignal, $Signal, $ItemSignal)
         $invokeSignal = $mappedAdapter.Invoke($adapterSlot, $Activity, $Signal, $Plan, $ItemSignal) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($invokeSignal)) {
-            $opSignal.LogCritical("⚠️ Storage adapter invoke failed (Adapter: $Adapter).")
+            $opSignal.LogCritical("Storage adapter invoke failed (Adapter: $Adapter).")
             return $opSignal
         }
         $opSignal.SetResult($invokeSignal.GetResult())
     }
     catch {
-        $opSignal.LogCritical("❌ Exception during storage adapter invoke: $($_.Exception.Message)", $null, $_)
+        $opSignal.LogCritical("Exception during storage adapter invoke: $($_.Exception.Message)", $null, $_)
     }
 
     return $opSignal

@@ -36,7 +36,7 @@ class RestCondenser {
 
         $skipBearerTokenSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.SkipBearerToken" -Default $false | Select-Object -Last 1
 
-        $bearerTokenSignal = $skipBearerTokenSignal ? $null : $this.ResolveBearerToken($ConductionSignal, $Plan, $false)
+        $bearerTokenSignal = $skipBearerTokenSignal.GetResult() ? $null : $this.ResolveBearerToken($ConductionSignal, $Plan, $false)
         $headersSignal = $this.GetStorageVersionHeaders($ConductionSignal, $Plan)
 
         # Clone Plan before Mutate
@@ -71,7 +71,7 @@ class RestCondenser {
 
     try {
         if (-not $Plan) {
-            $opSignal.LogCritical("❌ Plan is null.")
+            $opSignal.LogCritical("Plan is null.")
             return $opSignal
         }
 
@@ -81,7 +81,7 @@ class RestCondenser {
 
         $url = $urlSignal.GetResult()
         if ([string]::IsNullOrWhiteSpace($url)) {
-            $opSignal.LogCritical("❌ Plan.Uri was empty.")
+            $opSignal.LogCritical("Plan.Uri was empty.")
             return $opSignal
         }
 
@@ -92,7 +92,7 @@ class RestCondenser {
             $port = $uri.Port
         }
         catch {
-            $opSignal.LogCritical("❌ Plan.Url is not a valid Uri: $($_.Exception.Message)")
+            $opSignal.LogCritical("Plan.Url is not a valid Uri: $($_.Exception.Message)")
             return $opSignal
         }
 
@@ -137,12 +137,12 @@ class RestCondenser {
 
         try {
             if (-not $ConductionSignal) {
-                $opSignal.LogCritical("❌ ConductionSignal is null.")
+                $opSignal.LogCritical("ConductionSignal is null.")
                 return $opSignal
             }
 
             if (-not $Plan) {
-                $opSignal.LogCritical("❌ Plan is null.")
+                $opSignal.LogCritical("Plan is null.")
                 return $opSignal
             }
 
@@ -152,7 +152,7 @@ class RestCondenser {
 
             $hostAddress = $hostSignal.GetResult()
             if (-not $hostAddress) {
-                $opSignal.LogCritical("❌ Plan.Host was empty.")
+                $opSignal.LogCritical("Plan.Host was empty.")
                 return $opSignal
             }
 
@@ -178,7 +178,7 @@ class RestCondenser {
             }
 
             if (-not $tokensGraph) {
-                $opSignal.LogCritical("❌ Failed to resolve or create AccessTokens graph.")
+                $opSignal.LogCritical("Failed to resolve or create AccessTokens graph.")
                 return $opSignal
             }
 
@@ -207,7 +207,7 @@ class RestCondenser {
 
             $token = $bearerTokenSignal.GetResult($true)
             if (-not $token) {
-                $opSignal.LogCritical("❌ Resolve-BearerToken returned empty token.")
+                $opSignal.LogCritical("Resolve-BearerToken returned empty token.")
                 return $opSignal
             }
 

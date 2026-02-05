@@ -52,7 +52,7 @@ function Invoke-ApplyHydrationCondenser {
                         $stepSignal = & Invoke-CondenserAdapter -Slot $TokenDispatch[[string]$step] -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
                         #$stepSignal = & $TokenDispatch[[string]$step] -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -HydrationStyle $HydrationStyle | Select-Object -Last 1
                     } else {
-                        $opSignal.LogWarning("⚠️ Unknown hydration step: $step")
+                        $opSignal.LogWarning("Unknown hydration step: $step")
                         continue
                     }
 
@@ -61,7 +61,7 @@ function Invoke-ApplyHydrationCondenser {
             }
 
             if (-not $opSignal.MergeSignalAndVerifySuccess(@($stepSignal))) {
-                $opSignal.LogCritical("❌ Hydration step '$step' failed.")
+                $opSignal.LogCritical("Hydration step '$step' failed.")
                 break
             }
 

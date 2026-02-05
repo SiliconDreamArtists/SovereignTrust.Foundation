@@ -45,7 +45,7 @@ class Token_Navigator {
             $opSignal.SetResult($resultSignal.GetResult())
             $opSignal.LogInformation("✅ Token navigator path '$Path' resolved successfully.")
         } else {
-            $opSignal.LogWarning("⚠️ Token navigator path '$Path' failed to resolve.")
+            $opSignal.LogWarning("Token navigator path '$Path' failed to resolve.")
         }
     }
     catch {

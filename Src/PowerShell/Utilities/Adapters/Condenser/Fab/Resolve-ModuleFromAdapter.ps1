@@ -14,7 +14,7 @@ function Resolve-ModuleFromAdapter {
         $opSignal.MergeSignal($adapterSignal)
 
         if ($adapterSignal.Failure()) {
-            $opSignal.LogCritical("❌ Could not resolve MappedStorage adapter from signal.")
+            $opSignal.LogCritical("Could not resolve MappedStorage adapter from signal.")
             return $opSignal
         }
 
@@ -38,7 +38,7 @@ function Resolve-ModuleFromAdapter {
             $opSignal.LogInformation("✅ Module imported from path: $($pathSignal.GetResult())")
             $opSignal.SetResult($cmd)
         } else {
-            $opSignal.LogWarning("⚠️ Could not resolve module path from adapter.")
+            $opSignal.LogWarning("Could not resolve module path from adapter.")
             $opSignal.SetResult($pathSignal.GetResult())
         }
     }

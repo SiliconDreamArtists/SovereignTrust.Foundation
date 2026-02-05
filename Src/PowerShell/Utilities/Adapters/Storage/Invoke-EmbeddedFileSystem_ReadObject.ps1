@@ -25,7 +25,7 @@ function Invoke-EmbeddedFileSystem_ReadObject {
             }
         }
 
-        $opSignal.LogCritical("⚠️ File '$VirtualPath' not found in any address.")
+        $opSignal.LogCritical("File '$VirtualPath' not found in any address.")
     }
     catch {
         $opSignal.LogCritical("🔥 Exception during Invoke-ReadVirtualFileFromAddresses: $($_.Exception.Message)", $null, $_)

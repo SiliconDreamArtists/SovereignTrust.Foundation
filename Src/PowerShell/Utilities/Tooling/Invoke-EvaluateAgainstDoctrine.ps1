@@ -17,7 +17,7 @@ function Invoke-EvaluateAgainstDoctrine {
     # ░▒▓█ CHECK: SetResult usage █▓▒░
     if ($ScriptText -notmatch '\.SetResult\(') {
         $score -= 10
-        $flags += "⚠️ Missing .SetResult() — output may be undefined or untracked."
+        $flags += "Missing .SetResult() — output may be undefined or untracked."
     }
 
     # ░▒▓█ CHECK: Raw property access (anti-pattern) █▓▒░
@@ -41,7 +41,7 @@ function Invoke-EvaluateAgainstDoctrine {
     # ░▒▓█ CHECK: Return value is a Signal █▓▒░
     if ($ScriptText -notmatch 'return \$\w+\s*$') {
         $score -= 10
-        $flags += "⚠️ Return statement is not signal-tracked."
+        $flags += "Return statement is not signal-tracked."
     }
 
     # ░▒▓█ COMPILE REPORT █▓▒░
@@ -55,7 +55,7 @@ function Invoke-EvaluateAgainstDoctrine {
         $signal.LogInformation("✅ Doctrine alignment strong — score $score/100.")
     }
     else {
-        $signal.LogWarning("⚠️ Doctrine misalignment detected — score $score/100.")
+        $signal.LogWarning("Doctrine misalignment detected — score $score/100.")
         foreach ($flag in $flags) {
             $signal.LogWarning($flag)
         }

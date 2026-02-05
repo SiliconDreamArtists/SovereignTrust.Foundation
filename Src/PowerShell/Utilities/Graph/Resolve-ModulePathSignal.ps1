@@ -43,7 +43,7 @@ function Resolve-ModulePathSignal {
         # ░▒▓█ VERIFY WIREPATH FORMAT █▓▒░
         $segments = $WirePath -split '\.'
         if ($segments.Count -lt 4) {
-            $opSignal.LogCritical("❌ WirePath must follow format Project.Collection.Kind.Type[.Slot][.Key]")
+            $opSignal.LogCritical("WirePath must follow format Project.Collection.Kind.Type[.Slot][.Key]")
             return $opSignal
         }
 

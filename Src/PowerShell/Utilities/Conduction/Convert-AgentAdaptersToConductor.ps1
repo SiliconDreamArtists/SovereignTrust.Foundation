@@ -62,7 +62,7 @@ function Convert-AgentAdaptersToConductor {
             if ($signal.MergeSignalAndVerifySuccess($initSignal)) {
                 $signal.LogRecovery("🔁 AdapterJackets path was missing but was recovered via initialization.")
             } else {
-                $signal.LogWarning("⚠️ Failed to initialize AdapterJackets memory space.")
+                $signal.LogWarning("Failed to initialize AdapterJackets memory space.")
             }
         }
 

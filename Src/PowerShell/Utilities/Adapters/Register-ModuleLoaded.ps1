@@ -25,7 +25,7 @@ function Register-ModuleLoaded {
         $signal.LogInformation("📦 Signal '$ModuleName' registered in ModulesGraph.")
     }
     catch {
-        $signal.LogCritical("❌ Failed to register module '$ModuleName': $($_.Exception.Message)")
+        $signal.LogCritical("Failed to register module '$ModuleName': $($_.Exception.Message)")
     }
 
     $signal.SetResult($ModulesGraph)

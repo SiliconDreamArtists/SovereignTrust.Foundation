@@ -45,14 +45,14 @@ function Invoke-HydrateTokenCondenser {
 
     $addPlanSignal = Add-PathToDictionary -Dictionary $subSignal -Path "${PlanWirePathPrefix}.Plan" -Value $Plan | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($addPlanSignal)) {
-        $opSignal.LogCritical("❌ Failed to attach Plan to subSignal at path ${PlanWirePathPrefix}.Plan")
+        $opSignal.LogCritical("Failed to attach Plan to subSignal at path ${PlanWirePathPrefix}.Plan")
         return $opSignal
     }
 
     ##### Hydration Step
     $graphSignal = Resolve-PathGraphForJsonArray -ConductionSignal $subSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($graphSignal)) {
-        $opSignal.LogWarning("⚠️ Failed to resolve graph for plan: $PlanName")
+        $opSignal.LogWarning("Failed to resolve graph for plan: $PlanName")
         return $opSignal
     }
 
@@ -65,7 +65,7 @@ function Invoke-HydrateTokenCondenser {
     if ($Plan.TargetWirePath) {
         $injectSignal = Add-PathToDictionary -Dictionary $ItemSignal -Path $Plan.TargetWirePath -Value $wrappedGraphSignal | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($injectSignal)) {
-            $opSignal.LogCritical("❌ Failed to inject graph into '$($Plan.TargetWirePath)'")
+            $opSignal.LogCritical("Failed to inject graph into '$($Plan.TargetWirePath)'")
             return $opSignal
         }
         $opSignal.LogInformation("📍 Injected graph '$PlanName' into '$($Plan.TargetWirePath)'")

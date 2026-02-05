@@ -9,7 +9,7 @@ function Invoke-MapCondenser {
     $opSignal = [Signal]::Start("Invoke-MapCondenser", $Signal) | Select-Object -Last 1
 
     if (-not $ProposalSignal.HasResult()) {
-        $opSignal.LogCritical("❌ Missing Proposal object.")
+        $opSignal.LogCritical("Missing Proposal object.")
         return $opSignal
     }
 
@@ -27,7 +27,7 @@ function Invoke-MapCondenser {
         'Direct' {
             $directResult = Invoke-DirectMapCondenser -Signal $Signal -Context $Context -ProposalSignal $ProposalSignal | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure($directResult)) {
-                $opSignal.LogCritical("❌ DirectMapCondenser failed.")
+                $opSignal.LogCritical("DirectMapCondenser failed.")
                 return $opSignal
             }
             else {
@@ -43,7 +43,7 @@ function Invoke-MapCondenser {
         }
 
         default {
-            $opSignal.LogCritical("❌ Unknown CondenserMode: $mode")
+            $opSignal.LogCritical("Unknown CondenserMode: $mode")
             return $opSignal
         }
     }

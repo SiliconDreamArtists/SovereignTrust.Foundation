@@ -17,7 +17,7 @@ function Resolve-AdapterFromJacket {
         # ░▒▓█ RESOLVE VIRTUAL PATH █▓▒░
         $virtualPathSignal = Resolve-PathFromDictionary -Dictionary $Jacket -Path "@.VirtualPath" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($virtualPathSignal)) {
-            $opSignal.LogCritical("❌ Jacket is missing a valid VirtualPath.")
+            $opSignal.LogCritical("Jacket is missing a valid VirtualPath.")
             return $opSignal
         }
 
@@ -26,14 +26,14 @@ function Resolve-AdapterFromJacket {
         # ░▒▓█ LOAD MODULE MANIFEST GRAPH █▓▒░
         $moduleGraphSignal = Resolve-DependencyModuleFromGraph -Signal $Signal -ConductionContext $ConductionContext -WirePath $wirePath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($moduleGraphSignal)) {
-            $opSignal.LogCritical("❌ Failed to load manifest from WirePath: $wirePath")
+            $opSignal.LogCritical("Failed to load manifest from WirePath: $wirePath")
             return $opSignal
         }
 
         # ░▒▓█ RESOLVE CLASS TYPE FROM MANIFEST █▓▒░
         $typeSignal = Resolve-PathFromDictionary -Dictionary $moduleGraphSignal -Path "@.%.@.FullType" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($typeSignal)) {
-            $opSignal.LogCritical("❌ Class name missing in manifest.")
+            $opSignal.LogCritical("Class name missing in manifest.")
             return $opSignal
         }
 
@@ -58,7 +58,7 @@ function Resolve-AdapterFromJacket {
         }
 
         if ($opSignal.MergeSignalAndVerifyFailure($typeSignal)) {
-            $opSignal.LogCritical("❌ Class name missing in manifest.")
+            $opSignal.LogCritical("Class name missing in manifest.")
             return $opSignal
         }
 
@@ -67,7 +67,7 @@ function Resolve-AdapterFromJacket {
                 $instance = New-Object -TypeName $typeName -ErrorAction Stop
             }
             catch {
-                $error1 = "❌ Failed to instantiate type '$typeName': $_"
+                $error1 = "Failed to instantiate type '$typeName': $_"
             }
         }
 
@@ -77,7 +77,7 @@ function Resolve-AdapterFromJacket {
                 $instance = & $resolveFunctionName
             }
             catch {
-                $error2 = "❌ Failed to instantiate type '$typeName': $_"
+                $error2 = "Failed to instantiate type '$typeName': $_"
             }
         }
 
@@ -92,13 +92,13 @@ function Resolve-AdapterFromJacket {
         # ░▒▓█ MERGE $JACKET OVER $MANIFEST █▓▒░
         $manifestSignal = Resolve-PathFromDictionary -Dictionary $moduleGraphSignal -Path "@.%.@" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($manifestSignal)) {
-            $opSignal.LogCritical("❌ Failed to extract Manifest dictionary from Graph.")
+            $opSignal.LogCritical("Failed to extract Manifest dictionary from Graph.")
             return $opSignal
         }
 
         $mergeServiceSignal = Resolve-PathFromDictionary -Dictionary $ConductionContext -Path "%.*.#.Adapters.*.#.MappedCondenser.@.$.*.#.MergeCondenser.@" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($mergeServiceSignal)) {
-            $opSignal.LogCritical("❌ MergeCondenser not available on ConductionContext.")
+            $opSignal.LogCritical("MergeCondenser not available on ConductionContext.")
             return $opSignal
         }
 
@@ -106,7 +106,7 @@ function Resolve-AdapterFromJacket {
         $mergedSignal = $mergeService.InvokeByParameter($manifestSignal.GetResult(), $Jacket, $true) | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure($mergedSignal)) {
-            $opSignal.LogWarning("⚠️ Jacket-to-Manifest merge failed; continuing with original jacket.")
+            $opSignal.LogWarning("Jacket-to-Manifest merge failed; continuing with original jacket.")
         }
         else {
             $Jacket = $mergedSignal.GetResult()
@@ -122,7 +122,7 @@ function Resolve-AdapterFromJacket {
                 $opSignal.LogInformation("✅ Adapter '$($Jacket.Name)' ($($Jacket.VirtualPath)) constructed successfully.")
             }
             else {
-                $opSignal.LogWarning("⚠️ Construct() failed on adapter '$($Jacket.Name)'.")
+                $opSignal.LogWarning("Construct() failed on adapter '$($Jacket.Name)'.")
             }
         }
         else {

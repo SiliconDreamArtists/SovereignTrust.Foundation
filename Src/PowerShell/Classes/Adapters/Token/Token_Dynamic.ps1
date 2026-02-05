@@ -45,7 +45,7 @@ class Token_Dynamic {
             $opSignal.SetResult($resultSignal.GetResult())
             $opSignal.LogInformation("✅ Token Dynamic path '$Path' resolved successfully.")
         } else {
-            $opSignal.LogWarning("⚠️ Token Dynamic path '$Path' failed to resolve.")
+            $opSignal.LogWarning("Token Dynamic path '$Path' failed to resolve.")
         }
     }
     catch {

@@ -39,7 +39,7 @@ function Test-IsClassDefined {
             $opSignal.SetResult($type)
         }
         else {
-            $opSignal.LogWarning("❌ Class not found: $ClassName")
+            $opSignal.LogWarning("Class not found: $ClassName")
             #$opSignal.SetResult($false)
         }
     }

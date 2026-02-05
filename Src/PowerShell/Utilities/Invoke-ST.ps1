@@ -16,9 +16,11 @@ function Invoke-ST {
             [object]$Overlay
         )
 
-        $opSignal = [Signal]::Start("Resolve-ConductionPlanRoute", $Signal) | Select-Object -Last 1
-
-        $opSignal.LogInformation("🧭 Resolving ConductionPlanRoute from RouteOverlay.")
+        $opSignal = [Signal]::Start("Invoke-ST: Conduction Runner", $Signal) | Select-Object -Last 1
+        
+        # Acts as the Conduction Signal with the Conductor
+        $opSignal.SetJacket($Signal)
+        $opSignal.LogInformation("Resolving ConductionPlanRoute from RouteOverlay.")
 
         # ──────────────────────────────────────────────────────────────────────
         # Base mapping (overlay expected to provide name/path)
@@ -43,7 +45,7 @@ function Invoke-ST {
         | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure(@($mergeSignal))) {
-            $opSignal.LogCritical("⚠️ Failed to merge RouteOverlay into ConductionPlanMapping.")
+            $opSignal.LogCritical("Failed to merge RouteOverlay into ConductionPlanMapping.")
             return $opSignal
         }
 
@@ -76,7 +78,7 @@ function Invoke-ST {
         # ──────────────────────────────────────────────────────────────────────
         # Execute Memory.Generate
         # ──────────────────────────────────────────────────────────────────────
-        $TargetSignal = [Signal]::Start("Resolve-ConductionPlanRoute.Target", $opSignal) | Select-Object -Last 1
+        $TargetSignal = [Signal]::Start("Invoke-PlanWithOptionalContext", $opSignal) | Select-Object -Last 1
 
         $sourceSignal = Invoke-CondenserAdapter `
             -Slot "Memory" `
@@ -87,24 +89,10 @@ function Invoke-ST {
         | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure(@($sourceSignal))) {
-            $opSignal.LogCritical("⚠️ Memory.Generate failed while resolving ConductionPlan.")
-            return $opSignal
-        }
-        <#
-        # Extract resolved plan
-        $planSignal = Resolve-PathFromDictionary `
-            -Dictionary $sourceSignal `
-            -Path "@.*.#.Plan" `
-            -SignalLevel "Critical" `
-        | Select-Object -Last 1
-
-        if ($opSignal.MergeSignalAndVerifyFailure(@($planSignal))) {
-            $opSignal.LogCritical("⚠️ Failed to resolve '@.*.#.Plan' from Memory.Generate result.")
+            $opSignal.LogCritical("Memory.Generate failed while resolving ConductionPlan.")
             return $opSignal
         }
 
-        $opSignal.SetResult($planSignal.GetResult())
-#>
         $opSignal.SetResult($sourceSignal.GetResult())
         $opSignal.LogInformation("✅ Conduction plan resolved successfully.")
         return $opSignal
@@ -150,7 +138,7 @@ function Invoke-ST {
         | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure(@($mergeSignal))) {
-            $opSignal.LogCritical("⚠️ Failed to merge RouteOverlay into ConductionPlanMapping.")
+            $opSignal.LogCritical("Failed to merge RouteOverlay into ConductionPlanMapping.")
             return $opSignal
         }
 
@@ -182,7 +170,7 @@ function Invoke-ST {
         | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure(@($sourceSignal))) {
-            $opSignal.LogCritical("⚠️ Memory.Generate failed while resolving ConductionPlan.")
+            $opSignal.LogCritical("Memory.Generate failed while resolving ConductionPlan.")
             return $opSignal
         }
         <#
@@ -194,7 +182,7 @@ function Invoke-ST {
         | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure(@($planSignal))) {
-            $opSignal.LogCritical("⚠️ Failed to resolve '@.*.#.Plan' from Memory.Generate result.")
+            $opSignal.LogCritical("Failed to resolve '@.*.#.Plan' from Memory.Generate result.")
             return $opSignal
         }
 
@@ -237,7 +225,7 @@ function Invoke-ST {
                 | Select-Object -Last 1
 
                 if ($opSignal.MergeSignalAndVerifyFailure(@($mergeSignal))) {
-                    $opSignal.LogCritical("⚠️ Failed merging ConductionContextOverlay into ConductionContext.")
+                    $opSignal.LogCritical("Failed merging ConductionContextOverlay into ConductionContext.")
                     return $opSignal
                 }
 
@@ -252,7 +240,7 @@ function Invoke-ST {
             return $opSignal
         }
         catch {
-            $opSignal.LogCritical("❌ Exception in Resolve-ConductionContext: $($_.Exception.Message)", $null, $_)
+            $opSignal.LogCritical("Exception in Resolve-ConductionContext: $($_.Exception.Message)", $null, $_)
             return $opSignal
         }
     }
@@ -263,8 +251,8 @@ function Invoke-ST {
     # Optionally run a test fusion session
 
     # Create a global console logger
-    $Global:ConsoleLoggerInstance = [ConsoleLogger]::new()
-    $Global:SignalTelemeter = [SignalTelemeter]::new()
+    #    $Global:ConsoleLoggerInstance = [ConsoleLogger]::new()
+    #    $Global:SignalTelemeter = [SignalTelemeter]::new()
 
     #    [object]$Environment,
     #    [object]$ConductionPlanRoute,
@@ -288,107 +276,60 @@ function Invoke-ST {
     $conductorJacketSignal.SetPointer($environmentSignal.GetPointer())
 
 
-    ###################### 
-    $TelemetryLevel = 1
-    $message = "ST Has Started"
-    $TelemetrySignal = [Signal]::Start("Event") | Select-Object -Last 1
-    $TelemetryResult = @{
-        TelemetryLevel      = $TelemetryLevel
-        TelemetryMessage    = $message
-        TelemetryType       = "Standard"
-        TelemetryDataType   = "Event"
-        TelemetryProperties = @{
-            serviceName = "[Memory.Signal.%.@.ServiceName|SDAFusion/]"
+    function TestTelemetry([object]$conductorJacketSignal) {
+        $testOpSignal = [Signal]::Start("🎯 Start TestOpSignal", $environmentSignal) | Select-Object -Last 1
+        $testOpSignal.AddTag("Mine")
+        $testOpSignal.AddProperty("SignalId", ([guid]::NewGuid().ToString()))
+        $testOpSignal.LogInformation("✅ Test Information Level");
+
+        $entry = $testOpSignal.Entries | Select-Object -Last 1
+        $entry.AddTag("Verbose")
+        $entry.AddTag("IngestionScheduled")
+        $entry.AddProperty("SignalId", ([guid]::NewGuid().ToString()))
+
+        $testOpSignal.LogWarning("Test Warning Level");
+        $entry = $testOpSignal.Entries | Select-Object -Last 1
+        $entry.AddTag("Verbose")
+
+        $testOpSignal.LogCritical("Test Critical Level", @("Verbose"));
+
+        $signalMetaData = [PSCustomObject]@{
+            OperationId = [guid]::NewGuid().ToString()
         }
-    }
 
-    $TelemetrySignal.SetJacketResult($TelemetryResult) | Select-Object -Last 1
-    $TelemetrySignal.SetResult($opSignal)
+        $testOpSignal.SetMeta($signalMetaData)
 
-    $TelemetryPlan = [pscustomobject]@{
-        VirtualPath = "[Memory.Cache.TelemetryPlans.Telemetry.SignalEntries/]"
-        Mappings = [pscustomobject]@{
-            Adapter   = 'Storage.Content'
-            Activity  = 'Read'
-            Resource = 'System.Json'
-            Container = 'Plans'
-            Format    = 'Json'
-            Path       = 'Telemetry.RunEmitEntries'
+        try {
+            not-real-function
         }
-    }
-
-    # Call Adapter
-    #  Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignal" -Signal $conductorJacketSignal -Plan $Environment -ItemSignal $TelemetrySignal 
-
-    # Call Adapter
-    $testOpSignal = [Signal]::Start("🎯 Start TestOpSignal", $environmentSignal) | Select-Object -Last 1
-    $testOpSignal.AddTag("Mine")
-    $testOpSignal.AddProperty("SignalId", ([guid]::NewGuid().ToString()))
-    #$testOpEntriesHolderSignal = $testOpSignal.SetJacketResult("Test Container for Entries")
-    $testOpSignal.LogInformation("✅ Test Information Level");
-
-
-    $entry = $testOpSignal.Entries | Select-Object -Last 1
-    $entry.AddTag("Verbose")
-    $entry.AddTag("IngestionScheduled")
-    
-    $entry.AddProperty("SignalId", ([guid]::NewGuid().ToString()))
-    $testOpSignal.LogWarning("⚠️ Test Warning Level");
-    $entry = $testOpSignal.Entries | Select-Object -Last 1
-    $entry.AddTag("Verbose")
-
-    $testOpSignal.LogCritical("❌ Test Critical Level", @("Verbose"));
-
-    $signalMetaData = [PSCustomObject]@{
-        OperationId = [guid]::NewGuid().ToString()
-    }
-
-    $testOpSignal.SetMeta($signalMetaData)
-
-#    $testOpEntriesHolderSignal.AddTag("Mine2")
-#    $testOpEntriesHolderSignal.AddProperty("SignalId2", ([guid]::NewGuid().ToString()))
-
-    try
-    {
-        jid
-
-            }
         catch {
-            $testOpSignal.LogCritical("❌ Exception in Invoke-ST: $($_.Exception.Message)", @("Urgent"), $_)
-#            $testOpEntriesHolderSignal.LogCritical("Exception in Invoke-ST: $($_.Exception.Message)", @("Urgent"), $_)
+            $testOpSignal.LogCritical("Exception in Invoke-ST: $($_.Exception.Message)", @("Urgent"), $_)
         }
 
-   Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignalFull" -Signal $conductorJacketSignal -Plan $TelemetryPlan -ItemSignal $testOpSignal
-#    Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitEntries" -Signal $conductorJacketSignal -Plan $TelemetryPlan -ItemSignal $testOpSignal
-    ###################### 
+        Invoke-Telemetry -Signal $conductorJacketSignal -ItemSignal $testOpSignal
+        #Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignalFull" -Signal $conductorJacketSignal -Plan [pscustomobject]@{} -ItemSignal $testOpSignal
+        ###################### 
+    }
 
-
-
+    #    TestTelemetry -conductorJacketSignal $conductorJacketSignal
 
     $conductionPlanRouteSignal = $null
     if ($ConductionPlanRoute) {
-        #$conductionPlanRouteSignal = Resolve-PlanContentGeneration -Signal $conductorJacketSignal -Overlay $ConductionPlanRoute -GenerateMemory $true | Select-Object -Last 1
         $conductionPlanRouteSignal = Invoke-PlanWithOptionalContext -Signal $conductorJacketSignal -Overlay $ConductionPlanRoute  | Select-Object -Last 1
+        Invoke-Telemetry -Signal $conductorJacketSignal -ItemSignal $conductionPlanRouteSignal
     }
 
-    $ConductionContextSignal = $null
-    if ($ConductionContext) {
-        $ConductionContextSignal = Resolve-ConductionContext -Signal $conductorJacketSignal -ConductionContext $ConductionContext | Select-Object -Last 1
-
-        if ($opSignal.MergeSignalAndVerifyFailure($ConductionContextSignal)) {
-            
-        }
-    }
-
+    <#
     # Now Fire off Task into the $conduitSignal which is what the Condenser.Conductor.Process does when it loads a conduit to run in a silo.
     if ($PlanRunConfig) {
         Invoke-ST -ConductorSignal $conductorSignal -Plan $PlanRunConfig -ConfigContext $PlanConfigContext
     }
 
-
+#>
     # Moved the code below INTO Resolve-Conduit, Need to modify down to what is required for Invoke-SDAFusion outside of loading the exterior from external scripts.
     return $opSignal
 
+    <#
     $bondingConductorSignal = Resolve-Conductor -Signal $opSignal | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure(@($bondingConductorSignal))) {
         return $opSignal
@@ -446,7 +387,7 @@ function Invoke-ST {
     $ConductionPlanRoute = Resolve-ConductionPlanRoute -BondingConductor $bondingConductor -RouteOverlay $ConductionPlanRoute | Select-Object -Last 1
     $ConductionContext = Resolve-ConductionContext -BondingConductor $bondingConductor -ConductionContextOverlay $ConductionContext | Select-Object -Last 1
 
-
+#>
     
 
     <#
@@ -472,7 +413,7 @@ function Invoke-ST {
     $FabResult = Invoke-CondenserAdapter -Slot "Fab" -Signal $FabRequestSignal -ItemSignal $ItemSignal
 #>
 
-
+    <#
     Add-PathToDictionary -Dictionary $opSignal -Path "*.#.Environment" -Value $Environment
     Add-PathToDictionary -Dictionary $opSignal -Path "*.#.BondingConductor" -Value $bondingConductor
     $opSignal.SetReversePointer($bondingConductorSignal)
@@ -485,60 +426,5 @@ function Invoke-ST {
         $PlanEnvironment = Resolve-Environment -Environment $Environment -ServiceRole "Request-Client"
         Invoke-ST -Environment $PlanEnvironment -Plan $PlanRunConfig -ConfigContext $PlanConfigContext
     }
-
-
-    #    Start-STCSessionHost -RunInline $true
-
-    <#
-# Wire it into Signal system
-$Global:SignalTelemeter = {
-    param($signal, $entry)
-    $Global:ConsoleLoggerInstance.Log($entry.Level, $entry.Message, $entry.Exception)
-}
-    #>
-    #$opSignal = [Conductor]::Start($HostConductor, $ConductionSignal) | Select-Object -Last 1
-
-    #   $bondingConductor = New-Conductor -HostConductor $null -ConductionSignal $signal
-
-
-    <#
-     $DependenciesPath = "$PSScriptRoot\Packages"
-     
-    if (-not (Test-Path -Path $DependenciesPath)) {
-        New-Item -Path $DependenciesPath -ItemType Directory
-    }
-#>
-    #    Initialize-EnvironmentDependenciesSignal -TempLibraryFolder  $DependenciesPath
-
-
-
-    #    $sessionName = ([guid]::NewGuid()).ToString()
-    #    $startHostSignal = Start-STCSessionHost -SessionName $sessionName -RunInline $true | Select-Object -Last 1
-
-
-    #    $x = $startHostSignal.GetResult()
-    #$transferSignal = Convert-ImagesWithNConvert -InputFolder "M:\SDA\Projects\Pulses" -OutputFolder "M:\SDA\Publish\Pulses" -ResizeWidth 2688 | Select-Object -Last 1
-    #$a = $transferSignal.GetResult()
-    #return
-    <#
-$nodeSignal = Start-AtpNodeSession | Select-Object -Last 1
-$NodeSession = $nodeSignal.GetResult()
-
-$loginSignal = Invoke-AtpLogin -Handle "NeuralAlchemist@bddb.io" -Password "ioql-7w6e-va7h-3kwp" -NodeSession $NodeSession | Select-Object -Last 1
-$session = $loginSignal.GetResult()
-
-#$feedSignal = Invoke-AtpGetFeed  -Session $session -NodeSession $NodeSession -Did "at://did:plc:clhejj3qcuzj44ajyq7ctq4c/app.bsky.feed.generator/aaafi6watywx4" | Select-Object -Last 1
-
-#$profileSignal = Invoke-AtpGetProfile -Session $session -NodeSession $NodeSession -Did "sdafeeds.bsky.social" | Select-Object -Last 1
-#$feedsSignal = Invoke-AtpGetActorFeeds -Session $session -NodeSession $NodeSession -Did "sdafeeds.bsky.social" | Select-Object -Last 1
-
-
-$authorFeedSignal = Invoke-AtpGetAuthorFeed -Session $session -NodeSession $NodeSession -Did "lyraflux.bsky.social" | Select-Object -Last 1
-$authorFeedSignal = Invoke-AtpGetAuthorFeed -Session $session -NodeSession $NodeSession -Did "clarak222.bsky.social" | Select-Object -Last 1
-$authorFeedSignal = Invoke-AtpGetAuthorFeed -Session $session -NodeSession $NodeSession -Did "doomboundsda.bsky.social" | Select-Object -Last 1
-$authorFeedSignal = Invoke-AtpGetAuthorFeed -Session $session -NodeSession $NodeSession -Did "shadowphantomsda.bsky.social" | Select-Object -Last 1
-
-$postSignal = Invoke-AtpPostNote -Session $session  -Message "Hello world Test" -NodeSession $NodeSession | Select-Object -Last 1
-
-#>
+        #>
 }

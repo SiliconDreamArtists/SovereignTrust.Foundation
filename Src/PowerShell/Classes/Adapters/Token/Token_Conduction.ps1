@@ -45,7 +45,7 @@ class Token_Conduction {
             $opSignal.SetResult($resultSignal.GetResult())
             $opSignal.LogInformation("✅ Token conduction path '$Path' resolved successfully.")
         } else {
-            $opSignal.LogWarning("⚠️ Token conduction path '$Path' failed to resolve.")
+            $opSignal.LogWarning("Token conduction path '$Path' failed to resolve.")
         }
     }
     catch {

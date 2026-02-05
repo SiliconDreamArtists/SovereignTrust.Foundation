@@ -61,7 +61,7 @@ class GraphCondenser {
         $opSignal.MergeSignal($sourceSignal) | Out-Null
 
         if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal)) {
-            $opSignal.LogCritical("❌ Failed to resolve FlatFormulaSource.")
+            $opSignal.LogCritical("Failed to resolve FlatFormulaSource.")
             return $opSignal
         }
 
@@ -97,7 +97,7 @@ class GraphCondenser {
         # Extract graph plans using WirePath
         $planSignal = Resolve-PathFromDictionary -Dictionary $condenserSignal -Path $PlanWirePath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($planSignal)) {
-            $opSignal.LogCritical("❌ Failed to resolve GraphPlans from path: $PlanWirePath")
+            $opSignal.LogCritical("Failed to resolve GraphPlans from path: $PlanWirePath")
             return $opSignal
         }
 
@@ -125,7 +125,7 @@ class GraphCondenser {
         # Extract the graph plan array from the wire path
         $planSignal = Resolve-PathFromDictionary -Dictionary $condenserSignal -Path $PlanWirePath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($planSignal)) {
-            $opSignal.LogCritical("❌ Failed to resolve GraphPlans from path: $PlanWirePath")
+            $opSignal.LogCritical("Failed to resolve GraphPlans from path: $PlanWirePath")
             return $opSignal
         }
 

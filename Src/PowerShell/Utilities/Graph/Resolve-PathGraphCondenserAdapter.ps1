@@ -12,7 +12,7 @@ function Resolve-PathGraphCondenserAdapter {
     $adapterSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path "$.*.#.Adapters.*.#.MappedCondenser" | Select-Object -Last 1
 
     if ($opSignal.MergeSignalAndVerifyFailure(@($pointerSignal, $adapterSignal))) {
-        $opSignal.LogCritical("❌ Unable to resolve required context from Conductor.")
+        $opSignal.LogCritical("Unable to resolve required context from Conductor.")
         return $opSignal
     }
 
