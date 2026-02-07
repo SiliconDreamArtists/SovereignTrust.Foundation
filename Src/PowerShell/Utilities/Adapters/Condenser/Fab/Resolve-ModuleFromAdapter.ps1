@@ -10,7 +10,8 @@ function Resolve-ModuleFromAdapter {
     $opSignal = [Signal]::Start("Resolve-ModuleFromAdapter") | Select-Object -Last 1
 
     try {
-        $adapterSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%.*.#.Adapters.*.#.MappedStorage" | Select-Object -Last 1
+        $adapterSignal = Resolve-PathFromDictionary -Dictionary ($Signal.GetControl($true)) -Path "%.*.#.Adapters.*.#.MappedStorage" -SignalLevel "Information" | Select-Object -Last 1
+
         $opSignal.MergeSignal($adapterSignal)
 
         if ($adapterSignal.Failure()) {

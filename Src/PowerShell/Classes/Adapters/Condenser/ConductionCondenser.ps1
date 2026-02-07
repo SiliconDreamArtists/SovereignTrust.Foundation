@@ -42,6 +42,9 @@ class ConductionCondenser {
         $resultSignal = $adapter.Invoke($Slot, $Activity, $ConductionSignal, $Plan, $ItemSignal)
 #>
         if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
+
+                    $resultSignal = Invoke-MappedAdapter -Signal $ConductionSignal -ItemSignal $ItemSignal -Plan $Plan -Adapter "Conduction.$Activity" -Activity $Activity  | Select-Object -Last 1
+
             $opSignal.LogCritical("MappedStorageAdapter failed to invoke against slot '$Slot'.")
             return $opSignal
         }

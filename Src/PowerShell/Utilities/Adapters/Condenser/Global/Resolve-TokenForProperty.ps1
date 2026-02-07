@@ -99,8 +99,7 @@ function Resolve-TokenForProperty {
                 $lookupSignal = Scan-DictionaryForValue -Dictionary $Dictionary -PathSegments $pathSegments -Key $key | Select-Object -Last 1
             }
             else {
-
-                $adapterSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "%.*.#.Adapters.*.#.MappedToken.@" | Select-Object -Last 1
+                $adapterSignal = Resolve-PathFromDictionary -Dictionary ($Signal.GetControl($true)) -Path "%.*.#.Adapters.*.#.MappedToken.@" -SignalLevel "Information" | Select-Object -Last 1
                 
                 $adapter = $adapterSignal.GetResult()
 

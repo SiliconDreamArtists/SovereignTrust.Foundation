@@ -30,10 +30,12 @@ function Invoke-CondenserAdapter {
         # ░▒▓█ RESOLVE MAPPED CONDENSER ADAPTER █▓▒░
         $adapterPath = "%.*.#.Adapters.*.#.MappedCondenser"
 
+        $conductorSignal = $Signal.GetControl($true)
+
         $adapterSignal = Resolve-PathFromDictionary `
-            -Dictionary $Signal `
+            -Dictionary $conductorSignal `
             -Path $adapterPath `
-            -SignalLevel "Critical" `
+            -SignalLevel "Information" `
         | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure(@($adapterSignal))) {

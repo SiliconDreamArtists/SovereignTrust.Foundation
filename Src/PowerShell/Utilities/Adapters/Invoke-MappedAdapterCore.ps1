@@ -22,7 +22,13 @@ function Invoke-MappedAdapterCore {
     try {
         $slotPathPart = $slotParts[0]
         $adapterPath = "*.#.$($slotPathPart).@"
-        $adapterSignal = Resolve-PathFromDictionary -Dictionary $MappedAdapterSignal -Path $adapterPath | Select-Object -Last 1
+        $adapterSignal = Resolve-PathFromDictionary -Dictionary $MappedAdapterSignal -Path $adapterPath -SignalLevel "Information" | Select-Object -Last 1
+        if (-not $adapterSignal.HasResult())
+        {
+            $adapterPath = "%.*.#.$($slotPathPart).@"
+            $adapterSignal = Resolve-PathFromDictionary -Dictionary $MappedAdapterSignal -Path $adapterPath | Select-Object -Last 1
+        }
+        
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
             $opSignal.LogCritical("Adapter path '$adapterPath' not found in Conductor.")
             return $opSignal

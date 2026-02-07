@@ -63,6 +63,8 @@ function Resolve-Conduit {
     $ConductorSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
     $ConductorSignal.SetJacket($bondingConductor.Signal)
 
+        $ConductionSignal = [Signal]::Start("Conduction:EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
+        $ConductionSignal.SetJacket($ConductorSignal)
 
     # Hardwired initiation point of content adapter pointed to local storage - review pattern, should probably be passed in.
     $ContentRootPathSignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "Config.ContentRootPath" | Select-Object -Last 1

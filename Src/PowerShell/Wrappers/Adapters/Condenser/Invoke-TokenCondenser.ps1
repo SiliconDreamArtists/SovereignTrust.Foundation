@@ -12,7 +12,7 @@ function Invoke-TokenCondenser {
     try {
         
         $consdenserPath = "%.*.#.Adapters.*.#.MappedCondenser.@.$.*.#.TokenCondenser"
-        $consdenserSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path $consdenserPath | Select-Object -Last 1
+        $consdenserSignal = Resolve-PathFromDictionary -Dictionary ($Signal.GetControl($true)) -Path $consdenserPath -SignalLevel "Information" | Select-Object -Last 1
 
         $consdenser = $consdenserSignal.GetResult()
         while ($consdenser -is [Signal])

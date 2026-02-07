@@ -19,7 +19,7 @@ function Invoke-ST {
         $opSignal = [Signal]::Start("Invoke-ST: Conduction Runner", $Signal) | Select-Object -Last 1
         
         # Acts as the Conduction Signal with the Conductor
-        $opSignal.SetJacket($Signal)
+        $opSignal.SetControl($Signal)
         $opSignal.LogInformation("Resolving ConductionPlanRoute from RouteOverlay.")
 
         # ──────────────────────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ function Invoke-ST {
         # ──────────────────────────────────────────────────────────────────────
         $mergeSignal = Invoke-TransformCondenser `
             -Activity 'Merge' `
-            -Signal $Signal `
+            -Signal $opSignal.GetControl() `
             -Base $ConductionPlanMapping `
             -Overlay $Overlay `
             -MergeArrayHandling "Merge" `
@@ -50,6 +50,10 @@ function Invoke-ST {
         }
 
         $ConductionPlanMapping = $mergeSignal.GetResult()
+
+        $DisabledMapping = [PSCustomObject]@{
+            IsEnabled=$false
+        }
 
         $InvokeConductionMapping = [PSCustomObject]@{
             Name              = "Process Grid"
@@ -72,7 +76,7 @@ function Invoke-ST {
         # ──────────────────────────────────────────────────────────────────────
         $ConductionPlan = [pscustomobject]@{
             ReturnItemSignal = $true
-            Mappings         = @($ConductionPlanMapping, $InvokeConductionMapping)
+            Mappings         = @($DisabledMapping, $ConductionPlanMapping, $InvokeConductionMapping)
         }
 
         # ──────────────────────────────────────────────────────────────────────
@@ -83,7 +87,7 @@ function Invoke-ST {
         $sourceSignal = Invoke-CondenserAdapter `
             -Slot "Memory" `
             -Activity "Generate" `
-            -Signal $Signal `
+            -Signal $opSignal.GetControl() `
             -Plan $ConductionPlan `
             -ItemSignal $TargetSignal `
         | Select-Object -Last 1
@@ -251,8 +255,8 @@ function Invoke-ST {
     # Optionally run a test fusion session
 
     # Create a global console logger
-    #    $Global:ConsoleLoggerInstance = [ConsoleLogger]::new()
-    #    $Global:SignalTelemeter = [SignalTelemeter]::new()
+        $Global:ConsoleLoggerInstance = [ConsoleLogger]::new()
+        $Global:SignalTelemeter = [SignalTelemeter]::new()
 
     #    [object]$Environment,
     #    [object]$ConductionPlanRoute,

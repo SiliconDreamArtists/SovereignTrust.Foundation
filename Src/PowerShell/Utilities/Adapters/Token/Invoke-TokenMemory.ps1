@@ -62,7 +62,8 @@ function Invoke-TokenMemory {
         switch ($scope.ToLowerInvariant()) {
             'cache' {
                 # Shortcut Path to cache items stored in the Conduction Signal
-                $dictionarySignal = Resolve-PathFromDictionary -Dictionary $Signal -Path "*.#" | Select-Object -Last 1
+                $controlSignal = $Signal.GetControl($true)
+                $dictionarySignal = Resolve-PathFromDictionary -Dictionary $controlSignal -Path "*.#" | Select-Object -Last 1
                 if ($dictionarySignal.HasResult()) {
                     $dictionary = $dictionarySignal.GetResult()
                 }
@@ -77,6 +78,20 @@ function Invoke-TokenMemory {
                 $dictionary = $Signal 
                 break 
             }
+            'control' {
+                $dictionary = $Signal.GetControl($true)
+                break 
+            }
+            <#
+            'conduction' {
+                $dictionary = $Signal 
+                break 
+            }
+            'conductor' {
+                $controlSignal = $Signal.GetControl($true)
+                $dictionary = $controlSignal
+                break 
+            }#>
             'generation' {
                 # Shortcut Path to items created by Memory Generation
                 $dictionarySignal = Resolve-PathFromDictionary -Dictionary $ItemSignal  -Path "*.#" | Select-Object -Last 1

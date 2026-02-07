@@ -12,7 +12,7 @@ function Invoke-HydrationCondenser {
     try {
         
         $consdenserPath = "%.*.#.Adapters.*.#.MappedCondenser.@.$.*.#.HydrationCondenser"
-        $consdenserSignal = Resolve-PathFromDictionary -Dictionary $Signal -Path $consdenserPath | Select-Object -Last 1
+        $consdenserSignal = Resolve-PathFromDictionary -Dictionary ($Signal.GetControl($true)) -Path $consdenserPath -SignalLevel "Information" | Select-Object -Last 1
 
         $consdenser = $consdenserSignal.GetResult()
         while ($consdenser -is [Signal])
