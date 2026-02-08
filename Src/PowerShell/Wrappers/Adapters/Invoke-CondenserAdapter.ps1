@@ -20,7 +20,7 @@ function Invoke-CondenserAdapter {
         }
         if ([string]::IsNullOrWhiteSpace($Activity)) {
             $Activity = "Invoke"
-            $opSignal.LogWarning("Warning: Activity not specified, defaulted to 'Invoke'. Slot: $Slot")
+            $opSignal.LogWarning("Activity not specified, defaulted to 'Invoke'. Slot: $Slot")
         }
         if ($null -eq $ItemSignal) {
             $opSignal.LogCritical("ItemSignal is required.")

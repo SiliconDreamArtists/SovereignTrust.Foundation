@@ -199,7 +199,8 @@ function Invoke-TransformSelect {
                 $xpathParts += $xpathNode
             }
 
-            $result = '//' + ($xpathParts -join '/')
+            $result = ($xpathParts -join '/')
+            if (-not $result.StartsWith('//')) { $result = '//' + $result }
             $opSignal.SetResult($result)
         }
         catch {

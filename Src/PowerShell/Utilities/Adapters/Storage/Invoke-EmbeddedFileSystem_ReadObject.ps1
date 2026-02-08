@@ -20,7 +20,8 @@ function Invoke-EmbeddedFileSystem_ReadObject {
             if (Test-Path -Path $fullPath) {
                 $content = Get-Content -Path $fullPath -Raw
                 $opSignal.SetResult($content)
-                $opSignal.LogInformation("📄 Found and read file: $fullPath")
+                $logVirtualPath = $VirtualPath.Replace('\', '/')
+                $opSignal.LogInformation("📄 Found and read file: '$logVirtualPath'")
                 return $opSignal
             }
         }
