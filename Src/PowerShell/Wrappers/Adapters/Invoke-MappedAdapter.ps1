@@ -44,7 +44,7 @@ function Invoke-MappedAdapter {
         $adapterSlot     = $adapterParts.Count -ge 2 ? $adapterParts[1] : $null
 
         $adapterPath = "%.*.#.Adapters.*.#.Mapped$adapterName"
-        $adapterSignal = Resolve-PathFromDictionary -Dictionary ($Signal.GetControl($true)) -Path $adapterPath -SignalLevel "Information" | Select-Object -Last 1
+        $adapterSignal = Resolve-PathFromDictionary -Dictionary ($Signal.GetControl($true)) -Path $adapterPath | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure($adapterSignal)) {
             $opSignal.LogCritical("Cannot resolve storage adapter '$Adapter' from signal (path: $adapterPath).")

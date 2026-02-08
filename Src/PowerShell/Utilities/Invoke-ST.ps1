@@ -52,7 +52,7 @@ function Invoke-ST {
         $ConductionPlanMapping = $mergeSignal.GetResult()
 
         $DisabledMapping = [PSCustomObject]@{
-            IsEnabled=$false
+            IsEnabled = $false
         }
 
         $InvokeConductionMapping = [PSCustomObject]@{
@@ -255,12 +255,8 @@ function Invoke-ST {
     # Optionally run a test fusion session
 
     # Create a global console logger
-        $Global:ConsoleLoggerInstance = [ConsoleLogger]::new()
-        $Global:SignalTelemeter = [SignalTelemeter]::new()
-
-    #    [object]$Environment,
-    #    [object]$ConductionPlanRoute,
-    #    [object]$ConductionContext
+    $Global:ConsoleLoggerInstance = [ConsoleLogger]::new()
+    $Global:SignalTelemeter = [SignalTelemeter]::new()
 
     $environmentSignal = [Signal]::Start("Environment", $opSignal) | Select-Object -Last 1
     $environmentSignal.SetJacketResult($Environment)
@@ -280,6 +276,26 @@ function Invoke-ST {
     $conductorJacketSignal.SetPointer($environmentSignal.GetPointer())
 
 
+    $opSignal = [Signal]::Start("Invoke-ST: Processor", $Signal) | Select-Object -Last 1
+
+    # Acts as the Conduction Signal with the Conductor
+    $opSignal.SetControl($conductorJacketSignal)
+    $opSignal.LogInformation("Resolving ConductionPlanRoute from RouteOverlay.")
+
+
+    $opSignal.AddProperty("SignalType", "Conductor")
+    $processIdSignal = Resolve-PathFromDictionary -Dictionary $conductorSignal -Path "@.Config.Process.Id" | Select-Object -Last 1
+    $processorIdSignal = Resolve-PathFromDictionary -Dictionary $conductorSignal -Path "@.Config.Process.ProcessorId" | Select-Object -Last 1
+
+    $opSignal.AddProperty("ProcessorId", $processorIdSignal.GetResult())
+    $opSignal.AddProperty("ProcessId", $processIdSignal.GetResult())
+    $opSignal.AddProperty("OperationId", $processIdSignal.GetResult())
+    $opSignal.AddProperty("State", "Started")
+    $opSignal.AddProperty("StartedAt", [DateTime]::UtcNow)
+
+    Invoke-Telemetry -Signal $opSignal -ItemSignal $opSignal
+
+    <# TODO: Move or delete #> <#
     function TestTelemetry([object]$conductorJacketSignal) {
         $testOpSignal = [Signal]::Start("🎯 Start TestOpSignal", $environmentSignal) | Select-Object -Last 1
         $testOpSignal.AddTag("Mine")
@@ -303,7 +319,8 @@ function Invoke-ST {
 
         $testOpSignal.SetMeta($signalMetaData)
 
-        try {
+        try {    
+         
             not-real-function
         }
         catch {
@@ -311,124 +328,28 @@ function Invoke-ST {
         }
 
         Invoke-Telemetry -Signal $conductorJacketSignal -ItemSignal $testOpSignal
-        #Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignalFull" -Signal $conductorJacketSignal -Plan [pscustomobject]@{} -ItemSignal $testOpSignal
-        ###################### 
     }
 
-    #    TestTelemetry -conductorJacketSignal $conductorJacketSignal
+    TestTelemetry -conductorJacketSignal $conductorJacketSignal
+    <##>
 
     $conductionPlanRouteSignal = $null
     if ($ConductionPlanRoute) {
         $conductionPlanRouteSignal = Invoke-PlanWithOptionalContext -Signal $conductorJacketSignal -Overlay $ConductionPlanRoute  | Select-Object -Last 1
-        Invoke-Telemetry -Signal $conductorJacketSignal -ItemSignal $conductionPlanRouteSignal
+
+
+        $entryFilterSignal = [Signal]::Start("EntryFilter", $null) | Select-Object -Last 1
+        $entryFilterSignal.MergeSignal($opSignal, $null, "Skip")
+
+        $opSignal.Entries = $entryFilterSignal.Entries
+        $opSignal.MergeSignal($conductionPlanRouteSignal, $null, "Skip")
+        $opSignal.AddProperty("State", "Completed")
+        $opSignal.AddProperty("EndedAt", [DateTime]::UtcNow)
+        $opSignal.ModifiedDate = Get-Date
+        Invoke-Telemetry -Signal $opSignal -ItemSignal $opSignal
+
+        #    Invoke-Telemetry -Signal $conductorJacketSignal -ItemSignal $conductionPlanRouteSignal
     }
 
-    <#
-    # Now Fire off Task into the $conduitSignal which is what the Condenser.Conductor.Process does when it loads a conduit to run in a silo.
-    if ($PlanRunConfig) {
-        Invoke-ST -ConductorSignal $conductorSignal -Plan $PlanRunConfig -ConfigContext $PlanConfigContext
-    }
-
-#>
-    # Moved the code below INTO Resolve-Conduit, Need to modify down to what is required for Invoke-SDAFusion outside of loading the exterior from external scripts.
     return $opSignal
-
-    <#
-    $bondingConductorSignal = Resolve-Conductor -Signal $opSignal | Select-Object -Last 1
-    if ($opSignal.MergeSignalAndVerifyFailure(@($bondingConductorSignal))) {
-        return $opSignal
-    }
-
-    $bondingConductor = $bondingConductorSignal.GetResult()
-
-    $ConductorSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
-    $ConductorSignal.SetJacket($bondingConductor.Signal)
-
-    # TODO: Move these harded coded items into the mapping as config or something that gets passed in.
-
-    ###### System Content File Adapter
-    # Hardwired initiation point of content adapter pointed to local storage - review pattern, should probably be passed in.
-    $ContentRootPathSignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "Config.ContentRootPath" | Select-Object -Last 1
-    $virtualPath = "SovereignTrust.Adapters.Storage.EmbeddedFileSystem.Content.Persistent.Read"
-
-    $Config = [PSCustomObject]@{
-
-        VirtualPath = $virtualPath
-        Addresses   = @($ContentRootPathSignal.GetResult())
-    }
-
-    $FabRequestSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
-    $FabRequestSignal.SetResult($Config)
-    $FabRequestSignal.SetJacket($bondingConductor.Signal)
-
-    $ItemSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
-    $ItemSignal.SetJacket($FabRequestSignal)
-
-    $FabResult = Invoke-CondenserAdapter -Slot "Fab" -Signal $FabRequestSignal -ItemSignal $ItemSignal
-
-
-    # One for System
-    $virtualPath = "SovereignTrust.Adapters.Storage.EmbeddedFileSystem.System.Persistent.Read"
-
-    $Config = [PSCustomObject]@{
-
-        VirtualPath = $virtualPath
-        Addresses   = @($ContentRootPathSignal.GetResult())
-    }
-
-    $FabRequestSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
-    $FabRequestSignal.SetResult($Config)
-    $FabRequestSignal.SetJacket($bondingConductor.Signal)
-
-    $ItemSignal = [Signal]::Start("EmbeddedFabRequest", $opSignal) | Select-Object -Last 1
-    $ItemSignal.SetJacket($FabRequestSignal)
-
-    $FabResult = Invoke-CondenserAdapter -Slot "Fab" -Signal $FabRequestSignal -ItemSignal $ItemSignal
-
-
-    $EnvironmentSignal = Resolve-Environment -ConductorSignal $ConductorSignal -Environment $Environment | Select-Object -Last 1
-    $Environment = $EnvironmentSignal.GetResult()
-    $ConductionPlanRoute = Resolve-ConductionPlanRoute -BondingConductor $bondingConductor -RouteOverlay $ConductionPlanRoute | Select-Object -Last 1
-    $ConductionContext = Resolve-ConductionContext -BondingConductor $bondingConductor -ConductionContextOverlay $ConductionContext | Select-Object -Last 1
-
-#>
-    
-
-    <#
-        # Hardwired initiation point of Telemetry Service
-    $AppInsightsAddressSignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "Config.AppInsightsAddress" | Select-Object -Last 1
-    $AppInsightsKeySignal = Resolve-PathFromDictionary -Dictionary $Environment -Path "Config.AppInsightsKey" | Select-Object -Last 1
-    $virtualPath = "SovereignTrust.Adapters.Network.AzureApplicationInsights.Telemetry.Persistent.Run"
-
-    $Config = [PSCustomObject]@{
-
-        VirtualPath = $virtualPath
-        Resource = $AppInsightsKeySignal.GetResult()
-        Addresses   = @($AppInsightsAddressSignal.GetResult())
-    }
-
-    $FabRequestSignal = [Signal]::Start("AppInsightsFabRequest", $opSignal) | Select-Object -Last 1
-    $FabRequestSignal.SetResult($Config)
-    $FabRequestSignal.SetJacket($bondingConductor.Signal)
-
-    $ItemSignal = [Signal]::Start("AppInsightsFabRequest", $opSignal) | Select-Object -Last 1
-    $ItemSignal.SetJacket($FabRequestSignal)
-
-    $FabResult = Invoke-CondenserAdapter -Slot "Fab" -Signal $FabRequestSignal -ItemSignal $ItemSignal
-#>
-
-    <#
-    Add-PathToDictionary -Dictionary $opSignal -Path "*.#.Environment" -Value $Environment
-    Add-PathToDictionary -Dictionary $opSignal -Path "*.#.BondingConductor" -Value $bondingConductor
-    $opSignal.SetReversePointer($bondingConductorSignal)
-
-    # Invoke a plan to start the conductor using the fabcondenser
-
-    if ($PlanRunConfig) {
-        $PlanRunConfig = Resolve-Plan -SourcePath 'Request' -SourceName 'Requests' -Config $PlanRunConfig
-        $PlanConfigContext = Resolve-ConfigContext -ConfigContext $PlanConfigContext
-        $PlanEnvironment = Resolve-Environment -Environment $Environment -ServiceRole "Request-Client"
-        Invoke-ST -Environment $PlanEnvironment -Plan $PlanRunConfig -ConfigContext $PlanConfigContext
-    }
-        #>
 }

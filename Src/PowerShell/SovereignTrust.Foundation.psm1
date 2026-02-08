@@ -26,7 +26,7 @@ function Invoke-Telemetry(
     [Signal]$Signal,
     [Signal]$ItemSignal
 ){
-    Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignalFull" -Signal $Signal -Plan [pscustomobject]@{} -ItemSignal $ItemSignal
+    Invoke-MappedAdapter -Adapter "Network.Telemetry" -Activity "EmitSignalFull" -Signal $Signal -Plan ([pscustomobject]@{}) -ItemSignal $ItemSignal
 }
 
 # Load all files (functions + classes)

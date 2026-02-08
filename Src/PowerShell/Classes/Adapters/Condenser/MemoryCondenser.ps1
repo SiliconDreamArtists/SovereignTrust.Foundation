@@ -54,6 +54,7 @@ class MemoryCondenser {
                     $ItemSignal.CreateGraph()
                     foreach ($mapping in @($mappings)) {
 
+                        $opSignal.LogInformation("Processing Mapping $($mapping.Name)", @("Verbose"))
                         $descriptionSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Description" -SignalLevel "Information" | Select-Object -Last 1
                         if ($descriptionSignal.HasResult())
                         {
