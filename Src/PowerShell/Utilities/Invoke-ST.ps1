@@ -76,7 +76,7 @@ function Invoke-ST {
         # ──────────────────────────────────────────────────────────────────────
         $ConductionPlan = [pscustomobject]@{
             ReturnItemSignal = $true
-            Mappings         = @($DisabledMapping, $ConductionPlanMapping, $InvokeConductionMapping)
+            Steps         = @($DisabledMapping, $ConductionPlanMapping, $InvokeConductionMapping)
         }
 
         # ──────────────────────────────────────────────────────────────────────
@@ -157,7 +157,7 @@ function Invoke-ST {
         # ──────────────────────────────────────────────────────────────────────
         $ConductionPlan = [pscustomobject]@{
             ReturnItemSignal = $true
-            Mappings         = @($ConductionPlanMapping)
+            Steps         = @($ConductionPlanMapping)
         }
 
         # ──────────────────────────────────────────────────────────────────────

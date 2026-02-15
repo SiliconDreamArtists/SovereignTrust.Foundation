@@ -14,8 +14,7 @@ function Invoke-JsonTokenCondenser {
         [Signal]$Signal,
         [object]$Plan,
         [Signal]$ItemSignal,
-        [string]$RegexPattern = "(?s)\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]",
-        [string]$HydrationStyle = ""
+        [string]$RegexPattern = "(?s)\[((?>[^\[\]/]|(?<open>\[)|(?<-open>\]))+(?(open)(?!)))\/\]"
     )
 
     $opSignal = [Signal]::Start("Invoke-JsonTokenCondenser", $Signal) | Select-Object -Last 1
@@ -23,6 +22,10 @@ function Invoke-JsonTokenCondenser {
     $sourceContentPathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Path" | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($sourceContentPathSignal)) { return $opSignal }
 
+    $HydrationStyleSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "HydrationStyle" -SignalLevel "Information" | Select-Object -Last 1
+    if ($opSignal.MergeSignalAndVerifyFailure($HydrationStyleSignal)) { return $opSignal }
+
+    $HydrationStyle = $HydrationStyleSignal.HasResult() ? $HydrationStyleSignal.GetResult() : $null
     $resultSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $sourceContentPathSignal.GetResult() | Select-Object -Last 1
     if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) { return $opSignal }
 

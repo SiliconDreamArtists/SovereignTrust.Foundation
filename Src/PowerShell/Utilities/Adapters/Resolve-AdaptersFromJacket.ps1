@@ -102,8 +102,20 @@ function Resolve-AdapterFromJacket {
             return $opSignal
         }
 
+        $mergePlan= [PSCustomObject]@{
+            
+        }
+
+        # Change this to memory generator call to merge and then run hydration in deferred
+        $mergeItemSignal = [Signal]::Start("MergeSignal") | Select-Object -Last 1
+        Add-PathToDictionary -Dictionary $mergeItemSignal -Path "@.Base" -Value $manifestSignal.GetResult($true)  | Select-Object 
+        Add-PathToDictionary -Dictionary $mergeItemSignal -Path "@.Overlay" -Value $Jacket.GetResult($true)  | Select-Object 
+
         $mergeService = $mergeServiceSignal.GetResult()
-        $mergedSignal = $mergeService.InvokeByParameter($manifestSignal.GetResult(), $Jacket, $true) | Select-Object -Last 1
+        $mergeItemSignalJacket = [Signal]::Start("MergeSignal") | Select-Object -Last 1
+        $mergeItemSignalJacket.SetJacket($mergeItemSignal)
+
+        $mergedSignal = $mergeService.Invoke("Merge", "Merge", $Signal, $mergePlan, $mergeItemSignalJacket) | Select-Object -Last 1 #$manifestSignal.GetResult(), $Jacket, $true) | Select-Object -Last 1
 
         if ($opSignal.MergeSignalAndVerifyFailure($mergedSignal)) {
             $opSignal.LogWarning("Jacket-to-Manifest merge failed; continuing with original jacket.")
@@ -112,6 +124,27 @@ function Resolve-AdapterFromJacket {
             $Jacket = $mergedSignal.GetResult()
             $opSignal.LogInformation("🧬 Jacket successfully merged over Manifest.")
         }
+
+        # $Jacket needs to be hydrated after the merge for any tokens that couldn't be hydrated during load and required deferred token lookups
+#        if ($HydrationPlanSignal.HasResult()) {
+            $HydrationSignal= [Signal]::Start("Resolve-AdapterFromJacket.Invoke.Hydrate", $Jacket) | Select-Object -Last 1
+            $HydrationSignal.SetJacket($mergedSignal)
+#            $HydrationSignal.SetPointer($ItemSignal.GetPointer())
+
+            $HydrationPlan = [PSCustomObject]@{
+                    Path = "%.@"
+                    HydrationPlan = "@"
+                    HydrationStyle = "Deferred"
+                }
+
+            # Perform Hydration
+            $StepResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Activity "Invoke" -Plan $HydrationPlan -Signal $Signal -ItemSignal $HydrationSignal | Select-Object -Last 1
+            if ($opSignal.MergeSignalAndVerifyFailure($StepResultSignal)) { return $opSignal }
+
+            $Jacket = $StepResultSignal.GetResult()
+ #       }
+
+
 
         # ░▒▓█ CONSTRUCT METHOD (OPTIONAL) █▓▒░
         if ($instance -and ($instance | Get-Member -Name "Construct" -MemberType Method)) {

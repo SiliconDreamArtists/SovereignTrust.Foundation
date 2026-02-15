@@ -53,6 +53,7 @@ function Invoke-Telemetry(
 . "$PSScriptRoot/Classes/Adapters/MappedQueueAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedQuantumAdapter.ps1"
 . "$PSScriptRoot/Classes/Adapters/MappedTelemetryAdapter.ps1"
+. "$PSScriptRoot/Classes/Adapters/MappedSessionAdapter.ps1"
 . "$PSScriptRoot/Classes/Conduction/Conduit.ps1"
 . "$PSScriptRoot/Classes/Conduction/Conductor.ps1"
 

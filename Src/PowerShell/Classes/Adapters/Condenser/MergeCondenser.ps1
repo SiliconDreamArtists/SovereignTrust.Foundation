@@ -48,7 +48,7 @@ class MergeCondenser {
 
     try {
         # ---- Resolve plan options (with sane defaults) ----
-        $mergeNullValueHandlingSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "MergeNullValueHandling" -Default "Keep"  -SignalLevel "Warning" | Select-Object -Last 1
+        $mergeNullValueHandlingSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "MergeNullValueHandling" -Default "Ignore"  -SignalLevel "Warning" | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure(@($mergeNullValueHandlingSignal))) { return $opSignal }
         $MergeNullValueHandling = $mergeNullValueHandlingSignal.GetResult()
 
@@ -97,7 +97,7 @@ class MergeCondenser {
         return $opSignal
     }
 }
-
+<#
     # Should we move Merge function into TransformCondenser?
     [Signal] MergeJsonObject([Signal]$opSignal, [object]$Base, [object]$Overlay, [string]$MergeArrayHandling, [string]$MergeNullValueHandling, [int]$Depth, [bool]$IgnoreInternalObjects = $true) {
         $opSignal = $opSignal ?? ([Signal]::Start("MergeCondenser.Merge") | Select-Object -Last 1)
@@ -120,5 +120,5 @@ class MergeCondenser {
 
         $this.Signal.MergeSignal($opSignal)
         return $opSignal
-    }
+    } #>
 }

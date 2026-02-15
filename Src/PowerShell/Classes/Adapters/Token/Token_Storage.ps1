@@ -38,8 +38,17 @@ class Token_Storage {
 
         try {
             $Path = $Plan.Path
+
+            # Resolve existing VirtualPath from $Plan (sovereign read)
+            $virtualPathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.VirtualPath" -SignalLevel "Information" | Select-Object -Last 1
+
+            # If VirtualPath is missing/empty, set it via sovereign write
+            if (-not $virtualPathSignal.HasResult() -or -not $virtualPathSignal.GetResult())
+            {
+                $null = Add-PathToDictionary -Dictionary $Plan -Path "Config.VirtualPath" -Value $Path
+            }
             
-            $resultSignal = Invoke-TokenStorage -Conductor $this.Conductor -Path $Path -Plan $Plan | Select-Object -Last 1
+            $resultSignal = Invoke-TokenStorage -Signal $ConductionSignal -ItemSignal $ItemSignal -Path $Path -Plan $Plan | Select-Object -Last 1
             $opSignal.MergeSignal($resultSignal)
 
             if ($resultSignal.Success()) {

@@ -41,27 +41,27 @@ class MemoryCondenser {
                 "Generate" {
                     ###n/a# $Plan May be the container with the source details or it may be in a mappings collection
 
-                    $mappings = $null    
+                    $steps = $null    
 
-                    $mappingsSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Mappings" -SignalLevel "Information" | Select-Object -Last 1
-                    if ($mappingsSignal.HasResult()) {
-                        $mappings = @($mappingsSignal.GetResult())
+                    $stepsSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Steps" -SignalLevel "Information" | Select-Object -Last 1
+                    if ($stepsSignal.HasResult()) {
+                        $steps = @($stepsSignal.GetResult())
                     }
 
                     # TODO: Change to the DependsOn model like phases use
                     $resultSignal = $null
                     $_ItemSignal = [Signal]::Start("MemoryCondenser.MappingSignal") | Select-Object -Last 1
                     $ItemSignal.CreateGraph()
-                    foreach ($mapping in @($mappings)) {
+                    foreach ($step in @($steps)) {
 
-                        $opSignal.LogInformation("Processing Mapping $($mapping.Name)", @("Verbose"))
-                        $descriptionSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Description" -SignalLevel "Information" | Select-Object -Last 1
+                        $opSignal.LogInformation("Processing Mapping $($step.Name)", @("Verbose"))
+                        $descriptionSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Description" -SignalLevel "Information" | Select-Object -Last 1
                         if ($descriptionSignal.HasResult())
                         {
                             $opSignal.LogInformation($descriptionSignal.GetResult(), @("Verbose"))
                         }
 
-                        $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "IsEnabled" -Default $true | Select-Object -Last 1
+                        $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
                         if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
                         if (-not $IsEnabledSignal.GetResult()) {
                             continue
@@ -69,73 +69,78 @@ class MemoryCondenser {
 
 
                         # Load the environment from Content storage and merge with passed in Environment *.#.Adapters
-                        $PathSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Path" -SignalLevel "Warning" | Select-Object -Last 1
-                        $ResourceSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Resource" -SignalLevel "Warning" | Select-Object -Last 1
-                        $ContainerSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Container" -SignalLevel "Warning" | Select-Object -Last 1
-                        $FormatSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Format" -SignalLevel "Warning" | Select-Object -Last 1
-                        $ModeSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Mode" -Default "Select" -SignalLevel "Warning" | Select-Object -Last 1
-                        $ActivitySignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Activity" -SignalLevel "Warning" | Select-Object -Last 1
-                        $TypeSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Type" -Default "Transform" | Select-Object -Last 1
-                        $HydrationPlanSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "HydrationPlan" -Default $null | Select-Object -Last 1
-                        $KeySignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Key" -Default $null | Select-Object -Last 1
-                        $ExitAfterAdapterSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "ExitAfterAdapter" -Default $false | Select-Object -Last 1
+                        $PathSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Path" -SignalLevel "Warning" | Select-Object -Last 1
+                        $ResourceSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Resource" -SignalLevel "Warning" | Select-Object -Last 1
+                        $ContainerSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Container" -SignalLevel "Warning" | Select-Object -Last 1
+                        $FormatSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Format" -SignalLevel "Warning" | Select-Object -Last 1
+                        $ModeSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Mode" -Default "Select" -SignalLevel "Warning" | Select-Object -Last 1
+                        $ActivitySignal = Resolve-PathFromDictionary -Dictionary $step -Path "Activity" -SignalLevel "Warning" | Select-Object -Last 1
+                        $TypeSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Type" -Default "Transform" | Select-Object -Last 1
+                        $HydrationPlanSignal = Resolve-PathFromDictionary -Dictionary $step -Path "HydrationPlan" -Default $null | Select-Object -Last 1
+                        $KeySignal = Resolve-PathFromDictionary -Dictionary $step -Path "Key" -Default $null | Select-Object -Last 1
+                        $ExitAfterAdapterSignal = Resolve-PathFromDictionary -Dictionary $step -Path "ExitAfterAdapter" -Default $false | Select-Object -Last 1
+                        $ExitAfterAdapterNoResult = Resolve-PathFromDictionary -Dictionary $step -Path "ExitAfterAdapterNoResult" -Default $false | Select-Object -Last 1
 
                         $Key = $KeySignal.HasResult() ? $KeySignal.GetResult() : $null
-                        $MappingResultSignal = $null
+                        $StepResultSignal = $null
 
                         $Path = $PathSignal.HasResult()     ? $PathSignal.GetResult()     : $null
                         $Format = $FormatSignal.HasResult()    ? $FormatSignal.GetResult()    : $null
     
-                        $AdapterSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "Adapter" -SignalLevel "Warning"  | Select-Object -Last 1
+                        $AdapterSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Adapter" -SignalLevel "Warning"  | Select-Object -Last 1
                         if ($AdapterSignal.HasResult()) {
                             #                            $Container = $ContainerSignal.HasResult() ? $ContainerSignal.GetResult() : $null
                             #                           $Resource = $ResourceSignal.HasResult() ? $ResourceSignal.GetResult() : $null
 
-                            $MappingResultSignal = Invoke-MappedAdapter `
+                            $StepResultSignal = Invoke-MappedAdapter `
                                 -Signal $ConductionSignal `
                                 -Adapter $AdapterSignal.GetResult() `
                                 -Activity $ActivitySignal.GetResult() `
-                                -Plan $mapping `
+                                -Plan $step `
                                 -ItemSignal $ItemSignal #`
                             #-Name $Resource
                             #                                -Container $Container `
                             | Select-Object -Last 1
 
-                            if ($opSignal.MergeSignalAndVerifyFailure($MappingResultSignal)) { return $opSignal }
-                            $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
+                            if ($opSignal.MergeSignalAndVerifyFailure($StepResultSignal)) { return $opSignal }
+                            $this.RegisterSignal($ItemSignal, $Key, $StepResultSignal)
                         }
 
-                        if ($MappingResultSignal -and -not $ExitAfterAdapterSignal.GetResult()) {
+                        if (-not $StepResultSignal.HasResult() -and $ExitAfterAdapterNoResult.GetResult() ) {
+                            return $opSignal
+                        }
+
+                        if ($StepResultSignal.HasResult() -and (-not $ExitAfterAdapterSignal.GetResult())) {
 
                             # Apply Hydration Steps
 
                             # Perform Document formatting, xml, json or leave txt
                             if ($Format) {
                                 $FormatSignal = [Signal]::Start("MemoryCondenser.Invoke.Format", $ItemSignal) | Select-Object -Last 1
-                                $FormatSignal.SetJacket($MappingResultSignal)
+                                $FormatSignal.SetJacket($StepResultSignal)
                                 $FormatSignal.SetPointer($ItemSignal.GetPointer())
 
-                                $MappingResultSignal = Invoke-CondenserAdapter -Slot "Format" -Activity $Format -Plan $mapping -Signal $ConductionSignal -ItemSignal $FormatSignal | Select-Object -Last 1
-                                if ($opSignal.MergeSignalAndVerifyFailure($MappingResultSignal)) { return $opSignal }
-                                $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
+                                $StepResultSignal = Invoke-CondenserAdapter -Slot "Format" -Activity $Format -Plan $step -Signal $ConductionSignal -ItemSignal $FormatSignal | Select-Object -Last 1
+                                if ($opSignal.MergeSignalAndVerifyFailure($StepResultSignal)) { return $opSignal }
+                                $this.RegisterSignal($ItemSignal, $Key, $StepResultSignal)
                             }
 
                             # Optional Condenser-Based Transform Step
                             # Currently uses a CondenserAdapter and then uses the SourceType in the mapping to determine which one to use and SourceMode to determine which activity to run.
                             if ($Path) {
-                                $TransformSignal = [Signal]::Start("MemoryCondenser.Invoke.Format", $ItemSignal) | Select-Object -Last 1
-                                $TransformSignal.SetJacket($MappingResultSignal)
+                                $TransformSignal = [Signal]::Start("MemoryCondenser.Invoke.Transform", $ItemSignal) | Select-Object -Last 1
+                                $TransformSignal.SetJacket($StepResultSignal)
                                 $TransformSignal.SetPointer($ItemSignal.GetPointer())
 
-                                $MappingResultSignal = Invoke-CondenserAdapter -Slot $TypeSignal.GetResult() -Activity $ModeSignal.GetResult() -Plan $mapping -Signal $ConductionSignal -ItemSignal $TransformSignal | Select-Object -Last 1
-                                if ($opSignal.MergeSignalAndVerifyFailure($MappingResultSignal)) { return $opSignal }
-                                $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
+                                $StepResultSignal = Invoke-CondenserAdapter -Slot $TypeSignal.GetResult() -Activity $ModeSignal.GetResult() -Plan $step -Signal $ConductionSignal -ItemSignal $TransformSignal | Select-Object -Last 1
+                                if ($opSignal.MergeSignalAndVerifyFailure($StepResultSignal)) { return $opSignal }
+                                $this.RegisterSignal($ItemSignal, $Key, $StepResultSignal)
                             }
                 
                             # Optional Hydration Condenser Step
                             if ($HydrationPlanSignal.HasResult()) {
-                                $HydrationSignal= [Signal]::Start("MemoryCondenser.Invoke.Format", $ItemSignal) | Select-Object -Last 1
-                                $HydrationSignal.SetJacket($MappingResultSignal)
+                                $HydrationSignal= [Signal]::Start("MemoryCondenser.Invoke.Hydrate", $ItemSignal) | Select-Object -Last 1
+                                $HydrationSignal.SetJacket($StepResultSignal)
                                 $HydrationSignal.SetPointer($ItemSignal.GetPointer())
 
                                 $HydrationPlan = [PSCustomObject]@{
@@ -144,27 +149,27 @@ class MemoryCondenser {
                                     }
 
                                 # Perform Hydration
-                                $MappingResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
-                                if ($opSignal.MergeSignalAndVerifyFailure($MappingResultSignal)) { return $opSignal }
-                                $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
+                                $StepResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
+                                if ($opSignal.MergeSignalAndVerifyFailure($StepResultSignal)) { return $opSignal }
+                                $this.RegisterSignal($ItemSignal, $Key, $StepResultSignal)
                             }
                             <#
                             # Optional Target Step, uses the TargetAdapter to determine which adapter and slot to use then the activity is passed through.
-                            $TargetAdapterSignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "TargetAdapter" -SignalLevel "Information" | Select-Object -Last 1
-                            $TargetActivitySignal = Resolve-PathFromDictionary -Dictionary $mapping -Path "TargetActivity" -SignalLevel "Information" | Select-Object -Last 1
+                            $TargetAdapterSignal = Resolve-PathFromDictionary -Dictionary $step -Path "TargetAdapter" -SignalLevel "Information" | Select-Object -Last 1
+                            $TargetActivitySignal = Resolve-PathFromDictionary -Dictionary $step -Path "TargetActivity" -SignalLevel "Information" | Select-Object -Last 1
 
                             if ($TargetAdapterSignal.HasResult()) {
-                                $ItemSignal.SetJacket($MappingResultSignal)
+                                $ItemSignal.SetJacket($StepResultSignal)
 
-                                $MappingResultSignal = Invoke-MappedAdapter `
+                                $StepResultSignal = Invoke-MappedAdapter `
                                     -Signal $ConductionSignal `
                                     -Adapter $TargetAdapterSignal.GetResult() `
                                     -Activity $TargetActivitySignal.GetResult() `
-                                    -Plan $mapping `
+                                    -Plan $step `
                                 -ItemSignal $ItemSignal
                                 | Select-Object -Last 1
 
-                                $this.RegisterSignal($ItemSignal, $Key, $MappingResultSignal)
+                                $this.RegisterSignal($ItemSignal, $Key, $StepResultSignal)
                             }
                             #>
                         }

@@ -1,8 +1,9 @@
 function Invoke-TokenStorage {
     [CmdletBinding()]
     param (
-        [Conduit]$Conduit,
-        [Conductor]$Conductor,
+        #[Conduit]$Conduit,
+        [Signal]$Signal,
+        [Signal]$ItemSignal,
         [string]$Path,
         [object]$Plan  # Typically a small PSObject or Phase class in the future
     )
@@ -38,8 +39,8 @@ function Invoke-TokenStorage {
         $slot = $segments[1]
         $value = $null
 
-        $mappedAdapterPath = "$.*.#.Adapters.*.#.Mapped$key.@"
-        $mappedAdapterSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path $mappedAdapterPath | Select-Object -Last 1
+        $mappedAdapterPath = "%.*.#.Adapters.*.#.Mapped$key.@"
+        $mappedAdapterSignal = Resolve-PathFromDictionary -Dictionary $Signal.GetControl($true) -Path $mappedAdapterPath | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($mappedAdapterSignal)) {
             $opSignal.LogCritical("MappedAdapter path '$mappedAdapterPath' not found in Conductor.")
             return $opSignal
@@ -47,7 +48,7 @@ function Invoke-TokenStorage {
 
         $mappedAdapter = $mappedAdapterSignal.GetResult()
 
-        $resultSignal = $mappedAdapter.Invoke($slot, $PartialPath, $Plan) | Select-Object -Last 1
+        $resultSignal = $mappedAdapter.Invoke($slot, $PartialPath, $Signal, $Plan, $ItemSignal) | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
             $opSignal.LogCritical("MappedAdapter failed to resolve key '$key' with scope '$scope'.")
             return $opSignal

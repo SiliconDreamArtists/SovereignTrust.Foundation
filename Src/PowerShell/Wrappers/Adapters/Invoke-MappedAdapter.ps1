@@ -80,7 +80,10 @@ function Invoke-MappedAdapter {
             $opSignal.LogCritical("Storage adapter invoke failed (Adapter: $Adapter).")
             return $opSignal
         }
-        $opSignal.SetResult($invokeSignal.GetResult())
+
+        if ($invokeSignal.HasResult()) {
+             $opSignal.SetResult($invokeSignal.GetResult())
+        }
     }
     catch {
         $opSignal.LogCritical("Exception during storage adapter invoke: $($_.Exception.Message)", $null, $_)
