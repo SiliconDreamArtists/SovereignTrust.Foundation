@@ -15,20 +15,23 @@ function Invoke-ApplyHydrationCondenser {
     param (
         [Parameter(Mandatory)] [Signal]$Signal,
         [Parameter(Mandatory)] [object]$Plan,
-        [Parameter(Mandatory)] [object]$ItemSignal,
-        [string]$PlanPath = "HydrationPlan",
-        [string]$HydrationStyle = ""
+        [Parameter(Mandatory)] [object]$ItemSignal
     )
 
     $opSignal = [Signal]::Start("HydrationCondenser", $Signal) | Select-Object -Last 1
 
-    $PlanPath = $HydrationStyle + $PlanPath
+    
+ #   $hydrationStyleSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "HydrationStyle" -SignalLevel "Information" | Select-Object -Last 1
+ #   if ($hydrationStyleSignal.HasResult)
+ #   {
+ #       $HydrationStyle = $hydrationStyleSignal.GetResult()
+ #   }
 
     # Assume there are no changes until a change occurs.
     $opSignal.SetResult($false)
 
     try {
-        $hydrationPlanSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path $PlanPath | Select-Object -Last 1
+        $hydrationPlanSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "HydrationPlan" | Select-Object -Last 1
         if (-not $opSignal.MergeSignalAndVerifySuccess(@($hydrationPlanSignal))) {
             $opSignal.LogInformation("ℹ️ No HydrationPlan specified, skipping hydration.")
             return $Signal

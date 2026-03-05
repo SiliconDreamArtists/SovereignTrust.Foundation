@@ -40,17 +40,17 @@ class RestCondenser {
         $headersSignal = $this.GetStorageVersionHeaders($ConductionSignal, $Plan)
 
         # Clone Plan before Mutate
-        $Plan = $Plan | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
+        $clonePlan = (Resolve-ClonePlan -Plan $Plan | Select-Object -Last 1).GetResult()
 
         if ($headersSignal.HasResult()){
-            Add-PathToDictionary -Dictionary $Plan -Path "Config.Headers" -Value $headersSignal.GetResult()
+            Add-PathToDictionary -Dictionary $clonePlan -Path "Config.Headers" -Value $headersSignal.GetResult()
         }
 
         if ($bearerTokenSignal -and $bearerTokenSignal.HasResult()){
-            Add-PathToDictionary -Dictionary $Plan -Path "Config.BearerToken" -Value $bearerTokenSignal.GetResult()
+            Add-PathToDictionary -Dictionary $clonePlan -Path "Config.BearerToken" -Value $bearerTokenSignal.GetResult()
         }
 
-        $resultSignal = Invoke-RestCondenserCore -Signal $ConductionSignal -Plan $Plan -ItemSignal $ItemSignal -Activity $Activity | Select-Object -Last 1
+        $resultSignal = Invoke-RestCondenserCore -Signal $ConductionSignal -Plan $clonePlan -ItemSignal $ItemSignal -Activity $Activity | Select-Object -Last 1
         $opSignal.MergeSignal($resultSignal)
 
         # TODO: The result will now hold recommendations if there is a failure, such as to clear bearer token and try again
@@ -85,6 +85,9 @@ class RestCondenser {
             return $opSignal
         }
 
+        # Strip Url from array if in an array.
+        $url = (@($url))[0]
+
         # Parse URL
         try {
             $uri = [Uri]$url
@@ -113,12 +116,11 @@ class RestCondenser {
             $headers['Accept'] = 'application/xml'
 
             $opSignal.LogInformation("✅ Azure Storage headers generated for host: $hostAddress")
+            $opSignal.SetResult($headers)
         }
         else {
             $opSignal.LogVerbose("⏭️ Non-storage host detected; returning empty headers.")
         }
-
-        $opSignal.SetResult($headers)
     }
     catch {
         $opSignal.LogCritical("🔥 Exception in RestCondenser.GetStorageVersionHeaders: $($_.Exception.Message)", $null, $_)

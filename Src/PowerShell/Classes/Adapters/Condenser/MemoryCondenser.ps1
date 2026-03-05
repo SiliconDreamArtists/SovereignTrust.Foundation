@@ -41,32 +41,52 @@ class MemoryCondenser {
                 "Generate" {
                     ###n/a# $Plan May be the container with the source details or it may be in a mappings collection
 
-                    $steps = $null    
-
-                    $stepsSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Steps" -SignalLevel "Information" | Select-Object -Last 1
-                    if ($stepsSignal.HasResult()) {
-                        $steps = @($stepsSignal.GetResult())
-                    }
-
                     # TODO: Change to the DependsOn model like phases use
                     $resultSignal = $null
                     $_ItemSignal = [Signal]::Start("MemoryCondenser.MappingSignal") | Select-Object -Last 1
-                    $ItemSignal.CreateGraph()
-                    foreach ($step in @($steps)) {
+                    if (-not $ItemSignal.HasPointer()) {
+                        $ItemSignal.CreateGraph()
+                    }
 
+                    $step = $this.GetNextStep($null, $Plan)
+                    while ($step) {
                         $opSignal.LogInformation("Processing Mapping $($step.Name)", @("Verbose"))
                         $descriptionSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Description" -SignalLevel "Information" | Select-Object -Last 1
-                        if ($descriptionSignal.HasResult())
-                        {
+                        if ($descriptionSignal.HasResult()) {
                             $opSignal.LogInformation($descriptionSignal.GetResult(), @("Verbose"))
                         }
 
-                        $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
-                        if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
-                        if (-not $IsEnabledSignal.GetResult()) {
-                            continue
+                        $StepResultSignal = $null
+
+                        # The Deferred Hydration Plan is used to hydrate the step, usually because a previous set puts content in memory or cache.
+                        $DeferredHydrationPlanSignal = Resolve-PathFromDictionary -Dictionary $step -Path "DeferredHydrationPlan" -Default $null | Select-Object -Last 1
+                        if ($DeferredHydrationPlanSignal.HasResult()) {
+                            $HydrationSignal = [Signal]::Start("MemoryCondenser.Invoke.DeferredHydrate", $step) | Select-Object -Last 1
+                            $HydrationSignal.SetJacket($StepResultSignal)
+
+                            # Set the Step as the result content of the jacket which is what is going to be hydrated.
+                            $HydrationSignal.SetJacketResult($step)
+                            $HydrationSignal.SetPointer($ItemSignal.GetPointer())
+
+                            $HydrationPlan = [PSCustomObject]@{
+                                Path           = "%.@"
+                                HydrationStyle = "Deferred"
+                                HydrationPlan  = $DeferredHydrationPlanSignal.GetResult()
+                            }
+
+                            # Perform Hydration
+                            $StepHydrateResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
+                            if ($opSignal.MergeSignalAndVerifyFailure($StepHydrateResultSignal)) { return $opSignal }
+                            $step = $StepHydrateResultSignal.GetResult()
                         }
 
+                        $null = Add-PathToDictionary -Dictionary $step -Path "Phase" -Value $Plan
+                        $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
+                        if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
+                        if ($IsEnabledSignal.GetResult().ToString() -eq "false") {
+                            $step = $this.GetNextStep($step, $Plan)
+                            continue
+                        }
 
                         # Load the environment from Content storage and merge with passed in Environment *.#.Adapters
                         $PathSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Path" -SignalLevel "Warning" | Select-Object -Last 1
@@ -82,12 +102,11 @@ class MemoryCondenser {
                         $ExitAfterAdapterNoResult = Resolve-PathFromDictionary -Dictionary $step -Path "ExitAfterAdapterNoResult" -Default $false | Select-Object -Last 1
 
                         $Key = $KeySignal.HasResult() ? $KeySignal.GetResult() : $null
-                        $StepResultSignal = $null
-
                         $Path = $PathSignal.HasResult()     ? $PathSignal.GetResult()     : $null
                         $Format = $FormatSignal.HasResult()    ? $FormatSignal.GetResult()    : $null
-    
+
                         $AdapterSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Adapter" -SignalLevel "Warning"  | Select-Object -Last 1
+
                         if ($AdapterSignal.HasResult()) {
                             #                            $Container = $ContainerSignal.HasResult() ? $ContainerSignal.GetResult() : $null
                             #                           $Resource = $ResourceSignal.HasResult() ? $ResourceSignal.GetResult() : $null
@@ -139,14 +158,14 @@ class MemoryCondenser {
                 
                             # Optional Hydration Condenser Step
                             if ($HydrationPlanSignal.HasResult()) {
-                                $HydrationSignal= [Signal]::Start("MemoryCondenser.Invoke.Hydrate", $ItemSignal) | Select-Object -Last 1
+                                $HydrationSignal = [Signal]::Start("MemoryCondenser.Invoke.Hydrate", $ItemSignal) | Select-Object -Last 1
                                 $HydrationSignal.SetJacket($StepResultSignal)
                                 $HydrationSignal.SetPointer($ItemSignal.GetPointer())
 
                                 $HydrationPlan = [PSCustomObject]@{
-                                        Path = "%.@"
-                                        HydrationPlan = $HydrationPlanSignal.GetResult()
-                                    }
+                                    Path          = "%.@"
+                                    HydrationPlan = $HydrationPlanSignal.GetResult()
+                                }
 
                                 # Perform Hydration
                                 $StepResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
@@ -173,6 +192,8 @@ class MemoryCondenser {
                             }
                             #>
                         }
+
+                        $step = $this.GetNextStep($step, $Plan)
                     }
                     break
                 }
@@ -185,12 +206,53 @@ class MemoryCondenser {
         }
         
         $returnItemSignalSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "ReturnItemSignal" -Default $false | Select-Object -Last 1
-        if ($returnItemSignalSignal.GetResult())
-        {
+        if ($returnItemSignalSignal.GetResult()) {
             $opSignal.SetResult($ItemSignal)
         }
 
         return $opSignal
+    }
+
+    [object] GetNextStep(
+        [object]$currentStep,
+        [object]$phase
+    ) {
+        $step = $null
+        
+#        if ($currentStep -and (-not $currentStep.Name))
+#        {
+#            throw "Steps Must Have Names to be valid."
+#        }
+
+ #       $currentStepName = ($currentStep) ? $currentStep.Name : $null
+        
+        if ($phase.Steps) {
+            $phaseSteps = @($phase.Steps)
+
+            # If no current step, return the first step (if any)
+            if (-not $currentStep) {
+                if ($phaseSteps.Count -gt 0) {
+                    return $phaseSteps[0]
+                }
+                return $null
+            }
+
+            # Find current step and return the next one
+            for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
+
+                if ($phaseSteps[$i] -eq $currentStep) {
+
+                    $nextIndex = $i + 1
+                    if ($nextIndex -lt $phaseSteps.Count) {
+                        $step = $phaseSteps[$nextIndex]
+                    }
+
+                    break
+                }
+            }
+        }
+
+        return $step
     }
 
     [Signal] RegisterSignal(

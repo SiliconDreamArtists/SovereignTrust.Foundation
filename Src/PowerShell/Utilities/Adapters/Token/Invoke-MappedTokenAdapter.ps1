@@ -81,6 +81,12 @@ function Invoke-MappedTokenAdapter {
                 Path = $trimmed
             }
 
+            $configSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config" -SignalLevel "Information" | Select-Object -Last 1
+            if ($configSignal.HasResult())
+            {
+                $null = Add-PathToDictionary -Dictionary $TokenPlan -Path "Config" -Value $configSignal.GetResult()
+            }
+
             $invokeSignal = $adapter.Invoke($null, "Get", $Signal, $TokenPlan, $ItemSignal) | Select-Object -Last 1
             $opSignal.MergeSignal($invokeSignal)
 

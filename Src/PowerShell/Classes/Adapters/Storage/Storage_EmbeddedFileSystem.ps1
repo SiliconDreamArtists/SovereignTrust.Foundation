@@ -33,7 +33,7 @@ class Storage_EmbeddedFileSystem {
         return $opSignal
     }
 
-    [Signal] ReadObjectAsJson([string]$virtualPath) {
+    [Signal] ReadObjectAsJsonDEAD([string]$virtualPath) {
         $opSignal = [Signal]::Start("EmbeddedFileSystem.ReadObjectAsJson") | Select-Object -Last 1
 
         try {
@@ -71,7 +71,7 @@ class Storage_EmbeddedFileSystem {
         return $opSignal
     }
 
-    [Signal] ReadObject([string]$virtualPath) {
+    [Signal] ReadObjectDEAD([string]$virtualPath) {
         $opSignal = [Signal]::Start("EmbeddedFileSystem.ReadObject:$virtualPath") | Select-Object -Last 1
 
         try {
@@ -117,6 +117,19 @@ class Storage_EmbeddedFileSystem {
                     break
                 }
 
+                "Write" {
+                    $contentSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Content" | Select-Object -Last 1
+                    $content = $contentSignal.GetResult()
+
+                    $callSignal = Invoke-EmbeddedFileSystem_WriteObject `
+                        -Signal $this.Signal `
+                        -Content $content `
+                        -VirtualPath $virtualPath `
+                        -Addresses @($addressSignal.GetResult()) |
+                    Select-Object -Last 1
+                    break
+                }
+
                 default {
                     $opSignal.LogCritical("Unsupported adapter activity '$activity'.")
                     return $opSignal
@@ -135,7 +148,7 @@ class Storage_EmbeddedFileSystem {
         return $opSignal
     }
 
-    [Signal] Invoke([string]$virtualPath, [object]$Plan) {
+    [Signal] InvokeDEAD([string]$virtualPath, [object]$Plan) {
         $opSignal = [Signal]::Start("EmbeddedFileSystem.ReadObject:$virtualPath") | Select-Object -Last 1
 
         try {

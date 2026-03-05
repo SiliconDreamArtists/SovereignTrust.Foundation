@@ -37,6 +37,7 @@ function Invoke-Telemetry(
 . "$PSScriptRoot/Wrappers/Adapters/Condenser/Invoke-HydrationCondenser.ps1"
 
 . "$PSScriptRoot/Wrappers/Adapters/Condenser/Invoke-TokenCondenser.ps1"
+. "$PSScriptRoot/Wrappers/Adapters/Condenser/Invoke-PlanCondenser.ps1"
 
 
 . "$PSScriptRoot/Wrappers/Adapters/Invoke-CondenserAdapter.ps1"
@@ -69,6 +70,8 @@ function Invoke-Telemetry(
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Rest/Resolve-BearerToken.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Condenser/Rest/Invoke-RestCondenserCore.ps1"
 
+. "$PSScriptRoot/Utilities/Adapters/Condenser/Plan/Resolve-ClonePlan.ps1"
+
 . "$PSScriptRoot/Utilities/Adapters/Storage/Invoke-MappedStorageAdapter.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Invoke-MappedAdapterCore.ps1"
 
@@ -99,6 +102,7 @@ function Invoke-Telemetry(
 . "$PSScriptRoot/Classes/Adapters/Condenser/MemoryCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/MergeCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/TokenCondenser.ps1"
+. "$PSScriptRoot/Classes/Adapters/Condenser/PlanCondenser.ps1"
 . "$PSScriptRoot/Classes/Adapters/Condenser/TransformCondenser.ps1"
 
 #. "$PSScriptRoot/Utilities/Adapters/Condenser/Rest/Resolve-BearerToken.ps1"
@@ -137,6 +141,7 @@ function Invoke-Telemetry(
 
 #. "$PSScriptRoot/Utilities/New-Conductor.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Storage/Invoke-EmbeddedFileSystem_ReadObject.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Storage/Invoke-EmbeddedFileSystem_WriteObject.ps1"
 . "$PSScriptRoot/Utilities/Json/Invoke-CloneItem.ps1"
 
 . "$PSScriptRoot/Utilities/Adapters/New-MappedCondenserAdapterFromGraph.ps1"
@@ -166,6 +171,7 @@ function Invoke-Telemetry(
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenFormatterFilePath.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenFormatterVirtualFolder.ps1"
 . "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenFormatterJson.ps1"
+. "$PSScriptRoot/Utilities/Adapters/Token/Invoke-TokenFormatterString.ps1"
 
 . "$PSScriptRoot/Utilities/Resolve-SourcePathFromPlan.ps1"
 
@@ -212,6 +218,7 @@ function Invoke-Telemetry(
 # Export public utility functions
 Export-ModuleMember -Function Invoke-ST
 
+Export-ModuleMember -Function Resolve-ClonePlan
 
 # Previous set of public exports
 Export-ModuleMember -Function Resolve-Conduit

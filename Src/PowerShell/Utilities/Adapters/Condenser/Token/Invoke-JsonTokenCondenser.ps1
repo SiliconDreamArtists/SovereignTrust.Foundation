@@ -256,4 +256,12 @@ function Invoke-TokenCrawl {
                 -Parent $CurrentObject -Key $prop.Name -RegexPattern $RegexPattern
         }
     }
+    elseif ($CurrentObject -is [array]) {
+        foreach ($prop in $CurrentObject) {
+            _Walk             -Signal $Signal `
+                -ItemSignal $ItemSignal `
+                -Plan $Plan `
+                -Parent $CurrentObject -Key $prop.Name -RegexPattern $RegexPattern
+        }
+    }
 }

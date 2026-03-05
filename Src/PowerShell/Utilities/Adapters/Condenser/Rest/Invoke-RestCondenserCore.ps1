@@ -42,6 +42,9 @@ function Invoke-RestCondenserCore {
             $BodySignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Body" -Default $null | Select-Object -Last 1
 
             $Url = $UriSignal.GetResult()
+            # Strip Url from array if in an array.
+            $Url = (@($Url))[0]
+
             $Token = $BearerTokenSignal.HasResult() ? $BearerTokenSignal.GetResult() : $null
             $Querystring = $QuerystringSignal.HasResult() ? $QuerystringSignal.GetResult() : $null
             $headers = $HeadersSignal.HasResult() ? $HeadersSignal.GetResult() : $null
@@ -50,6 +53,17 @@ function Invoke-RestCondenserCore {
             $Method = $MethodSignal.HasResult() ? $MethodSignal.GetResult() : $null
             if ($Body -and -not $Body -is [string]) {
                 $Body = $Body | ConvertTo-Json -Depth 100
+            }
+
+            if ($headers -is [PSCustomObject])
+            {
+                $_headers = @{}
+                foreach ($property in $headers.PSObject.Properties)
+                {
+                    $_headers[$property.Name] = $property.Value
+                }
+
+                $headers = $_headers
             }
 
             if ($Token) {

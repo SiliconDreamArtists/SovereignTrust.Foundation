@@ -51,7 +51,7 @@ class Token_Storage {
             $resultSignal = Invoke-TokenStorage -Signal $ConductionSignal -ItemSignal $ItemSignal -Path $Path -Plan $Plan | Select-Object -Last 1
             $opSignal.MergeSignal($resultSignal)
 
-            if ($resultSignal.Success()) {
+            if ($resultSignal.HasResult()) {
                 $opSignal.SetResult($resultSignal.GetResult())
                 $opSignal.LogInformation("✅ Token storage path '$Path' resolved successfully.")
             }   

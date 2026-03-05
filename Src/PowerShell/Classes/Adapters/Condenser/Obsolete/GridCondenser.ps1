@@ -77,9 +77,8 @@ class GridCondenser {
                         return $opSignal
                     }
 
-                    $cloneJson = $Plan | ConvertTo-Json -Depth 100
-                    $clonePlan = $cloneJson | ConvertFrom-Json -Depth 100
-
+                    $clonePlan = (Resolve-ClonePlan -Plan $Plan | Select-Object -Last 1).GetResult()
+                    
                     $clonePlan.SourceAdapter = $clonePlan.ForEachSourceAdapter
                     $clonePlan.SourceActivity = $clonePlan.ForEachSourceActivity
                     

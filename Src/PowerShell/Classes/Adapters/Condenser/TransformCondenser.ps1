@@ -122,10 +122,10 @@ class TransformCondenser {
 
                 # Injects using a path to an xml or json object.
                 "Inject" {
+                    $sourceSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Content" | Select-Object -Last 1
+                    $addResult = Add-PathToDictionary -Dictionary $ItemSignal -Path $Plan.Path -Value $sourceSignal.GetResult() | Select-Object -Last 1
 
-                    # HASN'T BEEN IMPLEMENTED, WILL CALL FUNCTION Invoke-TransformInject
-                    $sourceSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $DefaultPath | Select-Object -Last 1
-
+<#
                     $pathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetPath" | Select-Object -Last 1
                     $formatSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetFormat" | Select-Object -Last 1
                     $htmlEncodeSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetHtmlEncode" -Default $false | Select-Object -Last 1
@@ -144,7 +144,8 @@ class TransformCondenser {
                         return $opSignal
                     }
 
-                    $opSignal.SetResult($resultSignal.GetResult())
+                    #>
+#                    $opSignal.SetResult($resultSignal.GetResult())
                     break
                 }
 

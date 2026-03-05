@@ -117,6 +117,7 @@ function Resolve-TokenForProperty {
 
                 $TokenPlan = [PSCustomObject]@{
                     Path = $Key
+
                 }
 
                 $configSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config" -SignalLevel "Information" | Select-Object -Last 1
@@ -142,7 +143,15 @@ function Resolve-TokenForProperty {
                 $replacement = $lookupSignal.GetResult()
 
                 # When a replacement value is a json object, etc, we can't do a replacement and must assume the object is ready to be returned.
-                if ($replacement -is [PSCustomObject] -or ($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]])) {
+                if (($replacement -is [PSCustomObject])) {
+                    $propertyValue = $replacement
+                }
+                elseif ($replacement -is [bool])
+                {
+                    $propertyValue = $replacement
+                }
+                elseif (($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]]))
+                {
                     $propertyValue = $replacement
                 }
                 else {

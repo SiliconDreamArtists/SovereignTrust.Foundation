@@ -104,6 +104,42 @@ function Resolve-TokenDynamic {
                 return $opSignal
             }
 
+            'notequals' {
+                if ($rawArgs.Count -lt 2) {
+                    throw "notequals() requires at least two arguments."
+                }
+
+                $first = $rawArgs[0]
+                $result = $first -notin $rawArgs[1..($rawArgs.Count - 1)]
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'equals' {
+                if ($rawArgs.Count -lt 2) {
+                    throw "equals() requires at least two arguments."
+                }
+
+                $first = $rawArgs[0]
+                $result = $first -in $rawArgs[1..($rawArgs.Count - 1)]
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'isnull' {
+                #TBD
+                $opSignal.SetResult([guid]::NewGuid().ToString())
+                return $opSignal
+            }
+
+            'isnotnull' {
+                #TBD
+                $opSignal.SetResult([guid]::NewGuid().ToString())
+                return $opSignal
+            }
+
             'newguid' {
                 $opSignal.SetResult([guid]::NewGuid().ToString())
                 return $opSignal
