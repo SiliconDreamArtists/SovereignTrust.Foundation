@@ -51,7 +51,7 @@ function Invoke-RestCondenserCore {
 
             $Body = $BodySignal.HasResult() ? $BodySignal.GetResult() : $null
             $Method = $MethodSignal.HasResult() ? $MethodSignal.GetResult() : $null
-            if ($Body -and -not $Body -is [string]) {
+            if ($Body -and ($Body -isnot [string])) {
                 $Body = $Body | ConvertTo-Json -Depth 100
             }
 

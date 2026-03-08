@@ -57,6 +57,13 @@ function Invoke-TokenMemory {
             $default = $parts[1]
         }
 
+        # Alternate Delimeter to break into a default value
+        if ($path -and $path -like '*=*') {
+            $parts = $path -split '\=', 2
+            $path = $parts[0]
+            $default = $parts[1]
+        }
+
         $pathSuffix = ""
 
         switch ($scope.ToLowerInvariant()) {
