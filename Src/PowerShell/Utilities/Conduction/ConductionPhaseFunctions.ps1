@@ -23,7 +23,7 @@ function Realize-ConductionPhase {
         $signal.LogInformation("✅ Phase realized from memory and settings.")
     }
     catch {
-        $signal.LogCritical("🔥 Failed to realize conduction phase: $_")
+        $signal.LogCritical("🔥 Exception: Failed to realize conduction phase: $_", $null, $_)
     }
 
     return $signal

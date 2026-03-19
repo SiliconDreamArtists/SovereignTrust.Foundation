@@ -2,14 +2,14 @@ class MappedNetworkAdapter {
     [Signal]$Signal
 
     MappedNetworkAdapter() {
-        # Static Start() pattern only
+        # Use static Start() instead
     }
 
     static [Signal] Start([object]$Conductor) {
         $opSignal = [Signal]::Start("MappedNetworkAdapter.Start") | Select-Object -Last 1
 
         if (-not $Conductor) {
-            $opSignal.LogCritical("❌ Null Conductor passed to MappedNetworkAdapter.Start()")
+            $opSignal.LogCritical("Null Conductor passed to MappedNetworkAdapter.Start()")
             return $opSignal
         }
 
@@ -19,91 +19,63 @@ class MappedNetworkAdapter {
             $adapter.Signal.SetJacket($Conductor)
             $adapter.Signal.SetReversePointer($Conductor)
 
-#            $envSignal = Resolve-PathFromDictionary -Dictionary $Conductor -Path "Environment" | Select-Object -Last 1
-#            if ($opSignal.MergeSignalAndVerifyFailure(@($envSignal))) { return $opSignal }
-
-#            $adapter.Signal.LogInformation("✅ Environment resolved for MappedNetworkAdapter")
-            $graphSignal = [Graph]::Start("MappedNetworkAdapter.Services", $adapter, $false)
-            $adapter.Signal.SetResult($graphSignal.GetResult())
+            $graphSignal = [Graph]::Start("MappedNetworkAdapter", $adapter, $false)
+            $adapter.Signal.SetPointer($graphSignal.GetResult())
 
             $opSignal.SetResult($adapter)
             $opSignal.LogInformation("✅ MappedNetworkAdapter initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception in MappedNetworkAdapter.Start(): $_")
+            $opSignal.LogCritical("💥 Exception in MappedNetworkAdapter.Start(): $_", $null, $_)
         }
 
         return $opSignal
     }
 
-    [Signal] RegisterAdapter([object]$networkService, [string]$Key = "NetworkService") {
+    [Signal] RegisterAdapter([object]$AdapterInstance, [string]$Key = "NetworkService") {
         $opSignal = [Signal]::Start("RegisterMappedAdapter:$Key") | Select-Object -Last 1
-        $adapterSignal = [Signal]::Start("Adapter:$Key") | Select-Object -Last 1
-        $adapterSignal.SetResult($networkService)
+        if ($AdapterInstance -isnot [Signal]) {
+            $adapterSignal = [Signal]::Start("Adapter:$Key") | Select-Object -Last 1
+            $adapterSignal.SetResult($AdapterInstance)
+        }
+        else {
+            $adapterSignal = $AdapterInstance
+        }
 
-        $graph = $this.Signal.GetResult()
+        $AddMappedAdapterSignal = Add-PathToDictionary -Dictionary $AdapterInstance -Path "MappedAdapter" -Value $this | Select-Object -Last 1
+        $graph = $this.Signal.GetPointer()
         $registerSignal = $graph.RegisterSignal($Key, $adapterSignal)
         $opSignal.MergeSignal($registerSignal)
 
         if ($registerSignal.Success()) {
-            $opSignal.LogInformation("✅ Registered network adapter at key: '$Key'")
+            $opSignal.LogInformation("✅ Registered adapter at key: '$Key'")
         } else {
-            $opSignal.LogWarning("⚠️ Failed to register network adapter at key: '$Key'")
+            $opSignal.LogWarning("Failed to register adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)
         return $opSignal
     }
 
-    [Signal] SendAsync([string]$channel, [string]$message, $messageDynamic) {
-        return $this.InvokeAdapterMethod("SendAsync", @($channel, $message, $messageDynamic))
-    }
+    [Signal] Invoke([string]$Slot, [string]$Activity, [Signal]$ConductionSignal, [object]$Plan, [Signal]$ItemSignal) {
+        $opSignal = [Signal]::Start("MappedDataAdapter.Invoke:$Slot") | Select-Object -Last 1
 
-    [Signal] CompleteMessageAsync([object]$message) {
-        return $this.InvokeAdapterMethod("CompleteMessageAsync", @($message))
-    }
+        $resultSignal = Invoke-MappedAdapterCore -MappedAdapterSignal $this.Signal -ConductionSignal $ConductionSignal -Slot $Slot -Activity $Activity -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
 
-    [void] StartListening([bool]$autoComplete) {
-        $graph = $this.Signal.GetResult()
-        foreach ($key in $graph.Grid.Keys) {
-            $adapterSignal = $graph.Grid[$key]
-            $adapter = $adapterSignal.GetResult()
-
-            if ($adapter -and ($adapter | Get-Member -Name "StartListening")) {
-                $adapter.StartListening($autoComplete)
-            }
-        }
-    }
-
-    [Signal] InvokeAdapterMethod([string]$MethodName, [object[]]$Args) {
-        $opSignal = [Signal]::Start("MappedNetworkAdapter.Invoke:$MethodName") | Select-Object -Last 1
-        $graph = $this.Signal.GetResult()
-
-        foreach ($key in $graph.Grid.Keys) {
-            $adapterSignal = $graph.Grid[$key]
-            $adapter = $adapterSignal.GetResult()
-
-            if ($null -ne $adapter -and ($adapter | Get-Member -Name $MethodName)) {
-                $result = $adapter.InvokeMethod($MethodName, $Args)
-                $opSignal.MergeSignal($result)
-
-                if ($result.Success()) {
-                    $opSignal.SetResult($result.GetResult())
-                    $opSignal.LogInformation("🎯 Network adapter '$key' successfully invoked '$MethodName'")
-                    break
-                } else {
-                    $opSignal.LogWarning("⚠️ Network adapter '$key' failed on method '$MethodName'")
-                }
-            } else {
-                $opSignal.LogVerbose("⏭️ Network adapter '$key' does not implement '$MethodName'")
-            }
+        if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)){
+            return $opSignal
         }
 
-        if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No network adapter succeeded for method '$MethodName'")
-        }
+        $opSignal.SetResult($resultSignal.GetResult($true))
+        return $opSignal
+    }
 
-        $this.Signal.MergeSignal($opSignal)
+    [Signal] Invoke([string]$Slot, [object]$Context, [object]$Plan) {
+        $opSignal = [Signal]::Start("MappedNetworkAdapter.Invoke:$Slot") | Select-Object -Last 1
+
+        $conductor = $this.Signal.GetJacket()
+        $opSignal = Invoke-NetworkAdapter -MappedAdapterSignal $this.Signal -NetworkSignal $Context -Slot $Slot | Select-Object -Last 1
+
         return $opSignal
     }
 }

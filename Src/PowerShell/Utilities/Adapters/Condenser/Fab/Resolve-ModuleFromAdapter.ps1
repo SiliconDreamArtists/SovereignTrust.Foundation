@@ -1,0 +1,51 @@
+function Resolve-ModuleFromAdapter {
+    [CmdletBinding()]
+    param (
+        [Signal]$Signal,
+        [string]$Slot,
+        [string]$ModuleName,
+        [string]$RelativePath
+    )
+
+    $opSignal = [Signal]::Start("Resolve-ModuleFromAdapter") | Select-Object -Last 1
+
+    try {
+        $adapterSignal = Resolve-PathFromDictionary -Dictionary ($Signal.GetControl($true)) -Path "%.*.#.Adapters.*.#.MappedStorage" -SignalLevel "Information" | Select-Object -Last 1
+
+        $opSignal.MergeSignal($adapterSignal)
+
+        if ($adapterSignal.Failure()) {
+            $opSignal.LogCritical("Could not resolve MappedStorage adapter from signal.")
+            return $opSignal
+        }
+
+        $adapter = $adapterSignal.GetResult() | Select-Object -Last 1
+        while ($adapter -is [Signal]) {
+            $adapter = $adapter.GetResult() | Select-Object -Last 1
+        }
+
+        # TODO: This should be moved into the adapter with the method name specifying embedded file system.
+
+        $pathSignal = Resolve-ModulePathFromAdapter -Signal $Signal -Adapter $adapter -Slot $Slot -RelativePath $RelativePath | Select-Object -Last 1
+        $opSignal.MergeSignal($pathSignal)
+
+        if ($pathSignal.Success()) {
+            Import-Module -Name $pathSignal.GetResult() -Force
+            $cmd = Get-Command -Module ModuleName
+
+            #$x = Resolve-Storage_AzureKeyVault | Select-Object -Last 1
+            #$x.Construct($null)
+                
+            $opSignal.LogInformation("✅ Module imported from path: $($pathSignal.GetResult())")
+            $opSignal.SetResult($cmd)
+        } else {
+            $opSignal.LogWarning("Could not resolve module path from adapter.")
+            $opSignal.SetResult($pathSignal.GetResult())
+        }
+    }
+    catch {
+        $opSignal.LogCritical("🔥 Exception in Resolve-ModuleFromAdapter: $($_.Exception.Message)", $null, $_)
+    }
+
+    return $opSignal
+}

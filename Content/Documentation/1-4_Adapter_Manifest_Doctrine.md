@@ -12,7 +12,7 @@ Defines rules for adapter resolution, virtual path usage, manifest hydration, an
 
 - Each adapter must declare a `VirtualPath`, retrievable using `Resolve-PathFromDictionary`.
 - This path identifies where the adapter's Manifest file resides (local or mapped storage).
-- Used by `Resolve-PathFormulaGraph` and `Resolve-PathFormulaGraphForConduction`.
+- Used by `Resolve-PathGraph` and `Resolve-PathGraphForConduction`.
 
 ---
 

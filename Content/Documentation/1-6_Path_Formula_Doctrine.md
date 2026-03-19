@@ -53,7 +53,7 @@ Each node in the graph contains:
 
 Used by:
 - `Resolve-DependencyModuleFromGraph`
-- `GraphCondenser` (Conduction planning)
+- `GridCondenser` (Conduction planning)
 - `Resolve-ConductionPhasesFromPathFormula`
 - SDA artifact publishers, AI planners, and agent configurators.
 

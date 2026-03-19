@@ -1,27 +1,32 @@
 function Read-JsonFileAsSignal {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
-        [string]$Path
+        [string]$Path,
+        [string]$RootPath
     )
 
-    $signal = [Signal]::Start("Read-JsonFileAsSignal") | Select-Object -Last 1
-    $signal.LogVerbose("📖 Reading JSON file from: $Path")
+    if ($null -ne $RootPath)
+    {
+        $Path = Join-Path -Path $RootPath -ChildPath $Path
+    }
+
+    $opSignal = [Signal]::Start("Read-JsonFileAsSignal") | Select-Object -Last 1
+    $opSignal.LogVerbose("📖 Reading JSON file from: $Path")
 
     if (-not (Test-Path -Path $Path)) {
-        $signal.LogError("❌ File does not exist at path: $Path")
-        return $signal
+        $opSignal.LogCritical("❌ File does not exist at path: $Path")
+        return $opSignal
     }
 
     try {
         $rawContent = Get-Content -Raw -Path $Path
         $json = $rawContent | ConvertFrom-Json -Depth 20
-        $signal.SetResult($json)
-        $signal.LogInformation("✅ JSON successfully parsed from: $Path")
+        $opSignal.SetResult($json)
+        $opSignal.LogInformation("✅ JSON successfully parsed from: $Path")
     }
     catch {
-        $signal.LogException("💥 Failed to parse JSON at path: $Path", $_)
+        $opSignal.LogCritical("💥 Failed to parse JSON at path: $($Path): $_")
     }
 
-    return $signal
+    return $opSignal
 }

@@ -5,7 +5,9 @@ function Invoke-TestGraph {
     )
 
     # ░▒▓█ INITIALIZE GRAPH █▓▒░
-    $graph = [Graph]::new($Environment)
+    $graphSignal = [Graph]::Start("Invoke-TestGraph", $opSignal, $true) | Select-Object -Last 1
+
+    $graph = $graphSignal.GetResult()
     $graph.Start()
 
     # ░▒▓█ DEFINE PATHS █▓▒░

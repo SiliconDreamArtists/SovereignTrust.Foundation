@@ -9,7 +9,7 @@ class MappedAdapterTemplate {
         $opSignal = [Signal]::Start("MappedAdapterTemplate.Start") | Select-Object -Last 1
 
         if (-not $Source) {
-            $opSignal.LogCritical("❌ Null source passed to MappedAdapterTemplate.Start()")
+            $opSignal.LogCritical("Null source passed to MappedAdapterTemplate.Start()")
             return $opSignal
         }
 
@@ -26,7 +26,7 @@ class MappedAdapterTemplate {
             $opSignal.LogInformation("✅ MappedAdapterTemplate initialized.")
         }
         catch {
-            $opSignal.LogCritical("💥 Exception during MappedAdapterTemplate.Start(): $_")
+            $opSignal.LogCritical("💥 Exception during MappedAdapterTemplate.Start(): $_", $null, $_)
         }
 
         return $opSignal
@@ -45,14 +45,15 @@ class MappedAdapterTemplate {
         if ($registerSignal.Success()) {
             $opSignal.LogInformation("✅ Registered sub-adapter at key: '$Key'")
         } else {
-            $opSignal.LogWarning("⚠️ Failed to register sub-adapter at key: '$Key'")
+            $opSignal.LogWarning("Failed to register sub-adapter at key: '$Key'")
         }
 
         $this.Signal.MergeSignal($opSignal)
         return $opSignal
     }
 
-    [Signal] Invoke([object]$Context) {
+#    [Signal] Invoke([object]$Context) {
+    [Signal] Invoke([string]$Slot, [Signal]$Context, [object]$Plan) {
         $opSignal = [Signal]::Start("MappedAdapterTemplate.Invoke") | Select-Object -Last 1
         $graph = $this.Signal.GetResult()
 
@@ -69,7 +70,7 @@ class MappedAdapterTemplate {
                     $opSignal.LogInformation("🎯 Sub-adapter '$key' invoked successfully.")
                     break
                 } else {
-                    $opSignal.LogWarning("⚠️ Sub-adapter '$key' failed to return a result.")
+                    $opSignal.LogWarning("Sub-adapter '$key' failed to return a result.")
                 }
             } else {
                 $opSignal.LogVerbose("⏭️ Sub-adapter '$key' does not implement Invoke().")
@@ -77,7 +78,7 @@ class MappedAdapterTemplate {
         }
 
         if (-not $opSignal.Success()) {
-            $opSignal.LogCritical("❌ No sub-adapter produced a valid result.")
+            $opSignal.LogCritical("No sub-adapter produced a valid result.")
         }
 
         $this.Signal.MergeSignal($opSignal)

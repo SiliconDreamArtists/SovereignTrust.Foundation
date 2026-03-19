@@ -11,7 +11,7 @@ function Convert-JsonToGraph {
 
     try {
         $parsed = $Json | ConvertFrom-Json -Depth 25
-        $graph = [Graph]::new($parsed.Environment)
+        $graph = [Graph]::Start("Convert-JsonToGraph")
 
         if (-not $IgnoreInternalObjects -and $parsed.GraphSignal) {
             $graph.GraphSignal = [Signal]::FromJson(($parsed.GraphSignal | ConvertTo-Json -Depth 25))
@@ -35,7 +35,7 @@ function Convert-JsonToGraph {
         $signal.LogInformation("✅ Graph successfully reconstructed from JSON.")
     }
     catch {
-        $signal.LogCritical("🔥 Failed to convert JSON to Graph: $($_.Exception.Message)")
+        $signal.LogCritical("🔥 Exception: Failed to convert JSON to Graph: $($_.Exception.Message)", $null, $_)
     }
 
     return $signal

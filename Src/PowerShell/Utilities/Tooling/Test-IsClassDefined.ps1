@@ -14,37 +14,39 @@ function Test-IsClassDefined {
         [string]$ClassName
     )
 
-    $signal = [Signal]::Start("Test-IsClassDefined:$ClassName") | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Test-IsClassDefined:$ClassName") | Select-Object -Last 1
 
     try {
         # ░▒▓█ TYPE DIRECT QUERY █▓▒░
         $type = [Type]::GetType($ClassName, $false)
         if ($type) {
-            $signal.LogVerbose("✅ Class found via [Type]::GetType(): $ClassName")
-            $signal.SetResult($true)
-            return $signal
+            $opSignal.LogVerbose("✅ Class found via [Type]::GetType(): $ClassName")
+            $opSignal.SetResult($true)
+            return $opSignal
         }
 
+        $types = [AppDomain]::CurrentDomain.GetAssemblies() 
+        
         # ░▒▓█ ASSEMBLY SCAN █▓▒░
-        $signal.LogVerbose("🔍 Scanning assemblies for class: $ClassName")
+        $opSignal.LogVerbose("🔍 Scanning assemblies for class: $ClassName")
         $type = [AppDomain]::CurrentDomain.GetAssemblies() |
             ForEach-Object { $_.GetType($ClassName, $false) } |
             Where-Object { $_ -ne $null } |
             Select-Object -First 1
 
         if ($type) {
-            $signal.LogVerbose("✅ Class found in assembly: $($type.Assembly.FullName)")
-            $signal.SetResult($true)
+            $opSignal.LogVerbose("✅ Class found in assembly: $($type.Assembly.FullName)")
+            $opSignal.SetResult($type)
         }
         else {
-            $signal.LogWarning("❌ Class not found: $ClassName")
-            $signal.SetResult($false)
+            $opSignal.LogWarning("Class not found: $ClassName")
+            #$opSignal.SetResult($false)
         }
     }
     catch {
-        $signal.LogCritical("🔥 Error while checking class: $($_.Exception.Message)")
-        $signal.SetResult($false)
+        $opSignal.LogCritical("🔥 Exception while checking class: $($_.Exception.Message)", $null, $_)
+        #$opSignal.SetResult($false)
     }
 
-    return $signal
+    return $opSignal
 }

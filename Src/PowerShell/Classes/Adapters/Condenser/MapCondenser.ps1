@@ -1,84 +1,146 @@
-# ░▒▓█ SDA MapCondenser █▓▒░
-# PowerShell implementation of MapCondenser for SovereignTrust
+# =============================================================================
+# 🧩 MapCondenser (Symbolic Mapping + Contextual Replacement)
+#  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
+#  Authors: Shadow PhanTom ☠️🧁👾️/🤖 • Neural Alchemist ⚗️☣️🐲 • Last Updated: 07/12/2025
+# =============================================================================
 # Performs template condensation using dynamic mappings and embedded context.
+# Resolves tags such as `@@TAG`, `##TAG`, `<TAG />` using sovereign source maps.
+# Often used in Condenser chains during token hydration, agent bootstrap, or
+# reactive publishing from flattened Plan schemas.
+# =============================================================================
 
 class MapCondenser {
     [Conductor]$Conductor
     [MappedCondenserAdapter]$MappedCondenserAdapter
-    [Signal]$ControlSignal
+    [Signal]$Signal  # Previously ControlSignal
 
-    MapCondenser([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
-        $this.MappedCondenserAdapter = $mappedAdapter
-        $this.Conductor = $conductor
-        $this.ControlSignal = [Signal]::Start("MergeCondenser.Control") | Select-Object -Last 1
+    MapCondenser() {
+        # Empty constructor — use .Start()
+    }
+       
+    static [MapCondenser] Start([MappedCondenserAdapter]$mappedAdapter, [Conductor]$conductor) {
+        $instance = [MapCondenser]::new()
+        $instance.MappedCondenserAdapter = $mappedAdapter
+        $instance.Conductor = $conductor
+        $instance.Signal = [Signal]::Start("MapCondenser.Start") | Select-Object -Last 1
+        return $instance
     }
 
-    [Signal] CondenseTemplate([object]$Proposal, [object]$Context) {
-        $signal = [Signal]::Start("CondenseTemplate") | Select-Object -Last 1
+    [Signal] Invoke([string]$Slot, [string]$Activity, $ConductionSignal, $Plan, $ItemSignal) {
+        # For the Content Condenser, the plan contains the steps to perform, similar to the steps in the FormulaGraphCondenser but 2 dimensional mappings
 
-        if (-not $Proposal -or -not $Proposal.Content) {
-            $signal.LogCritical("Invalid or missing Proposal.Content for condensation.")
-            return $signal
-        }
+        $opSignal = [Signal]::Start("MapCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
+        
+        # First Supported Activities -> Select, Merge, Project
+        $DefaultPath = "%.@"
+        if ($Activity) {
+            switch ($Activity) {
 
-        $variableTags = $this.GetVariableTags($Proposal.Content, $Proposal.ReplacementType)
+                # Converts a named object Array into a graph, or takes a graph and extends it with an array.  (Move to Graph Condenser and join with GridCondenser functionality like navigate grid?)
+                #"Direct" - this is Invoke below instead of something declarative because it's coming through the hydration condenser and we aren't changing that in this revision set.
+                "Invoke" {
 
-        foreach ($tag in $variableTags) {
-            foreach ($source in $Proposal.SourceRelayList) {
-                $relayData = $Proposal.RelayData | Where-Object { $_.Key.RelayFilename -eq $source }
+                    ## Require Result or Jacket to have value.
+                    #$result = $ItemSignal.HasResult() ? $ItemSignal.GetResult() : $ItemSignal.GetJacket().GetResult()
+                    $sourceContentPathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Path" | Select-Object -Last 1
+                    if ($opSignal.MergeSignalAndVerifyFailure($sourceContentPathSignal)) { 
+                        return $opSignal }
 
-                if ($relayData.Value) {
-                    $resolved = Resolve-PathFromDictionary -Dictionary $relayData.Value -Path $tag
-                    $signal.MergeSignal(@($resolved))
+                    $resultSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $sourceContentPathSignal.GetResult() | Select-Object -Last 1
+                    if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) { 
+                        return $opSignal }
 
-                    if ($resolved.Success()) {
-                        $Proposal.Content = $this.ReplaceTagInContent($Proposal.Content, $resolved.GetResult(), $tag, $Proposal.MappingType, $Proposal.ReplacementType)
+                    $result = $resultSignal.GetResult()
+
+                    # Fix this, we should not be mutating ItemSignal, we should create the proxy and pass the result through.
+                    $ItemProxySignal = $ItemSignal
+
+                    if ($result -is [string]) {
+                        $resultObject = [pscustomobject]@{
+                            Message = $result
+                        }
+                        # Generate a new object to act as the Signle to pass in as a proxy
+                         $null = Add-PathToDictionary -Dictionary $ItemSignal -Path $sourceContentPathSignal.GetResult() -Value $resultObject
+
                     }
+
+                    $condenserResult = Invoke-JsonTokenCondenser -Signal $ConductionSignal -ItemSignal $ItemSignal -Plan $Plan | Select-Object -Last 1
+
+                    if ($result -is [string]) {
+                        $messageObject = $condenserResult.GetResult()
+                        $opSignal.SetResult($messageObject.Message);
+                    }
+                    else {
+                        $opSignal.SetResult($condenserResult.GetResult());
+                    }
+
+                    $null = Add-PathToDictionary -Dictionary $ItemSignal -Path $sourceContentPathSignal.GetResult() -Value $opSignal.GetResult() | Select-Object -Last 1
+                    break
+                }
+
+                "Map" {
+
+                    if ($null -eq $Plan) {
+                        $PlanSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.Plan" | Select-Object -Last 1
+                        $Plan = $PlanSignal.GetResult()
+                    }
+
+                    <#
+                    if ($null -eq $Context) {
+                        $ContextSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.Context" | Select-Object -Last 1
+                        $Context = $ContextSignal.GetResult()
+                    }
+                        #>
+                    # HACKED TOGETHER TO MAKE WORK FROM BELOW, NOT CURRENTLY FUNCTIONAL
+                        $Context = $ItemSignal
+                    $resultSignal = Invoke-MapCondenser -Signal $ItemSignal -ProposalSignal $Plan -Context $Context | Select-Object -Last 1
+                    $opSignal.MergeSignal($resultSignal)
+
+                    if ($resultSignal.HasResult()) {
+                        $opSignal.SetResult($resultSignal.GetResult())
+                    }
+                    
+                    break
+                }
+
+                default {
+                    $opSignal.LogWarning("Unsupported Activity: $Activity")
+                    break
                 }
             }
+
+            return $opSignal
+        }
+        
+        $returnItemSignalSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "ReturnItemSignal" -Default $false | Select-Object -Last 1
+        if ($returnItemSignalSignal.GetResult()) {
+            $opSignal.SetResult($ItemSignal)
         }
 
-        $signal.SetResult(@{
-            Content = $Proposal.Content
-        })
+        return $opSignal
 
-        $signal.LogInformation("Condensation completed.")
-        return $signal
     }
 
-    [string] ReplaceTagInContent([string]$Input, [string]$Value, [string]$Tag, [string]$MappingType, [string]$ReplacementType) {
-        if ($MappingType -eq 'Set') {
-            return $Value
+    [Signal] Invoke([Signal]$ItemSignal, [object]$Plan, [object]$Context = $null) {
+        $opSignal = [Signal]::Start("MapCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
+
+        if ($null -eq $Plan) {
+            $PlanSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.Plan" | Select-Object -Last 1
+            $Plan = $PlanSignal.GetResult()
         }
 
-        $tags = $this.GetReplacementPatterns($Tag, $ReplacementType)
-        foreach ($pattern in $tags) {
-            $Input = $Input.Replace($pattern, $Value)
+        if ($null -eq $Context) {
+            $ContextSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path "%.@.Context" | Select-Object -Last 1
+            $Context = $ContextSignal.GetResult()
         }
 
-        return $Input
-    }
+        $resultSignal = Invoke-MapCondenser -Signal $ItemSignal -ProposalSignal $Plan -Context $Context | Select-Object -Last 1
+        $opSignal.MergeSignal($resultSignal)
 
-    [string[]] GetReplacementPatterns([string]$Tag, [string]$Type) {
-        switch ($Type) {
-            'XmlTag'       { return @("<$Tag />", "&lt;$Tag /&gt;") }
-            'HashHashtag'  { return @("##$Tag") }
-            'AtAttag'      { return @("@@$Tag") }
-            default        { return @() }
+        if ($resultSignal.HasResult()) {
+            $opSignal.SetResult($resultSignal.GetResult())
         }
 
-        return @()
-    }
-
-    [string[]] GetVariableTags([string]$Content, [string]$Type) {
-        if (-not $Content) { return @() }
-
-        switch ($Type) {
-            'AtAttag'     { return [regex]::Matches($Content, "@@[a-zA-Z0-9-]+") | ForEach-Object { $_.Value.Substring(2) } }
-            'HashHashtag' { return [regex]::Matches($Content, "##[a-zA-Z0-9_.-]+") | ForEach-Object { $_.Value.Substring(2) } }
-            default       { return @() }
-        }
- 
-        return @()
+        return $opSignal
     }
 }

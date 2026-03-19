@@ -38,7 +38,7 @@ function Get-AgentForConductor {
         $signal.SetResult($Agent)
     }
     catch {
-        $signal.LogCritical("Unhandled critical failure in Get-AgentForConductor: $_")
+        $signal.LogCritical("Exception: Critical failure in Get-AgentForConductor: $_", $null, $_)
     }
 
     return $signal
