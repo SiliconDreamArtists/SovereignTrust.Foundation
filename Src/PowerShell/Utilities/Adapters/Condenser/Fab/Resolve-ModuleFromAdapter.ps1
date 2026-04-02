@@ -26,6 +26,11 @@ function Resolve-ModuleFromAdapter {
 
         # TODO: This should be moved into the adapter with the method name specifying embedded file system.
 
+        if ($RelativePath -eq "SDAFusion.Adapters\Src\Token\SDA\PowerShell\Token_SDA.psd1")
+        {
+            $a = ""
+        }
+
         $pathSignal = Resolve-ModulePathFromAdapter -Signal $Signal -Adapter $adapter -Slot $Slot -RelativePath $RelativePath | Select-Object -Last 1
         $opSignal.MergeSignal($pathSignal)
 

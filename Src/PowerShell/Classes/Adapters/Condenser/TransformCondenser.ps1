@@ -123,7 +123,7 @@ class TransformCondenser {
                 # Injects using a path to an xml or json object.
                 "Inject" {
                     $sourceSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Content" | Select-Object -Last 1
-                    $addResult = Add-PathToDictionary -Dictionary $ItemSignal -Path $Plan.Path -Value $sourceSignal.GetResult() | Select-Object -Last 1
+                    $addResult = Add-PathToDictionary -Dictionary $ItemSignal -AddStyle "Append" -Path $Plan.Path -Value $sourceSignal.GetResult() | Select-Object -Last 1
 
 <#
                     $pathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetPath" | Select-Object -Last 1

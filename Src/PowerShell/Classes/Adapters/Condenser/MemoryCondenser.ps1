@@ -93,7 +93,8 @@ class MemoryCondenser {
                         $ResourceSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Resource" -SignalLevel "Warning" | Select-Object -Last 1
                         $ContainerSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Container" -SignalLevel "Warning" | Select-Object -Last 1
                         $FormatSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Format" -SignalLevel "Warning" | Select-Object -Last 1
-                        $ModeSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Mode" -Default "Select" -SignalLevel "Warning" | Select-Object -Last 1
+                        $ContentFormatSignal = Resolve-PathFromDictionary -Dictionary $step -Path "ContentFormat" -SignalLevel "Information" | Select-Object -Last 1
+                        $ModeSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Mode" -Default "Select" -SignalLevel "Information" | Select-Object -Last 1
                         $ActivitySignal = Resolve-PathFromDictionary -Dictionary $step -Path "Activity" -SignalLevel "Warning" | Select-Object -Last 1
                         $TypeSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Type" -Default "Transform" | Select-Object -Last 1
                         $HydrationPlanSignal = Resolve-PathFromDictionary -Dictionary $step -Path "HydrationPlan" -Default $null | Select-Object -Last 1
@@ -104,6 +105,7 @@ class MemoryCondenser {
                         $Key = $KeySignal.HasResult() ? $KeySignal.GetResult() : $null
                         $Path = $PathSignal.HasResult()     ? $PathSignal.GetResult()     : $null
                         $Format = $FormatSignal.HasResult()    ? $FormatSignal.GetResult()    : $null
+                        $ContentFormat = $ContentFormatSignal.HasResult()    ? $ContentFormatSignal.GetResult()    : $null
 
                         $AdapterSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Adapter" -SignalLevel "Warning"  | Select-Object -Last 1
 
@@ -123,6 +125,9 @@ class MemoryCondenser {
 
                             if ($opSignal.MergeSignalAndVerifyFailure($StepResultSignal)) { return $opSignal }
                             $this.RegisterSignal($ItemSignal, $Key, $StepResultSignal)
+                        }
+                        else {
+                            $StepResultSignal = [Signal]::Start("MemoryCondenser.EmptyStepResult") | Select-Object -Last 1
                         }
 
                         if (-not $StepResultSignal.HasResult() -and $ExitAfterAdapterNoResult.GetResult() ) {
@@ -155,23 +160,49 @@ class MemoryCondenser {
                                 if ($opSignal.MergeSignalAndVerifyFailure($StepResultSignal)) { return $opSignal }
                                 $this.RegisterSignal($ItemSignal, $Key, $StepResultSignal)
                             }
-                
+
                             # Optional Hydration Condenser Step
                             if ($HydrationPlanSignal.HasResult()) {
                                 $HydrationSignal = [Signal]::Start("MemoryCondenser.Invoke.Hydrate", $ItemSignal) | Select-Object -Last 1
                                 $HydrationSignal.SetJacket($StepResultSignal)
                                 $HydrationSignal.SetPointer($ItemSignal.GetPointer())
 
+#                                $HydrationPlan = $step | ConvertFrom-Json -Depth 100 | ConvertTo-Json -Depth 100
+
+<##>
+                                # Re-use the step in case hydration needs to come from
+                                $HydrationPlan = (Resolve-ClonePlan -Plan $step | Select-Object -Last 1).GetResult()
+                                
+                                $null = Add-PathToDictionary -Dictionary $HydrationPlan -Path "HydrationPlan" -Value $HydrationPlanSignal.GetResult()
+                                $null = Add-PathToDictionary -Dictionary $HydrationPlan -Path "Path" -Value "%.@"
+#>
+<#
                                 $HydrationPlan = [PSCustomObject]@{
                                     Path          = "%.@"
                                     HydrationPlan = $HydrationPlanSignal.GetResult()
                                 }
+#>
 
                                 # Perform Hydration
                                 $StepResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
                                 if ($opSignal.MergeSignalAndVerifyFailure($StepResultSignal)) { return $opSignal }
                                 $this.RegisterSignal($ItemSignal, $Key, $StepResultSignal)
                             }
+                
+                            if ($ContentFormat) {
+                                $ContentFormatSignal = [Signal]::Start("MemoryCondenser.Invoke.ContentFormat", $ItemSignal) | Select-Object -Last 1
+                                $ContentFormatSignal.SetJacket($StepResultSignal)
+                                $ContentFormatSignal.SetPointer($ItemSignal.GetPointer())
+
+                                $FormatPlan = [PSCustomObject]@{
+                                    Format = $ContentFormat
+                                }
+
+                                $StepResultSignal = Invoke-CondenserAdapter -Slot "Format" -Activity $ContentFormat -Plan $FormatPlan -Signal $ConductionSignal -ItemSignal $ContentFormatSignal | Select-Object -Last 1
+                                if ($opSignal.MergeSignalAndVerifyFailure($StepResultSignal)) { return $opSignal }
+                                $this.RegisterSignal($ItemSignal, $Key, $StepResultSignal)
+                            }
+
                             <#
                             # Optional Target Step, uses the TargetAdapter to determine which adapter and slot to use then the activity is passed through.
                             $TargetAdapterSignal = Resolve-PathFromDictionary -Dictionary $step -Path "TargetAdapter" -SignalLevel "Information" | Select-Object -Last 1
@@ -219,40 +250,64 @@ class MemoryCondenser {
     ) {
         $step = $null
         
-#        if ($currentStep -and (-not $currentStep.Name))
-#        {
-#            throw "Steps Must Have Names to be valid."
-#        }
-
- #       $currentStepName = ($currentStep) ? $currentStep.Name : $null
-        
         if ($phase.Steps) {
             $phaseSteps = @($phase.Steps)
+
+            foreach ($phaseStep in $phaseSteps)
+            {
+                if (-not $phaseStep.Name)
+                {
+                    $null = Add-PathToDictionary -Dictionary $phaseStep -Path "Name" -Value  New-Guid
+                }
+            }
 
             # If no current step, return the first step (if any)
             if (-not $currentStep) {
                 if ($phaseSteps.Count -gt 0) {
-                    return $phaseSteps[0]
+                    return $phaseSteps[0]  | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
                 }
-                return $null
+            }
+
+            # Apply going to a specific step.
+            if ($null -eq $step) {
+                if ($null -eq $currentStep.Adapter -and $currentStep.Activity -eq "Goto") {
+                    $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $currentStep -Path "IsEnabled" -Default $true | Select-Object -Last 1
+                    $isEnabled = $IsEnabledSignal.GetResult().ToString() -eq "true"
+
+                    if ($isEnabled) {
+                        $gotoName = $currentStep.Path
+                        for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
+                            if ($phaseSteps[$i].Name -eq $gotoName) {
+                                return $phaseSteps[$i]  | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10 
+                            }
+                        }
+                    }
+                }
             }
 
             # Find current step and return the next one
-            for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
+            if ($null -eq $step) {
+                for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
 
-                if ($phaseSteps[$i] -eq $currentStep) {
+                    if ($phaseSteps[$i].Name -eq $currentStep.Name) {
+                        $nextIndex = $i + 1
+                        if ($nextIndex -lt $phaseSteps.Count) {
+                            return $phaseSteps[$nextIndex]  | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
+                        }
 
-                    $nextIndex = $i + 1
-                    if ($nextIndex -lt $phaseSteps.Count) {
-                        $step = $phaseSteps[$nextIndex]
+                        break
                     }
-
-                    break
                 }
             }
         }
 
-        return $step
+        if ($null -eq $step)
+        {
+            return $null
+        }
+
+#        return (Resolve-ClonePlan -Plan $step | Select-Object -Last 1).GetResult()
+        return $step | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
     }
 
     [Signal] RegisterSignal(

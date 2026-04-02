@@ -184,6 +184,12 @@ function Invoke-TokenCrawl {
 
         if ($null -eq $value) { return }
 
+        if ($value -like "*__*") {
+            if ($value -match $RegexPattern) {
+                $a = "a"
+            }
+        }
+
         switch ($value.GetType().Name) {
             'Hashtable' {
                 foreach ($subKey in $value.Keys) {
@@ -220,6 +226,9 @@ function Invoke-TokenCrawl {
                             -HydrationStyle $HydrationStyle `
                             -ReturnRequiredValues:$ReturnRequiredValues `
                             -RegexPattern $RegexPattern
+                    }
+                    else {
+                        $type = $value[$i].GetType()
                     }
                 }
             }

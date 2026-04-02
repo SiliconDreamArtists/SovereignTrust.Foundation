@@ -130,13 +130,15 @@ function Resolve-TokenDynamic {
 
             'isnull' {
                 #TBD
-                $opSignal.SetResult([guid]::NewGuid().ToString())
+                $result = $null -eq $rawArgs
+                $opSignal.SetResult($result)
                 return $opSignal
             }
 
             'isnotnull' {
                 #TBD
-                $opSignal.SetResult([guid]::NewGuid().ToString())
+                $result = $null -ne $rawArgs
+                $opSignal.SetResult($result)
                 return $opSignal
             }
 

@@ -75,12 +75,12 @@ function Resolve-TokenForProperty {
             $matches = [regex]::Matches($propertyValue, $RegexPattern)
         }
 
-        if ($matches.Count -gt 100) {
-
-            $matches = $matches |
-            ForEach-Object { $_.Value } |
-            Select-Object -Unique
-        }
+#        if ($matches.Count -gt 100) {
+#
+#            $matches = $matches |
+#            ForEach-Object { $_.Value } |
+#            Select-Object -Unique
+#        }
                 
         foreach ($match in $matches) {
             $matchText = $match.Value.Trim()
@@ -112,12 +112,14 @@ function Resolve-TokenForProperty {
                     $RegexPattern = "(?s)$RegexPattern"
                 }
 
-#                $clonePlan = $Plan | ConvertTo-Json | ConvertFrom-Json
-#                $clonePlan.Path = $key
+<#
+
+                $TokenPlan = (Resolve-ClonePlan -Plan $Plan | Select-Object -Last 1).GetResult()
+                $null = Add-PathToDictionary -Dictionary $TokenPlan -Path "Path" -Value $Key
+#>
 
                 $TokenPlan = [PSCustomObject]@{
-                    Path = $Key
-
+                    Path = $key
                 }
 
                 $configSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config" -SignalLevel "Information" | Select-Object -Last 1
