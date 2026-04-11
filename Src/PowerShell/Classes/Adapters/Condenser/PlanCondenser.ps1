@@ -56,6 +56,12 @@ class PlanCondenser {
                     $planSteps = $planStepsSignal.GetResult()
                     $currentPlanName = $Plan.Name
 
+                    $breakSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Break" -Default $false | Select-Object -Last 1
+                    if ($breakSignal.GetResult())
+                    {
+                        $Check = ""
+                    }
+
                     # clone and Iterate through new steps, rename in order to make them unique and re-usable.
                     $phaseSteps = (Resolve-ClonePlan -Plan $phaseSteps | Select-Object -Last 1).GetResult()
 

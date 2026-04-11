@@ -152,6 +152,19 @@ function Invoke-TokenCrawl {
             -RegexPattern $RegexPattern `
             -ReturnRequiredValues:$ReturnRequiredValues | Select-Object -Last 1 | Out-Null
 
+    if ($HydrationStyle -eq "" -and $propObject.Value -like '*/]*') {
+        Resolve-TokenForProperty `
+            -MergeCondenserFeedback $MergeCondenserFeedback `
+            -Property $propObject `
+            -Signal $Signal `
+            -ItemSignal $ItemSignal `
+            -Plan $Plan `
+            -HydrationStyle $HydrationStyle `
+            -RegexPattern $RegexPattern `
+            -ReturnRequiredValues:$ReturnRequiredValues | Select-Object -Last 1 | Out-Null
+        
+    }
+
         $propertyValue = $propObject.Value
 
         if ($propertyValue -is [string] -and $null -ne $propertyValue) {

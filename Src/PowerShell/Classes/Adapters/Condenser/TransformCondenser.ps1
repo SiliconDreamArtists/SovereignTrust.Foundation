@@ -68,6 +68,8 @@ class TransformCondenser {
                                     $HydrationPlan = [PSCustomObject]@{
                                         Path = "%.@"
                                         HydrationPlan = "@"
+                                        Source = "TransformCondenser"
+                                        Config = $Plan.Config
                                     }
 
                                     #$null = Add-PathToDictionary -Dictionary $ContentPlan -Path "Config" -Value $node

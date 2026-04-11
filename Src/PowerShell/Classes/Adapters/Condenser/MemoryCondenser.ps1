@@ -50,6 +50,20 @@ class MemoryCondenser {
 
                     $step = $this.GetNextStep($null, $Plan)
                     while ($step) {
+
+                        $breakSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Config.Break" -Default $false | Select-Object -Last 1
+                       if ($breakSignal.GetResult())
+                        {
+                            $Check = ""
+                        }
+
+                        $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
+                        if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
+                        if ($IsEnabledSignal.GetResult().ToString() -eq "false") {
+                            $step = $this.GetNextStep($step, $Plan)
+                            continue
+                        }
+
                         $opSignal.LogInformation("Processing Mapping $($step.Name)", @("Verbose"))
                         $descriptionSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Description" -SignalLevel "Information" | Select-Object -Last 1
                         if ($descriptionSignal.HasResult()) {
@@ -72,21 +86,30 @@ class MemoryCondenser {
                                 Path           = "%.@"
                                 HydrationStyle = "Deferred"
                                 HydrationPlan  = $DeferredHydrationPlanSignal.GetResult()
+                                Config = $step.Config
                             }
+
+#                            $stepConfigResult = Resolve-PathFromDictionary -Dictionary $step -Path "Config" -SignalLevel "Information" | Select-Object -Last 1
+#                            if ($stepConfigResult.HasResult())
+#                            {
+#                                $null = Add-PathToDictionary -Dictionary $HydrationPlan -Path "Config" -Value $stepConfigResult.GetResult() 
+#                            }
 
                             # Perform Hydration
                             $StepHydrateResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
                             if ($opSignal.MergeSignalAndVerifyFailure($StepHydrateResultSignal)) { return $opSignal }
                             $step = $StepHydrateResultSignal.GetResult()
+
+                            #Check Enabled again after hydration in case the value was hydrated at runtime.
+                            $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
+                            if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
+                            if ($IsEnabledSignal.GetResult().ToString() -eq "false") {
+                                $step = $this.GetNextStep($step, $Plan)
+                                continue
+                            }
                         }
 
                         $null = Add-PathToDictionary -Dictionary $step -Path "Phase" -Value $Plan
-                        $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
-                        if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
-                        if ($IsEnabledSignal.GetResult().ToString() -eq "false") {
-                            $step = $this.GetNextStep($step, $Plan)
-                            continue
-                        }
 
                         # Load the environment from Content storage and merge with passed in Environment *.#.Adapters
                         $PathSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Path" -SignalLevel "Warning" | Select-Object -Last 1

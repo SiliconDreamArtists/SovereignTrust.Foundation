@@ -75,12 +75,12 @@ function Resolve-TokenForProperty {
             $matches = [regex]::Matches($propertyValue, $RegexPattern)
         }
 
-#        if ($matches.Count -gt 100) {
-#
-#            $matches = $matches |
-#            ForEach-Object { $_.Value } |
-#            Select-Object -Unique
-#        }
+        #        if ($matches.Count -gt 100) {
+        #
+        #            $matches = $matches |
+        #            ForEach-Object { $_.Value } |
+        #            Select-Object -Unique
+        #        }
                 
         foreach ($match in $matches) {
             $matchText = $match.Value.Trim()
@@ -112,7 +112,7 @@ function Resolve-TokenForProperty {
                     $RegexPattern = "(?s)$RegexPattern"
                 }
 
-<#
+                <#
 
                 $TokenPlan = (Resolve-ClonePlan -Plan $Plan | Select-Object -Last 1).GetResult()
                 $null = Add-PathToDictionary -Dictionary $TokenPlan -Path "Path" -Value $Key
@@ -123,8 +123,7 @@ function Resolve-TokenForProperty {
                 }
 
                 $configSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config" -SignalLevel "Information" | Select-Object -Last 1
-                if ($configSignal.HasResult())
-                {
+                if ($configSignal.HasResult()) {
                     $null = Add-PathToDictionary -Dictionary $TokenPlan -Path "Config" -Value $configSignal.GetResult()
                 }
 
@@ -148,12 +147,10 @@ function Resolve-TokenForProperty {
                 if (($replacement -is [PSCustomObject])) {
                     $propertyValue = $replacement
                 }
-                elseif ($replacement -is [bool])
-                {
+                elseif ($replacement -is [bool]) {
                     $propertyValue = $replacement
                 }
-                elseif (($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]]))
-                {
+                elseif (($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]])) {
                     $propertyValue = $replacement
                 }
                 else {
@@ -175,18 +172,24 @@ function Resolve-TokenForProperty {
                     
                     $oldValue = $propertyValue
 
-                    if ($replacement -is [string[]])
-                    {
-                        $replacement = (@($replacement) | ForEach-Object { "`"$_`"" }) -join ", "
-                    }
-
-                    if ($replacement -is [datetime])
-                    {
-                        $replacement = $replacement.ToUniversalTime().ToString("o")
-                    }
-
                     try {
-                        $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
+                        # Test the $propertyValue to see if the current value is being set into a string, if it's going into a blank entry, simply replace instead of doing the regex replacement.
+                        $propertyValueTest = $innerRegex.Replace($propertyValue, "")
+                        if ($propertyValueTest -eq "") {
+                            $propertyValue = $replacement
+                        }
+                        else {
+                            # Massage $replacement into a string if it's being integrated into an existing value.
+                            if ($replacement -is [string[]]) {
+                                $replacement = (@($replacement) | ForEach-Object { "`"$_`"" }) -join ", "
+                            }
+
+                            if ($replacement -is [datetime]) {
+                                $replacement = $replacement.ToUniversalTime().ToString("o")
+                            }
+
+                            $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
+                        }
                     }
                     catch {
                         $a = ""
