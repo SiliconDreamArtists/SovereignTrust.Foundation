@@ -128,15 +128,30 @@ function Resolve-TokenDynamic {
                 return $opSignal
             }
 
+            'and' {
+                $result = ($null -ne $rawArgs) -and ($rawArgs.Count -gt 0) -and `
+                        ($rawArgs | ForEach-Object { $_.ToString().ToLower() -eq "true" } | Where-Object { -not $_ } | Measure-Object).Count -eq 0
+
+                $opSignal.SetResult($result)
+                return $opSignal
+
+            }
+
+            'or' {
+                $result = ($null -ne $rawArgs) -and ($rawArgs.Count -gt 0) -and `
+                        ($rawArgs | ForEach-Object { $_.ToString().ToLower() -eq "true" } | Where-Object { $_ } | Measure-Object).Count -gt 0
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
             'isnull' {
-                #TBD
                 $result = $null -eq $rawArgs
                 $opSignal.SetResult($result)
                 return $opSignal
             }
 
             'isnotnull' {
-                #TBD
                 $result = $null -ne $rawArgs
                 $opSignal.SetResult($result)
                 return $opSignal

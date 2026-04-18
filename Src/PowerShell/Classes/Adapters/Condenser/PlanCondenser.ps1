@@ -25,6 +25,75 @@ class PlanCondenser {
         return $instance
     }
 
+    [Signal] ResolveInsertPhaseSteps(
+        [Signal]$ParentSignal,
+        $ConductionSignal,
+        $Plan,
+        $ItemSignal
+    ) {
+        $opSignal = [Signal]::Start("PlanCondenser.ResolveInsertPhaseSteps", $ParentSignal) | Select-Object -Last 1
+
+        # Get the steps to inject
+        $phaseStepsSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $Plan.Path | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($phaseStepsSignal)) { return $opSignal }
+
+        # Get the current phase steps
+#        $planStepsSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Phase.Steps" | Select-Object -Last 1
+#        if ($opSignal.MergeSignalAndVerifyFailure($planStepsSignal)) { return $opSignal }
+
+        $phaseSteps = $phaseStepsSignal.GetResult()
+#        $planSteps = $planStepsSignal.GetResult()
+        $currentPlanName = $Plan.Name
+
+        $breakSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Break" -Default $false | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($breakSignal)) { return $opSignal }
+
+        if ($breakSignal.GetResult()) {
+            $check = ""
+        }
+
+        # Clone steps so they can be reused safely
+        $cloneSignal = Resolve-ClonePlan -Plan $phaseSteps | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($cloneSignal)) { return $opSignal }
+
+        $phaseSteps = $cloneSignal.GetResult()
+
+        $hydrationPlan = [PSCustomObject]@{
+            Path          = "%.@"
+            HydrationPlan = "@"
+            Config        = $Plan.Config
+        }
+
+        # Hydrate the injected steps
+        $subItemSignal = [Signal]::Start("PlanCondenser.ResolveInsertPhaseSteps", $ItemSignal) | Select-Object -Last 1
+        $subItemSignal.SetJacketResult($phaseSteps)
+
+        $stepHydrateResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $hydrationPlan -Signal $ConductionSignal -ItemSignal $subItemSignal | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure($stepHydrateResultSignal)) { return $opSignal }
+
+        $phaseSteps = $stepHydrateResultSignal.GetResult()
+
+        $skipRenameSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.SkipRename" -Default $false | Select-Object -Last 1
+        if (-not $skipRenameSignal.GetResult()) {
+            foreach ($step in @($phaseSteps)) {
+                $step.Name = "$($currentPlanName)_$($step.Name)"
+            }
+        }
+
+        <#
+        $newSteps = @()
+        foreach ($step in @($planSteps)) {
+            $newSteps += $step
+            if ($step.Name -eq $currentPlanName) {
+                $newSteps += $phaseSteps
+            }
+        }
+        #>
+
+        $opSignal.SetResult($phaseSteps)
+        return $opSignal
+    }
+
     [Signal] Invoke([string]$Slot, [string]$Activity, $ConductionSignal, $Plan, $ItemSignal) {
         $opSignal = [Signal]::Start("PlanCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
 
@@ -44,53 +113,52 @@ class PlanCondenser {
                 }
 
                 "InsertPhaseSteps" {
-                    # Get The Steps to Inject
-                    $phaseStepsSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $Plan.Path | Select-Object -Last 1
-                    if ($opSignal.MergeSignalAndVerifyFailure($phaseStepsSignal)) { return $opSignal}
+                    $resolveStepsSignal = $this.ResolveInsertPhaseSteps($opSignal, $ConductionSignal, $Plan, $ItemSignal)
+                    if ($opSignal.MergeSignalAndVerifyFailure($resolveStepsSignal)) {
+                         return $opSignal 
+                        }
 
-                    # Inject Steps 
-                    $planStepsSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Phase.Steps" | Select-Object -Last 1
-                    if ($opSignal.MergeSignalAndVerifyFailure($planStepsSignal)) { return $opSignal}
+                    $newSteps = $resolveStepsSignal.GetResult()
 
-                    $phaseSteps = $phaseStepsSignal.GetResult()
-                    $planSteps = $planStepsSignal.GetResult()
-                    $currentPlanName = $Plan.Name
+                    $phaseStepsSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Phase.Steps" | Select-Object -Last 1
+                    $phaseSteps = @($phaseStepsSignal.GetResult())
 
-                    $breakSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Break" -Default $false | Select-Object -Last 1
-                    if ($breakSignal.GetResult())
-                    {
-                        $Check = ""
-                    }
-
-                    # clone and Iterate through new steps, rename in order to make them unique and re-usable.
-                    $phaseSteps = (Resolve-ClonePlan -Plan $phaseSteps | Select-Object -Last 1).GetResult()
-
-                    $HydrationPlan = [PSCustomObject]@{
-                        Path           = "%.@"
-                        HydrationPlan  = "@"
-                        Config = $Plan.Config
-                    }
-
-                    # Perform Hydration
-                    $subItemSignal = [Signal]::Start("PlanCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
-                    $subItemSignal.SetJacketResult($phaseSteps)
-                    $StepHydrateResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $subItemSignal | Select-Object -Last 1
-                    if ($opSignal.MergeSignalAndVerifyFailure($StepHydrateResultSignal)) { return $opSignal }
-
-                    $phaseSteps = $StepHydrateResultSignal.GetResult()
-                    foreach ($step in @($phaseSteps))
-                    {
-                        $step.Name = "$($currentPlanName)_$($step.Name)"
-                    }
-                    
-                    $newSteps = @()
-                    foreach ($step in @($planSteps))
-                    {
-                        $newSteps += $step
-                        if ($step.Name -eq $currentPlanName){
-                            $newSteps += $phaseSteps
+                    # Find the index of the current plan object inside Phase.Steps
+                    $currentIndex = -1
+                    for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
+                        if ($phaseSteps[$i].Name -eq $Plan.Name) {
+                            $currentIndex = $i
+                            break
                         }
                     }
+
+                    if ($currentIndex -ge 0) {
+                        $updatedSteps = @()
+
+                        if ($currentIndex -ge 0) {
+                            $updatedSteps += $phaseSteps[0..$currentIndex]
+                        }
+
+                        $updatedSteps += @($newSteps)
+
+                        if ($currentIndex + 1 -lt $phaseSteps.Count) {
+                            $updatedSteps += $phaseSteps[($currentIndex + 1)..($phaseSteps.Count - 1)]
+                        }
+
+                        $null = Add-PathToDictionary -Dictionary $Plan -Path "Phase.Steps" -Value $updatedSteps | Select-Object -Last 1
+                    }
+                    else {
+                        $opSignal.LogCritical("Could not find the current plan step inside Phase.Steps.")
+                    }
+
+                    break
+                }
+
+                "AddPhaseSteps" {
+                    $resolveStepsSignal = $this.ResolveInsertPhaseSteps($opSignal, $ConductionSignal, $Plan, $ItemSignal)
+                    if ($opSignal.MergeSignalAndVerifyFailure($resolveStepsSignal)) { return $opSignal }
+
+                    $newSteps = $resolveStepsSignal.GetResult()
 
                     $null = Add-PathToDictionary -Dictionary $Plan -Path "Phase.Steps" -Value $newSteps | Select-Object -Last 1
 
@@ -105,6 +173,5 @@ class PlanCondenser {
         }
 
         return $opSignal
-
     }
 }

@@ -48,7 +48,7 @@ class MemoryCondenser {
                         $ItemSignal.CreateGraph()
                     }
 
-                    $step = $this.GetNextStep($null, $Plan)
+                    $step = $this.GetNextStep($null, $Plan, $ItemSignal)
                     while ($step) {
 
                         $breakSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Config.Break" -Default $false | Select-Object -Last 1
@@ -60,7 +60,7 @@ class MemoryCondenser {
                         $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
                         if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
                         if ($IsEnabledSignal.GetResult().ToString() -eq "false") {
-                            $step = $this.GetNextStep($step, $Plan)
+                            $step = $this.GetNextStep($step, $Plan, $ItemSignal)
                             continue
                         }
 
@@ -104,7 +104,7 @@ class MemoryCondenser {
                             $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
                             if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
                             if ($IsEnabledSignal.GetResult().ToString() -eq "false") {
-                                $step = $this.GetNextStep($step, $Plan)
+                                $step = $this.GetNextStep($step, $Plan, $ItemSignal)
                                 continue
                             }
                         }
@@ -247,7 +247,7 @@ class MemoryCondenser {
                             #>
                         }
 
-                        $step = $this.GetNextStep($step, $Plan)
+                        $step = $this.GetNextStep($step, $Plan, $ItemSignal)
                     }
                     break
                 }
@@ -269,7 +269,8 @@ class MemoryCondenser {
 
     [object] GetNextStep(
         [object]$currentStep,
-        [object]$phase
+        [object]$phase,
+        [Signal]$ItemSignal
     ) {
         $step = $null
         
@@ -292,17 +293,15 @@ class MemoryCondenser {
             }
 
             # Apply going to a specific step.
-            if ($null -eq $step) {
-                if ($null -eq $currentStep.Adapter -and $currentStep.Activity -eq "Goto") {
-                    $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $currentStep -Path "IsEnabled" -Default $true | Select-Object -Last 1
-                    $isEnabled = $IsEnabledSignal.GetResult().ToString() -eq "true"
+            if ($null -eq $currentStep.Adapter -and $currentStep.Activity -eq "Goto") {
+                $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $currentStep -Path "IsEnabled" -Default $true | Select-Object -Last 1
+                $isEnabled = $IsEnabledSignal.GetResult().ToString() -eq "true"
 
-                    if ($isEnabled) {
-                        $gotoName = $currentStep.Path
-                        for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
-                            if ($phaseSteps[$i].Name -eq $gotoName) {
-                                return $phaseSteps[$i]  | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10 
-                            }
+                if ($isEnabled) {
+                    $gotoName = $currentStep.Path
+                    for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
+                        if ($phaseSteps[$i].Name -eq $gotoName) {
+                            return $phaseSteps[$i]  | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10 
                         }
                     }
                 }

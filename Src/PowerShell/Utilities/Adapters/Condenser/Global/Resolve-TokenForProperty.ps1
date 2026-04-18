@@ -147,9 +147,9 @@ function Resolve-TokenForProperty {
                 if (($replacement -is [PSCustomObject])) {
                     $propertyValue = $replacement
                 }
-                elseif ($replacement -is [bool]) {
-                    $propertyValue = $replacement
-                }
+           #     elseif ($replacement -is [bool]) {
+           #         $propertyValue = $replacement
+           #     }
                 elseif (($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]])) {
                     $propertyValue = $replacement
                 }
@@ -186,6 +186,10 @@ function Resolve-TokenForProperty {
 
                             if ($replacement -is [datetime]) {
                                 $replacement = $replacement.ToUniversalTime().ToString("o")
+                            }
+
+                            if ($replacement -is [bool]) {
+                                $replacement = $replacement.ToString()
                             }
 
                             $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
