@@ -63,13 +63,13 @@ class MemoryCondenser {
                             $step = $this.GetNextStep($step, $Plan, $ItemSignal)
                             continue
                         }
-
+<#
                         $opSignal.LogInformation("Processing Mapping $($step.Name)", @("Verbose"))
                         $descriptionSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Description" -SignalLevel "Information" | Select-Object -Last 1
                         if ($descriptionSignal.HasResult()) {
                             $opSignal.LogInformation($descriptionSignal.GetResult(), @("Verbose"))
                         }
-
+#>
                         $StepResultSignal = $null
 
                         # The Deferred Hydration Plan is used to hydrate the step, usually because a previous set puts content in memory or cache.
@@ -288,12 +288,12 @@ class MemoryCondenser {
             # If no current step, return the first step (if any)
             if (-not $currentStep) {
                 if ($phaseSteps.Count -gt 0) {
-                    return $phaseSteps[0]  | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
+                    $step = $phaseSteps[0]
                 }
             }
 
             # Apply going to a specific step.
-            if ($null -eq $currentStep.Adapter -and $currentStep.Activity -eq "Goto") {
+            if ($null -eq $step -and $null -eq $currentStep.Adapter -and $currentStep.Activity -eq "Goto") {
                 $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $currentStep -Path "IsEnabled" -Default $true | Select-Object -Last 1
                 $isEnabled = $IsEnabledSignal.GetResult().ToString() -eq "true"
 
@@ -301,7 +301,8 @@ class MemoryCondenser {
                     $gotoName = $currentStep.Path
                     for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
                         if ($phaseSteps[$i].Name -eq $gotoName) {
-                            return $phaseSteps[$i]  | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10 
+                            $skipSteps = $currentStep.Config.SkipSteps ?? 0
+                            $step = $phaseSteps[$i + $skipSteps]
                         }
                     }
                 }
@@ -314,7 +315,7 @@ class MemoryCondenser {
                     if ($phaseSteps[$i].Name -eq $currentStep.Name) {
                         $nextIndex = $i + 1
                         if ($nextIndex -lt $phaseSteps.Count) {
-                            return $phaseSteps[$nextIndex]  | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
+                            $step = $phaseSteps[$nextIndex]
                         }
 
                         break
@@ -328,8 +329,18 @@ class MemoryCondenser {
             return $null
         }
 
-#        return (Resolve-ClonePlan -Plan $step | Select-Object -Last 1).GetResult()
-        return $step | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
+        $trackIteration = $step.Config.PreventReclone
+        $iteration = 0
+        if ($trackIteration) {
+            $iterationSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Config.Iteration" -Default 0 | Select-Object -Last 1
+            $iteration = $iterationSignal.GetResult() + 1
+            $null = Add-PathToDictionary -Dictionary $step -Path "Config.Iteration" -Value $iteration 
+#            $step.Name = "$($step.Name)_$($iteration)"
+        }
+
+
+        $step = (Resolve-ClonePlan -Plan $step | Select-Object -Last 1).GetResult()
+        return $step
     }
 
     [Signal] RegisterSignal(

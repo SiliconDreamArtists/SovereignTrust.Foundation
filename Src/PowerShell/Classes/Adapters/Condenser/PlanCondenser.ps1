@@ -33,6 +33,16 @@ class PlanCondenser {
     ) {
         $opSignal = [Signal]::Start("PlanCondenser.ResolveInsertPhaseSteps", $ParentSignal) | Select-Object -Last 1
 
+        $iteration = $Plan.Config.Iteration ?? 0
+        if ($Plan.Config.PreventReclone -and $iteration -gt 0)
+        {
+            if ($iteration -gt 1)
+            {
+                $opSignal.LogInformation("Skip Repeat Cloning")
+                return $opSignal
+            }
+        }
+
         # Get the steps to inject
         $phaseStepsSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $Plan.Path | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($phaseStepsSignal)) { return $opSignal }
@@ -114,9 +124,10 @@ class PlanCondenser {
 
                 "InsertPhaseSteps" {
                     $resolveStepsSignal = $this.ResolveInsertPhaseSteps($opSignal, $ConductionSignal, $Plan, $ItemSignal)
-                    if ($opSignal.MergeSignalAndVerifyFailure($resolveStepsSignal)) {
+                    if ($opSignal.MergeSignalAndVerifyFailure($resolveStepsSignal) -or (-not $resolveStepsSignal.HasResult())) {
                          return $opSignal 
-                        }
+                    }
+
 
                     $newSteps = $resolveStepsSignal.GetResult()
 
@@ -156,7 +167,9 @@ class PlanCondenser {
 
                 "AddPhaseSteps" {
                     $resolveStepsSignal = $this.ResolveInsertPhaseSteps($opSignal, $ConductionSignal, $Plan, $ItemSignal)
-                    if ($opSignal.MergeSignalAndVerifyFailure($resolveStepsSignal)) { return $opSignal }
+                    if ($opSignal.MergeSignalAndVerifyFailure($resolveStepsSignal) -or (-not $resolveStepsSignal.HasResult())) {
+                         return $opSignal 
+                    }
 
                     $newSteps = $resolveStepsSignal.GetResult()
 
