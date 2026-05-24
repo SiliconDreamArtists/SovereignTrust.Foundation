@@ -75,7 +75,7 @@ function Resolve-TokenDynamic {
             }
         }
 
-        if ($sgn -lt 0) { $total = -$total }
+        if ($sgn -lt 0) { $total = - $total }
         return $total
     }
 
@@ -101,6 +101,66 @@ function Resolve-TokenDynamic {
 
             'guid' {
                 $opSignal.SetResult([guid]::NewGuid().ToString())
+                return $opSignal
+            }
+
+            'ToArray' {
+                if ($rawArgs.Count -ne 2) {
+                    throw "ToArray() requires two arguments. ($rawArgs.Count was supplied)"
+                }
+
+                $first = $rawArgs[0]
+                $second = $rawArgs[1]
+                $result = $first -split ('\' + $second)
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'substring' {
+                if ($rawArgs.Count -lt 1) {
+                    throw "substring() requires at least one argument (length). ($($rawArgs.Count) supplied)"
+                }
+
+                # Length comes from the LAST argument
+                $length = [int]$rawArgs[-1]
+
+                if ($null -eq $raw) {
+                    throw "substring() requires `$raw to be defined."
+                }
+
+                if ($length -lt 0) {
+                    throw "substring() length must be >= 0. ($length supplied)"
+                }
+
+                if ($length -gt $raw.Length) {
+                    $length = $raw.Length
+                }
+
+                $result = $raw.Substring(0, $length)
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+            'GetIndex' {
+                if ($rawArgs.Count -lt 2) {
+                    throw "ToArray() requires at least two arguments. ($($rawArgs.Count) was supplied)"
+                }
+
+                # Last item is the index
+                $index = [int]$rawArgs[-1]
+
+                # Everything before that is the array
+                #$array = @($rawArgs[0..($rawArgs.Count - 2)])
+
+                # Validate index
+                if ($index -lt 0 -or $index -ge $rawArgs.Count) {
+                    throw "Index $index is out of bounds for array of size $($array.Count)"
+                }
+
+                $result = $rawArgs[$index]
+
+                $opSignal.SetResult($result)
                 return $opSignal
             }
 
@@ -130,7 +190,7 @@ function Resolve-TokenDynamic {
 
             'and' {
                 $result = ($null -ne $rawArgs) -and ($rawArgs.Count -gt 0) -and `
-                        ($rawArgs | ForEach-Object { $_.ToString().ToLower() -eq "true" } | Where-Object { -not $_ } | Measure-Object).Count -eq 0
+                ($rawArgs | ForEach-Object { $_.ToString().ToLower() -eq "true" } | Where-Object { -not $_ } | Measure-Object).Count -eq 0
 
                 $opSignal.SetResult($result)
                 return $opSignal
@@ -139,7 +199,7 @@ function Resolve-TokenDynamic {
 
             'or' {
                 $result = ($null -ne $rawArgs) -and ($rawArgs.Count -gt 0) -and `
-                        ($rawArgs | ForEach-Object { $_.ToString().ToLower() -eq "true" } | Where-Object { $_ } | Measure-Object).Count -gt 0
+                ($rawArgs | ForEach-Object { $_.ToString().ToLower() -eq "true" } | Where-Object { $_ } | Measure-Object).Count -gt 0
 
                 $opSignal.SetResult($result)
                 return $opSignal

@@ -71,12 +71,20 @@ class PlanCondenser {
         $hydrationPlan = [PSCustomObject]@{
             Path          = "%.@"
             HydrationPlan = "@"
+            HydrationStyle = "Standard"
             Config        = $Plan.Config
         }
 
         # Hydrate the injected steps
         $subItemSignal = [Signal]::Start("PlanCondenser.ResolveInsertPhaseSteps", $ItemSignal) | Select-Object -Last 1
         $subItemSignal.SetJacketResult($phaseSteps)
+
+        # Pass through the Pointer so the Hydration process has it available to resolve values.
+        $subItemSignal.SetPointer($ItemSignal.GetPointer())
+
+        if ($Plan.Name -like "*ManageLineage"){
+            $a = ""
+        }
 
         $stepHydrateResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $hydrationPlan -Signal $ConductionSignal -ItemSignal $subItemSignal | Select-Object -Last 1
         if ($opSignal.MergeSignalAndVerifyFailure($stepHydrateResultSignal)) { return $opSignal }

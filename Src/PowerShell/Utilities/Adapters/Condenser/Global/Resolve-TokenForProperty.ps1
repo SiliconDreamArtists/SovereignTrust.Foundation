@@ -70,9 +70,9 @@ function Resolve-TokenForProperty {
             if ($HydrationStyle -eq "Deferred") {
                 # Version to get items when they have [] inside the text.
                 $RegexPattern = "(?s)\[(.*?)\|\]"
-            }
 
-            $matches = [regex]::Matches($propertyValue, $RegexPattern)
+                $matches = [regex]::Matches($propertyValue, $RegexPattern)
+            }
         }
 
         #        if ($matches.Count -gt 100) {
@@ -144,13 +144,13 @@ function Resolve-TokenForProperty {
                 $replacement = $lookupSignal.GetResult()
 
                 # When a replacement value is a json object, etc, we can't do a replacement and must assume the object is ready to be returned.
-                if (($replacement -is [PSCustomObject])) {
-                    $propertyValue = $replacement
-                }
+#                if (($replacement -is [PSCustomObject])) {
+#                    $propertyValue = $replacement
+#                }
            #     elseif ($replacement -is [bool]) {
            #         $propertyValue = $replacement
            #     }
-                elseif (($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]])) {
+                if (($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]])) {
                     $propertyValue = $replacement
                 }
                 else {
@@ -180,15 +180,19 @@ function Resolve-TokenForProperty {
                         }
                         else {
                             # Massage $replacement into a string if it's being integrated into an existing value.
-                            if ($replacement -is [string[]]) {
+                            if (($replacement -is [PSCustomObject])) {
+                                $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
+                            }
+
+                            elseif ($replacement -is [string[]]) {
                                 $replacement = (@($replacement) | ForEach-Object { "`"$_`"" }) -join ", "
                             }
 
-                            if ($replacement -is [datetime]) {
+                            elseif ($replacement -is [datetime]) {
                                 $replacement = $replacement.ToUniversalTime().ToString("o")
                             }
 
-                            if ($replacement -is [bool]) {
+                            elseif ($replacement -is [bool]) {
                                 $replacement = $replacement.ToString()
                             }
 
@@ -196,7 +200,7 @@ function Resolve-TokenForProperty {
                         }
                     }
                     catch {
-                        $a = ""
+                        $a = $_
                     }
 
                     if ($propertyValue -ne $oldValue) {

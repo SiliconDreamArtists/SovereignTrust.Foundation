@@ -134,4 +134,4 @@ function Invoke-RestCondenserCore {
             $opSignal.LogWarning("Attempt $($attempts) Error during call to '$FinalUrl' $message", @("Retry"))
         }
     }
-}
+}   

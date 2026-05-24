@@ -105,7 +105,7 @@ class Storage_EmbeddedFileSystem {
             $signalLevelSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path 'Config.SignalLevel' -Default "Critical" | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure(@($addressSignal))) {
                 return $opSignal.LogCritical("Could not resolve Jacket.Addresses path.")
-            }
+            }`
 
             $callSignal = $null
             switch ($activity) {
@@ -116,6 +116,32 @@ class Storage_EmbeddedFileSystem {
                         -SignalLevel $signalLevelSignal.GetResult() `
                         -Addresses @($addressSignal.GetResult()) |
                     Select-Object -Last 1
+
+                    # TODO: Move to Storage Adapter so it works across implementations. 5-17-26
+                    if ($callSignal.Failure()) {
+                        $contentSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Content" -SignalLevel "Warning" | Select-Object -Last 1
+                        if ($contentSignal.HasResult()) {
+                            $content = $contentSignal.GetResult()
+
+                            $saveIfNewSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.SaveIfNew" -Default $false -SignalLevel "Warning" | Select-Object -Last 1
+                            if ($saveIfNewSignal.GetResult()) {
+                                $clonePlan = (Resolve-ClonePlan -Plan $Plan | Select-Object -Last 1).GetResult()
+                                $null = Add-PathToDictionary -Dictionary $clonePlan -Path "Config.Content" -Value $content
+                                $writeResultSignal = $this.Invoke($Slot, "Write", $ConductionSignal, $clonePlan, $ItemSignal)
+                                if ($opSignal.MergeSignalAndVerifyFailure($writeResultSignal)) {
+                                    return $opSignal
+                                }
+                            }
+
+                            if ($content -is [PSCustomObject]) {
+                                $content = $content | ConvertTo-Json -Depth 100
+                            }
+
+                            $callSignal.LogRecovery("Default Content Override")
+                            $callSignal.SetResult($content)
+                        }    
+                    }
+
                     break
                 }
 

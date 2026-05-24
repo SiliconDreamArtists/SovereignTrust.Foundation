@@ -67,7 +67,7 @@ class TransformCondenser {
                                 {
                                     $HydrationPlan = [PSCustomObject]@{
                                         Path = "%.@"
-                                        HydrationPlan = "@"
+                                        HydrationStyle = "Deferred"
                                         Source = "TransformCondenser"
                                         Config = $Plan.Config
                                     }

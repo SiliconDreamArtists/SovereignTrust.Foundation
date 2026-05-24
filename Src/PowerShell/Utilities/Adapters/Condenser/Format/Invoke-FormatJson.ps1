@@ -34,6 +34,6 @@ function Invoke-FormatJson {
     catch {
         $opSignal.LogCritical("🔥 Exception in Invoke-TokenFormatterJson: $_", $null, $_)
     }
-
+ 
     return $opSignal
 }
