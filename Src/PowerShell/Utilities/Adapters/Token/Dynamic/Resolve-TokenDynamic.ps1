@@ -84,7 +84,12 @@ function Resolve-TokenDynamic {
         $expr = ($Path -replace '^\s*::', '').Trim()
 
         # 4) Parse dynamic function: name(args...)
-        if ($expr -notmatch '^(?<fn>[A-Za-z_]\w*)\s*(?:\((?<rawArgs>.*)\))?$') {
+#        if ($expr -notmatch '^(?<fn>[A-Za-z_]\w*)\s*(?:\((?<rawArgs>.*)\))?$') {
+#            throw "Resolve-DynamicPath: invalid dynamic expression '$Path'"
+#        }
+
+        # Line Break Safe
+        if ($expr -notmatch '^(?<fn>[A-Za-z_]\w*)\s*(?:\((?s)(?<rawArgs>.*)\))?$') {
             throw "Resolve-DynamicPath: invalid dynamic expression '$Path'"
         }
 
@@ -93,6 +98,22 @@ function Resolve-TokenDynamic {
         $rawArgs = Split-DynamicArgs $raw
 
         switch ($fn) {
+            'replace' {
+                $matchValueIndex = $rawArgs.Count - 2
+                $replaceValueIndex = $rawArgs.Count - 1
+
+                $matchValue = $rawArgs[$matchValueIndex]
+                $replaceValue = $rawArgs[$replaceValueIndex]
+
+                # Everything before match/replace is the source value
+                $valueArgs = @($rawArgs[0..($rawArgs.Count - 3)])
+                $value = ($valueArgs -join ',')
+
+                # Replace matchValue with replaceValue
+                $finalValue = $value -replace [regex]::Escape($matchValue), $replaceValue
+                $opSignal.SetResult($finalValue)
+                return $opSignal
+            }
 
             'null' {
                 $opSignal.SetResult($null)
@@ -104,7 +125,51 @@ function Resolve-TokenDynamic {
                 return $opSignal
             }
 
-            'ToArray' {
+            'gt' {
+                if ($rawArgs.Count -ne 2) {
+                    throw "GreaterThan() requires two arguments. ($rawArgs.Count was supplied)"
+                }
+
+                $result = [int]$rawArgs[0] -gt [int]$rawArgs[1]
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'lt' {
+                if ($rawArgs.Count -ne 2) {
+                    throw "LesserThan() requires two arguments. ($rawArgs.Count was supplied)"
+                }
+
+                $result = [int]$rawArgs[0] -lt [int]$rawArgs[1]
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'add' {
+                if ($rawArgs.Count -ne 2) {
+                    throw "Add() requires two arguments. ($rawArgs.Count was supplied)"
+                }
+
+                $result = [int]$rawArgs[0] + [int]$rawArgs[1]
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'subtract' {
+                if ($rawArgs.Count -ne 2) {
+                    throw "Subtract() requires two arguments. ($rawArgs.Count was supplied)"
+                }
+
+                $result = [int]$rawArgs[0] - [int]$rawArgs[1]
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'toarray' {
                 if ($rawArgs.Count -ne 2) {
                     throw "ToArray() requires two arguments. ($rawArgs.Count was supplied)"
                 }
@@ -142,23 +207,107 @@ function Resolve-TokenDynamic {
                 $opSignal.SetResult($result)
                 return $opSignal
             }
-            'GetIndex' {
+
+            'getindex' {
+                if ($rawArgs.Count -lt 2) {
+                    throw "GetIndex requires at least two arguments. ($($rawArgs.Count) was supplied)"
+                }
+
+                # Last item is the requested index
+                $index = [int]$rawArgs[-1]
+
+                # Everything before that is the array to index into
+                $array = @($rawArgs[0..($rawArgs.Count - 2)])
+
+                # Convert negative index to reverse lookup
+                # -1 = last item, -2 = second-to-last, etc.
+                if ($index -lt 0) {
+                    $index = $array.Count + $index
+                }
+
+                # Validate index after conversion
+                if ($index -lt 0 -or $index -ge $array.Count) {
+                    $opSignal.LogWarning("Index $index is out of bounds for array of size $($array.Count)")
+                    $result = $null
+                }
+                else {
+                    $result = $array[$index]
+                }
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'tojson' {
                 if ($rawArgs.Count -lt 2) {
                     throw "ToArray() requires at least two arguments. ($($rawArgs.Count) was supplied)"
                 }
 
                 # Last item is the index
-                $index = [int]$rawArgs[-1]
+                $delimeter = $rawArgs[-1]
 
-                # Everything before that is the array
-                #$array = @($rawArgs[0..($rawArgs.Count - 2)])
+                $json = ($rawArgs[0..($rawArgs.Count - 2)]) -join ','
 
-                # Validate index
-                if ($index -lt 0 -or $index -ge $rawArgs.Count) {
-                    throw "Index $index is out of bounds for array of size $($array.Count)"
+                $json_object = $json | ConvertTo-Json -Depth 10
+                $json_object = $json | ConvertFrom-Json -Depth 10
+
+                $values = @()
+
+                foreach ($property in $json_object.PSObject.Properties) {
+                    $values += $property.Value
                 }
 
-                $result = $rawArgs[$index]
+                $result = $values -join $delimeter
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'joinvalues' {
+                if ($rawArgs.Count -lt 2) {
+                    throw "ToArray() requires at least two arguments. ($($rawArgs.Count) was supplied)"
+                }
+
+                # Last item is the index
+                $delimeter = $rawArgs[-1]
+
+                $json = ($rawArgs[0..($rawArgs.Count - 2)]) -join ','
+
+                $json_object = $json | ConvertFrom-Json -Depth 10
+
+                $values = @()
+
+                foreach ($property in $json_object.PSObject.Properties) {
+                    $values += $property.Value
+                }
+
+                $result = $values -join $delimeter
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'joinarrays' {
+                if ($rawArgs.Count -lt 2) {
+                    throw "ToArray() requires at least two arguments. ($($rawArgs.Count) was supplied)"
+                }
+
+                # Last item is the delimiter
+                $delimiter = $rawArgs[-1]
+
+                # Everything before the delimiter is JSON
+                $json = ($rawArgs[0..($rawArgs.Count - 2)]) -join ','
+                $jsonObject = $json | ConvertFrom-Json -Depth 10
+
+                $values = @()
+
+            foreach ($inner in $jsonObject) {
+                    # Join each inner array with nothing
+                    $values += ($inner -join '')
+            }
+
+                # Join all results with the delimiter
+                $result = $values -join $delimiter
 
                 $opSignal.SetResult($result)
                 return $opSignal
@@ -170,13 +319,37 @@ function Resolve-TokenDynamic {
                 }
 
                 $first = $rawArgs[0]
-                $result = $first -notin $rawArgs[1..($rawArgs.Count - 1)]
+                $result = $first -ne $rawArgs[($rawArgs.Count - 1)]
 
                 $opSignal.SetResult($result)
                 return $opSignal
             }
 
             'equals' {
+                if ($rawArgs.Count -lt 2) {
+                    throw "equals() requires at least two arguments."
+                }
+
+                $first = $rawArgs[0]
+                $result = $first -eq $rawArgs[($rawArgs.Count - 1)]
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'notin' {
+                if ($rawArgs.Count -lt 2) {
+                    throw "notequals() requires at least two arguments."
+                }
+
+                $first = $rawArgs[0]
+                $result = $first -notin $rawArgs[1..($rawArgs.Count - 1)]
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'in' {
                 if ($rawArgs.Count -lt 2) {
                     throw "equals() requires at least two arguments."
                 }

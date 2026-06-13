@@ -58,7 +58,13 @@ class MemoryCondenser {
 
                         $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
                         if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
-                        if ($IsEnabledSignal.GetResult().ToString() -eq "false") {
+
+                        $isEnabledResult = $IsEnabledSignal.GetResult().ToString().ToLower()
+                        if ($isEnabledResult -ne "false" -and $isEnabledResult -ne "true"){
+                            
+                        }
+
+                        if ($isEnabledResult -eq "false") {
                             $step = $this.GetNextStep($step, $Plan, $ItemSignal, $ConductionSignal)
                             continue
                         }
@@ -86,6 +92,10 @@ class MemoryCondenser {
 #                                $a = "It is an array"
 #                            }
 
+if ($step.Name -eq "ManageProperties_AddIdentityMeta_ManageEnrollmentParentEnrollmentTree_EnrollInAgency_OpenParent")
+{
+    $a = ""
+}
                             # Perform Hydration
                             $StepHydrateResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
                             if ($opSignal.MergeSignalAndVerifyFailure($StepHydrateResultSignal)) { return $opSignal }

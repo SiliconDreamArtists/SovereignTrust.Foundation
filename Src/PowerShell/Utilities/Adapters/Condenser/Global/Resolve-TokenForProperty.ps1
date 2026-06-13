@@ -184,8 +184,21 @@ function Resolve-TokenForProperty {
                                 $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
                             }
 
+                            if (($replacement -is [ordered])) {
+                                $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
+                            }
+
                             elseif ($replacement -is [string[]]) {
                                 $replacement = (@($replacement) | ForEach-Object { "`"$_`"" }) -join ", "
+                            }
+
+                            # Handles an array of arrays, like the ELineage.
+                            elseif ($replacement -is [object[]] -and
+                                    $replacement.Count -gt 0 -and
+                                    ($replacement | ForEach-Object { $_ -is [object[]] })) {
+
+                                # We have an array of arrays
+                                $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
                             }
 
                             elseif ($replacement -is [datetime]) {
