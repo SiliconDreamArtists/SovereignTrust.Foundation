@@ -29,7 +29,6 @@ class MemoryCondenser {
         $opSignal = [Signal]::Start("MemoryCondenser.Invoke", $ItemSignal) | Select-Object -Last 1
         
         # First Supported Activities -> Select, Merge, Project
-        $DefaultPath = "%.@"
         if ($Activity) {
             switch ($Activity) {
 
@@ -42,15 +41,12 @@ class MemoryCondenser {
                     ###n/a# $Plan May be the container with the source details or it may be in a mappings collection
 
                     # TODO: Change to the DependsOn model like phases use
-                    $resultSignal = $null
-                    $_ItemSignal = [Signal]::Start("MemoryCondenser.MappingSignal") | Select-Object -Last 1
                     if (-not $ItemSignal.HasPointer()) {
                         $ItemSignal.CreateGraph()
                     }
 
                     $step = $this.GetNextStep($null, $Plan, $ItemSignal, $ConductionSignal)
                     while ($step) {
-
                         $breakSignal = Resolve-PathFromDictionary -Dictionary $step -Path "Config.Break" -Default $false | Select-Object -Last 1
                         if ($breakSignal.GetResult()) {
                             $Check = ""
@@ -60,12 +56,9 @@ class MemoryCondenser {
                         if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
 
                         $isEnabledResult = $IsEnabledSignal.GetResult().ToString().ToLower()
-                        if ($isEnabledResult -ne "false" -and $isEnabledResult -ne "true"){
-                            
-                        }
 
                         if ($isEnabledResult -eq "false") {
-                            $step = $this.GetNextStep($step, $Plan, $ItemSignal, $ConductionSignal)
+                            $step = $this.GetNextStep($step, $Plan, $ItemSignal, $ConductionSignal) 
                             continue
                         }
 
@@ -88,14 +81,6 @@ class MemoryCondenser {
                                 Config         = $step.Config
                             }
 
-#                            if ($step.Name -eq "ManageProperties_ManageTitle_SaveEntity") {
-#                                $a = "It is an array"
-#                            }
-
-if ($step.Name -eq "ManageProperties_AddIdentityMeta_ManageEnrollmentParentEnrollmentTree_EnrollInAgency_OpenParent")
-{
-    $a = ""
-}
                             # Perform Hydration
                             $StepHydrateResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
                             if ($opSignal.MergeSignalAndVerifyFailure($StepHydrateResultSignal)) { return $opSignal }
@@ -272,7 +257,7 @@ if ($step.Name -eq "ManageProperties_AddIdentityMeta_ManageEnrollmentParentEnrol
                 $isEnabled = $IsEnabledSignal.GetResult().ToString() -eq "true"
 
                 if ($isEnabled) {
-                    $gotoName = $currentStep.Path
+                    $gotoName = $currentStep.Path # SetWeather_SelectSpecifiedTime_Exit
                     for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
                         if ($phaseSteps[$i].Name -eq $gotoName) {
                             $skipSteps = $currentStep.Config.SkipSteps ?? 0

@@ -112,6 +112,10 @@ function Resolve-TokenForProperty {
                     $RegexPattern = "(?s)$RegexPattern"
                 }
 
+                if ($key -like "*ECode*" )
+                {
+                    $a = ""
+                }
                 <#
 
                 $TokenPlan = (Resolve-ClonePlan -Plan $Plan | Select-Object -Last 1).GetResult()
@@ -200,7 +204,15 @@ function Resolve-TokenForProperty {
                                 # We have an array of arrays
                                 $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
                             }
+<#
+                            # Handles an array of arrays, like the ELineage.
+                            elseif ($replacement -is [object[]] -and
+                                    $replacement.Count -gt 0) {
 
+                                # We have an array of arrays
+                                $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
+                            }
+#>
                             elseif ($replacement -is [datetime]) {
                                 $replacement = $replacement.ToUniversalTime().ToString("o")
                             }

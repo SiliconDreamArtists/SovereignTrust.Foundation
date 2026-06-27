@@ -15,8 +15,210 @@ function Resolve-TokenDynamic {
     )
 
     $opSignal = [Signal]::Start("Resolve-TokenDynamic", $Signal) | Select-Object -Last 1
+function Convert-LocalDateTimeToUtc {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Date,          # "2024-12-01" or "12/01/2024"
+
+        [Parameter(Mandatory)]
+        [string]$LocalTime,     # "17:00:00"
+
+        [Parameter(Mandatory)]
+        [string]$TimeZoneId     # "Australia/Lord_Howe"
+    )
+
+    $culture = [System.Globalization.CultureInfo]::InvariantCulture
+
+    # Clean inputs
+    $cleanDate = ($Date ?? '').Trim().Trim('"', "'")
+    $cleanTime = ($LocalTime ?? '').Trim().Trim('"', "'")
+
+    # Normalize whitespace
+    $cleanDate = $cleanDate -replace '\s+', ' '
+    $cleanTime = $cleanTime -replace '\s+', ' '
+
+    if ([string]::IsNullOrWhiteSpace($cleanDate)) {
+        throw "Date is empty."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($cleanTime)) {
+        throw "LocalTime is empty."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($TimeZoneId)) {
+        throw "TimeZoneId is empty."
+    }
+
+    # Normalize common time input, e.g. "17:00" is allowed.
+    $localText = "$cleanDate $cleanTime"
+    $localText = $localText.Trim() -replace '\s+', ' '
+
+    $dateFormats = [string[]]@(
+        'yyyy-MM-dd HH:mm:ss',
+        'yyyy-MM-dd H:mm:ss',
+        'yyyy-MM-dd HH:mm',
+        'yyyy-MM-dd H:mm',
+
+        'MM/dd/yyyy HH:mm:ss',
+        'M/d/yyyy HH:mm:ss',
+        'MM/dd/yyyy H:mm:ss',
+        'M/d/yyyy H:mm:ss',
+
+        'MM/dd/yyyy HH:mm',
+        'M/d/yyyy HH:mm',
+        'MM/dd/yyyy H:mm',
+        'M/d/yyyy H:mm'
+    )
+
+    $localUnspecified = [DateTime]::MinValue
+
+    $parsed = [DateTime]::TryParseExact(
+        $localText,
+        $dateFormats,
+        $culture,
+        [System.Globalization.DateTimeStyles]::None,
+        [ref]$localUnspecified
+    )
+
+    if (-not $parsed) {
+        throw "Could not parse local date/time '$localText'. Expected formats like yyyy-MM-dd HH:mm:ss, yyyy-MM-dd HH:mm, MM/dd/yyyy HH:mm:ss, or MM/dd/yyyy HH:mm."
+    }
+
+    # This is critical: the parsed value is a wall-clock time in the target timezone.
+    $localUnspecified = [DateTime]::SpecifyKind($localUnspecified, [DateTimeKind]::Unspecified)
+
+    try {
+        $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById($TimeZoneId)
+    }
+    catch {
+        throw "Could not find timezone '$TimeZoneId'. If you are using Windows PowerShell 5.1, IANA timezone IDs like 'Australia/Lord_Howe' may not work. Use PowerShell 7 or map it to a Windows timezone ID."
+    }
+
+    if ($tz.IsInvalidTime($localUnspecified)) {
+        throw "The local time '$localText' is invalid in timezone '$TimeZoneId' because of a daylight-saving transition."
+    }
+
+    $isAmbiguous = $tz.IsAmbiguousTime($localUnspecified)
+    if ($isAmbiguous) {
+        Write-Warning "The local time '$localText' is ambiguous in timezone '$TimeZoneId' because of a daylight-saving transition."
+    }
+
+    $utcDateTime = [System.TimeZoneInfo]::ConvertTimeToUtc($localUnspecified, $tz)
+    $utcOffset = $tz.GetUtcOffset($localUnspecified)
+
+    $utcDateTimeOffset = [DateTimeOffset]::new(
+        [DateTime]::SpecifyKind($utcDateTime, [DateTimeKind]::Utc)
+    )
+
+    $epochUtc = $utcDateTimeOffset.ToUnixTimeSeconds()
+
+    return [pscustomobject]@{
+        Date                  = $localUnspecified.ToString('yyyy-MM-dd', $culture)
+        LocalTime             = $localUnspecified.ToString('HH:mm:ss', $culture)
+        DisplayTime           = $localUnspecified.ToString('h:mm tt', $culture)
+        Timezone              = $TimeZoneId
+        UtcOffset             = $utcOffset.ToString()
+        UtcDateTime           = $utcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", $culture)
+        DatetimeEpochUtc      = $epochUtc
+        IsAmbiguousLocalTime  = $isAmbiguous
+    }
+}
+    function Convert-To12HourTime {
+        param([string]$TimeText)
+
+        if ([string]::IsNullOrWhiteSpace($TimeText)) {
+            return $null
+        }
+
+        $cleanTime = $TimeText.Trim().Trim('"', "'")
+
+        $formats = [string[]]@(
+            'HH:mm:ss',
+            'H:mm:ss',
+            'HH:mm',
+            'H:mm'
+        )
+
+        $culture = [System.Globalization.CultureInfo]::InvariantCulture
+        $styles = [System.Globalization.DateTimeStyles]::None
+        $dt = [DateTime]::MinValue
+
+        if (-not [DateTime]::TryParseExact($cleanTime, $formats, $culture, $styles, [ref]$dt)) {
+            throw "get12hourtime() could not parse time '$TimeText'. Cleaned value was '$cleanTime'. Expected HH:mm:ss, H:mm:ss, HH:mm, or H:mm."
+        }
+
+        return $dt.ToString('h:mm tt', $culture)
+    }
 
     function Split-DynamicArgs {
+        param([string]$Text)
+
+        if ($null -eq $Text -or $Text.Length -eq 0) { return @() }
+
+        $parts = @()
+        $sb = [System.Text.StringBuilder]::new()
+        $inS = $false
+        $inD = $false
+
+        foreach ($ch in $Text.ToCharArray()) {
+            switch ($ch) {
+                "'" {
+                    if (-not $inD) { $inS = -not $inS }
+                    [void]$sb.Append($ch)
+                }
+
+                '"' {
+                    if (-not $inS) { $inD = -not $inD }
+                    [void]$sb.Append($ch)
+                }
+
+                ',' {
+                    if ($inS -or $inD) {
+                        [void]$sb.Append($ch)
+                    }
+                    else {
+                        $parts += $sb.ToString()
+                        [void]$sb.Clear()
+                    }
+                }
+
+                default {
+                    [void]$sb.Append($ch)
+                }
+            }
+        }
+
+        # Add final argument, even if empty
+        $parts += $sb.ToString()
+
+        return $parts | ForEach-Object {
+            $raw = $_
+
+            # Trim only enough to detect whether the whole value is quoted.
+            # This allows: abc, ' value ' ,+
+            $check = $raw.Trim()
+
+            if ($check.Length -ge 2 -and
+                (
+                    ($check.StartsWith("'") -and $check.EndsWith("'")) -or
+                    ($check.StartsWith('"') -and $check.EndsWith('"'))
+                )) {
+                # Quoted value: remove wrapping quotes, but do NOT trim inside
+                $quoteChar = $check.Substring(0, 1)
+
+                # Find the quoted content from the trimmed wrapper
+                $s = $check.Substring(1, $check.Length - 2)
+
+                return $s
+            }
+            else {
+                # Unquoted value: normal trim
+                return $raw.Trim()
+            }
+        }
+    }
+    function Split-DynamicArgs-previous {
         param([string]$Text)
         if ([string]::IsNullOrWhiteSpace($Text)) { return @() }
 
@@ -84,9 +286,9 @@ function Resolve-TokenDynamic {
         $expr = ($Path -replace '^\s*::', '').Trim()
 
         # 4) Parse dynamic function: name(args...)
-#        if ($expr -notmatch '^(?<fn>[A-Za-z_]\w*)\s*(?:\((?<rawArgs>.*)\))?$') {
-#            throw "Resolve-DynamicPath: invalid dynamic expression '$Path'"
-#        }
+        #        if ($expr -notmatch '^(?<fn>[A-Za-z_]\w*)\s*(?:\((?<rawArgs>.*)\))?$') {
+        #            throw "Resolve-DynamicPath: invalid dynamic expression '$Path'"
+        #        }
 
         # Line Break Safe
         if ($expr -notmatch '^(?<fn>[A-Za-z_]\w*)\s*(?:\((?s)(?<rawArgs>.*)\))?$') {
@@ -170,12 +372,12 @@ function Resolve-TokenDynamic {
             }
 
             'toarray' {
-                if ($rawArgs.Count -ne 2) {
-                    throw "ToArray() requires two arguments. ($rawArgs.Count was supplied)"
+                if ($rawArgs.Count -lt 2) {
+                    throw "ToArray() requires two arguments. ($($rawArgs.Count) was supplied)"
                 }
 
                 $first = $rawArgs[0]
-                $second = $rawArgs[1]
+                $second = $rawArgs[-1]
                 $result = $first -split ('\' + $second)
 
                 $opSignal.SetResult($result)
@@ -238,7 +440,18 @@ function Resolve-TokenDynamic {
                 return $opSignal
             }
 
+            'toint' {
+
+                $value = $rawArgs[0]
+
+                $result = [int]$value
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
             'tojson' {
+                #tbd
                 if ($rawArgs.Count -lt 2) {
                     throw "ToArray() requires at least two arguments. ($($rawArgs.Count) was supplied)"
                 }
@@ -248,7 +461,7 @@ function Resolve-TokenDynamic {
 
                 $json = ($rawArgs[0..($rawArgs.Count - 2)]) -join ','
 
-                $json_object = $json | ConvertTo-Json -Depth 10
+                #$json_object = $json | ConvertTo-Json -Depth 10
                 $json_object = $json | ConvertFrom-Json -Depth 10
 
                 $values = @()
@@ -263,7 +476,52 @@ function Resolve-TokenDynamic {
                 return $opSignal
             }
 
+            'fromjson' {
+                #tbd
+                # Last item is the index
+                $delimeter = $rawArgs[-1]
+
+                $json = ($rawArgs[0..($rawArgs.Count - 2)]) -join ','
+
+                $json_object = $json | ConvertTo-Json -Depth 10
+                #$json_object = $json | ConvertFrom-Json -Depth 10
+
+                $values = @()
+
+                foreach ($property in $json_object.PSObject.Properties) {
+                    $values += $property.Value
+                }
+
+                $result = $values -join $delimeter
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'join' {
+                # Joins a single array into a string
+                if ($rawArgs.Count -lt 2) {
+                    throw "Join() requires at least two arguments: a JSON array and a delimiter. ($($rawArgs.Count) was supplied)"
+                }
+
+                # Last item is the delimiter
+                $delimiter = $rawArgs[-1]
+
+                # Everything before the delimiter is JSON
+                # This allows the JSON array itself to contain commas
+                $json = ($rawArgs[0..($rawArgs.Count - 2)]) -join ','
+
+                $jsonObject = $json | ConvertFrom-Json -Depth 10
+
+                # Join the single array using the delimiter
+                $result = @($jsonObject) -join $delimiter
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
             'joinvalues' {
+                # Joins from Json Objects
                 if ($rawArgs.Count -lt 2) {
                     throw "ToArray() requires at least two arguments. ($($rawArgs.Count) was supplied)"
                 }
@@ -288,6 +546,7 @@ function Resolve-TokenDynamic {
             }
 
             'joinarrays' {
+                # Joins a matrix of arrays
                 if ($rawArgs.Count -lt 2) {
                     throw "ToArray() requires at least two arguments. ($($rawArgs.Count) was supplied)"
                 }
@@ -301,10 +560,10 @@ function Resolve-TokenDynamic {
 
                 $values = @()
 
-            foreach ($inner in $jsonObject) {
+                foreach ($inner in $jsonObject) {
                     # Join each inner array with nothing
                     $values += ($inner -join '')
-            }
+                }
 
                 # Join all results with the delimiter
                 $result = $values -join $delimiter
@@ -407,6 +666,28 @@ function Resolve-TokenDynamic {
                 $dtUtc = [DateTime]::SpecifyKind($dt, [DateTimeKind]::Utc)
 
                 $opSignal.SetResult($dtUtc.ToString('o', [System.Globalization.CultureInfo]::InvariantCulture))
+                return $opSignal
+            }
+
+            'get12hourtime' {
+                if ($rawArgs.Count -ne 1) {
+                    throw "get12hourtime() requires one argument. ($($rawArgs.Count) was supplied)"
+                }
+
+                $result = Convert-To12HourTime $rawArgs
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'localtoutc' {
+                if ($rawArgs.Count -ne 3) {
+                    throw "get12hourtime() requires 3 arguments. ($($rawArgs.Count) was supplied)"
+                }
+
+                $result = Convert-LocalDateTimeToUtc -Date $rawArgs[0] -LocalTime $rawArgs[1] -TimeZoneId $rawArgs[2]
+
+                $opSignal.SetResult($result.UtcDateTime)
                 return $opSignal
             }
 
