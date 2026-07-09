@@ -120,14 +120,54 @@ class PlanCondenser {
 
         if ($Activity) {
             switch ($Activity) {
-                "InvokePlan" {
+                "InteratePhase" {
+                    $iterationArraySignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.IterationArray" | Select-Object -Last 1
+                    $iterationNameSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.IterationName" -Default "Iteration" | Select-Object -Last 1
+                    $iterationArray = $iterationArraySignal.GetResult()
+
+                    foreach ($iteration in $iterationArray) {
+                        $iterationPlan = (Resolve-ClonePlan -Plan $Plan | Select-Object -Last 1).GetResult()
+                        
+                        $iterationPlan.Activity = $Plan.Config.Activity
+
+                        # Put the iteration data in a Signal so it can be put in the ItemSignal Graph for later use.
+                        $iterationSignal = [Signal]::Start("Iteration", $ItemSignal) | Select-Object -Last 1
+                        $iterationData = [PSCustomObject]@{
+                            Value = $iteration
+                            IterationArray = $iterationArray
+                        }
+
+                        $iterationData = $iteration
+                        $iterationSignal.SetResult($iterationData)
+                        $ItemSignal.Pointer.RegisterSignal($iterationNameSignal.GetResult(), $iterationSignal)
+
+                        # This shouldn't reply on always calling a condenser.
+                        $condenserSlot = ($Plan.Adapter -split '\.')[1]
+                        $iterationSignal = Invoke-CondenserAdapter -Slot $condenserSlot -Activity $Plan.Config.Activity -Plan $iterationPlan -Signal $ConductionSignal -ItemSignal $ItemSignal | Select-Object -Last 1
+                        if ($opSignal.MergeSignalAndVerifyFailure($iterationSignal)) { return $opSignal }
+                    }
                     #TDB
                     break
                 }
 
-                "InsertPhase" {
+                "InvokePlan" {
                     #TDB
-                    break
+                   break
+                }
+
+                "InvokePhase" {
+                     $resolveStepsSignal = $this.ResolveInsertPhaseSteps($opSignal, $ConductionSignal, $Plan, $ItemSignal)
+                    if ($opSignal.MergeSignalAndVerifyFailure($resolveStepsSignal) -or (-not $resolveStepsSignal.HasResult())) {
+                         return $opSignal 
+                    }
+
+                    $phase = [PSCustomObject]@{
+                        Steps = @($resolveStepsSignal.GetResult())
+                    }
+
+                    $SourceSignal = Invoke-CondenserAdapter -Slot "Memory" -Activity "Generate" -Signal $ConductionSignal -Plan $phase -ItemSignal $ItemSignal | Select-Object -Last 1
+
+                   break
                 }
 
                 "InsertPhaseSteps" {

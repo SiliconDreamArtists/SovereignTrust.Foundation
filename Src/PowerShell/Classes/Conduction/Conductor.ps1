@@ -81,6 +81,7 @@ class Conductor {
             @{ Name = "MappedQueue"; Instance = [MappedQueueAdapter]::Start($this) },
             @{ Name = "MappedTelemetry"; Instance = [MappedTelemetryAdapter]::Start($this) }
             @{ Name = "MappedSession"; Instance = [MappedSessionAdapter]::Start($this) }
+            @{ Name = "MappedUtility"; Instance = [MappedUtilityAdapter]::Start($this) }
         )
 
         # 🔁 Load MappedCondenserAdapter and add to list

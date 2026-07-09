@@ -125,29 +125,20 @@ class TransformCondenser {
                 # Injects using a path to an xml or json object.
                 "Inject" {
                     $sourceSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Content" | Select-Object -Last 1
-                    $addResult = Add-PathToDictionary -Dictionary $ItemSignal -AddStyle "Append" -Path $Plan.Path -Value $sourceSignal.GetResult() | Select-Object -Last 1
+                    $null = Add-PathToDictionary -Dictionary $ItemSignal -AddStyle "Append" -Path $Plan.Path -Value $sourceSignal.GetResult() | Select-Object -Last 1
+                    break
+                }
 
-<#
-                    $pathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetPath" | Select-Object -Last 1
-                    $formatSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetFormat" | Select-Object -Last 1
-                    $htmlEncodeSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetHtmlEncode" -Default $false | Select-Object -Last 1
+                # Clone using a path to an xml or json object.
+                "Clone" {
+                    $pathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Path" | Select-Object -Last 1
 
-                    if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal) -or $opSignal.MergeSignalAndVerifyFailure($pathSignal) -or $opSignal.MergeSignalAndVerifyFailure($formatSignal) -or $opSignal.MergeSignalAndVerifyFailure($htmlEncodeSignal)) {
-                        $opSignal.LogCritical("Failed to resolve content for Transform")
-                        return $opSignal
-                    }
+                    $path = $pathSignal.GetResult()
 
-                    $source = $sourceSignal.GetResult($true)
-
-                    # Invoke-FormatJson should receive the JSON text (or object) directly, not via -Path unless it truly expects a file path
-                    $resultSignal = Invoke-TransformInject -Target $source -Source $source -Path $pathSignal.GetResult() -Format $formatSignal.GetResult() -HtmlEncode $htmlEncodeSignal.GetResult() | Select-Object -Last 1
-                    if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-                        $opSignal.LogCritical("JSON formatting failed.")
-                        return $opSignal
-                    }
-
-                    #>
-#                    $opSignal.SetResult($resultSignal.GetResult())
+                    $sourceSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $path | Select-Object -Last 1
+                    $source = $sourceSignal.GetResult() | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
+                    
+                    $opSignal.SetResult($source)
                     break
                 }
 

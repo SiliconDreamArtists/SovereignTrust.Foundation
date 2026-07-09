@@ -89,6 +89,9 @@ class MemoryCondenser {
                             #Check Enabled again after hydration in case the value was hydrated at runtime.
                             $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
                             if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
+                            if ($IsEnabledSignal.GetResult().ToString() -ne "false" -and $IsEnabledSignal.GetResult().ToString() -ne "true") {
+                                $a = ""
+                            }
                             if ($IsEnabledSignal.GetResult().ToString() -eq "false") {
                                 $step = $this.GetNextStep($step, $Plan, $ItemSignal, $ConductionSignal)
                                 continue
@@ -262,6 +265,7 @@ class MemoryCondenser {
                         if ($phaseSteps[$i].Name -eq $gotoName) {
                             $skipSteps = $currentStep.Config.SkipSteps ?? 0
                             $step = $phaseSteps[$i + $skipSteps]
+                            break;
                         }
                     }
                 }

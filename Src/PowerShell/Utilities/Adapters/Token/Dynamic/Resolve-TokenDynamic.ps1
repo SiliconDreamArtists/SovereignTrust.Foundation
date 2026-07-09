@@ -15,115 +15,115 @@ function Resolve-TokenDynamic {
     )
 
     $opSignal = [Signal]::Start("Resolve-TokenDynamic", $Signal) | Select-Object -Last 1
-function Convert-LocalDateTimeToUtc {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$Date,          # "2024-12-01" or "12/01/2024"
+    function Convert-LocalDateTimeToUtc {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [string]$Date,          # "2024-12-01" or "12/01/2024"
 
-        [Parameter(Mandatory)]
-        [string]$LocalTime,     # "17:00:00"
+            [Parameter(Mandatory)]
+            [string]$LocalTime,     # "17:00:00"
 
-        [Parameter(Mandatory)]
-        [string]$TimeZoneId     # "Australia/Lord_Howe"
-    )
+            [Parameter(Mandatory)]
+            [string]$TimeZoneId     # "Australia/Lord_Howe"
+        )
 
-    $culture = [System.Globalization.CultureInfo]::InvariantCulture
+        $culture = [System.Globalization.CultureInfo]::InvariantCulture
 
-    # Clean inputs
-    $cleanDate = ($Date ?? '').Trim().Trim('"', "'")
-    $cleanTime = ($LocalTime ?? '').Trim().Trim('"', "'")
+        # Clean inputs
+        $cleanDate = ($Date ?? '').Trim().Trim('"', "'")
+        $cleanTime = ($LocalTime ?? '').Trim().Trim('"', "'")
 
-    # Normalize whitespace
-    $cleanDate = $cleanDate -replace '\s+', ' '
-    $cleanTime = $cleanTime -replace '\s+', ' '
+        # Normalize whitespace
+        $cleanDate = $cleanDate -replace '\s+', ' '
+        $cleanTime = $cleanTime -replace '\s+', ' '
 
-    if ([string]::IsNullOrWhiteSpace($cleanDate)) {
-        throw "Date is empty."
+        if ([string]::IsNullOrWhiteSpace($cleanDate)) {
+            throw "Date is empty."
+        }
+
+        if ([string]::IsNullOrWhiteSpace($cleanTime)) {
+            throw "LocalTime is empty."
+        }
+
+        if ([string]::IsNullOrWhiteSpace($TimeZoneId)) {
+            throw "TimeZoneId is empty."
+        }
+
+        # Normalize common time input, e.g. "17:00" is allowed.
+        $localText = "$cleanDate $cleanTime"
+        $localText = $localText.Trim() -replace '\s+', ' '
+
+        $dateFormats = [string[]]@(
+            'yyyy-MM-dd HH:mm:ss',
+            'yyyy-MM-dd H:mm:ss',
+            'yyyy-MM-dd HH:mm',
+            'yyyy-MM-dd H:mm',
+
+            'MM/dd/yyyy HH:mm:ss',
+            'M/d/yyyy HH:mm:ss',
+            'MM/dd/yyyy H:mm:ss',
+            'M/d/yyyy H:mm:ss',
+
+            'MM/dd/yyyy HH:mm',
+            'M/d/yyyy HH:mm',
+            'MM/dd/yyyy H:mm',
+            'M/d/yyyy H:mm'
+        )
+
+        $localUnspecified = [DateTime]::MinValue
+
+        $parsed = [DateTime]::TryParseExact(
+            $localText,
+            $dateFormats,
+            $culture,
+            [System.Globalization.DateTimeStyles]::None,
+            [ref]$localUnspecified
+        )
+
+        if (-not $parsed) {
+            throw "Could not parse local date/time '$localText'. Expected formats like yyyy-MM-dd HH:mm:ss, yyyy-MM-dd HH:mm, MM/dd/yyyy HH:mm:ss, or MM/dd/yyyy HH:mm."
+        }
+
+        # This is critical: the parsed value is a wall-clock time in the target timezone.
+        $localUnspecified = [DateTime]::SpecifyKind($localUnspecified, [DateTimeKind]::Unspecified)
+
+        try {
+            $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById($TimeZoneId)
+        }
+        catch {
+            throw "Could not find timezone '$TimeZoneId'. If you are using Windows PowerShell 5.1, IANA timezone IDs like 'Australia/Lord_Howe' may not work. Use PowerShell 7 or map it to a Windows timezone ID."
+        }
+
+        if ($tz.IsInvalidTime($localUnspecified)) {
+            throw "The local time '$localText' is invalid in timezone '$TimeZoneId' because of a daylight-saving transition."
+        }
+
+        $isAmbiguous = $tz.IsAmbiguousTime($localUnspecified)
+        if ($isAmbiguous) {
+            Write-Warning "The local time '$localText' is ambiguous in timezone '$TimeZoneId' because of a daylight-saving transition."
+        }
+
+        $utcDateTime = [System.TimeZoneInfo]::ConvertTimeToUtc($localUnspecified, $tz)
+        $utcOffset = $tz.GetUtcOffset($localUnspecified)
+
+        $utcDateTimeOffset = [DateTimeOffset]::new(
+            [DateTime]::SpecifyKind($utcDateTime, [DateTimeKind]::Utc)
+        )
+
+        $epochUtc = $utcDateTimeOffset.ToUnixTimeSeconds()
+
+        return [pscustomobject]@{
+            Date                 = $localUnspecified.ToString('yyyy-MM-dd', $culture)
+            LocalTime            = $localUnspecified.ToString('HH:mm:ss', $culture)
+            DisplayTime          = $localUnspecified.ToString('h:mm tt', $culture)
+            Timezone             = $TimeZoneId
+            UtcOffset            = $utcOffset.ToString()
+            UtcDateTime          = $utcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", $culture)
+            DatetimeEpochUtc     = $epochUtc
+            IsAmbiguousLocalTime = $isAmbiguous
+        }
     }
-
-    if ([string]::IsNullOrWhiteSpace($cleanTime)) {
-        throw "LocalTime is empty."
-    }
-
-    if ([string]::IsNullOrWhiteSpace($TimeZoneId)) {
-        throw "TimeZoneId is empty."
-    }
-
-    # Normalize common time input, e.g. "17:00" is allowed.
-    $localText = "$cleanDate $cleanTime"
-    $localText = $localText.Trim() -replace '\s+', ' '
-
-    $dateFormats = [string[]]@(
-        'yyyy-MM-dd HH:mm:ss',
-        'yyyy-MM-dd H:mm:ss',
-        'yyyy-MM-dd HH:mm',
-        'yyyy-MM-dd H:mm',
-
-        'MM/dd/yyyy HH:mm:ss',
-        'M/d/yyyy HH:mm:ss',
-        'MM/dd/yyyy H:mm:ss',
-        'M/d/yyyy H:mm:ss',
-
-        'MM/dd/yyyy HH:mm',
-        'M/d/yyyy HH:mm',
-        'MM/dd/yyyy H:mm',
-        'M/d/yyyy H:mm'
-    )
-
-    $localUnspecified = [DateTime]::MinValue
-
-    $parsed = [DateTime]::TryParseExact(
-        $localText,
-        $dateFormats,
-        $culture,
-        [System.Globalization.DateTimeStyles]::None,
-        [ref]$localUnspecified
-    )
-
-    if (-not $parsed) {
-        throw "Could not parse local date/time '$localText'. Expected formats like yyyy-MM-dd HH:mm:ss, yyyy-MM-dd HH:mm, MM/dd/yyyy HH:mm:ss, or MM/dd/yyyy HH:mm."
-    }
-
-    # This is critical: the parsed value is a wall-clock time in the target timezone.
-    $localUnspecified = [DateTime]::SpecifyKind($localUnspecified, [DateTimeKind]::Unspecified)
-
-    try {
-        $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById($TimeZoneId)
-    }
-    catch {
-        throw "Could not find timezone '$TimeZoneId'. If you are using Windows PowerShell 5.1, IANA timezone IDs like 'Australia/Lord_Howe' may not work. Use PowerShell 7 or map it to a Windows timezone ID."
-    }
-
-    if ($tz.IsInvalidTime($localUnspecified)) {
-        throw "The local time '$localText' is invalid in timezone '$TimeZoneId' because of a daylight-saving transition."
-    }
-
-    $isAmbiguous = $tz.IsAmbiguousTime($localUnspecified)
-    if ($isAmbiguous) {
-        Write-Warning "The local time '$localText' is ambiguous in timezone '$TimeZoneId' because of a daylight-saving transition."
-    }
-
-    $utcDateTime = [System.TimeZoneInfo]::ConvertTimeToUtc($localUnspecified, $tz)
-    $utcOffset = $tz.GetUtcOffset($localUnspecified)
-
-    $utcDateTimeOffset = [DateTimeOffset]::new(
-        [DateTime]::SpecifyKind($utcDateTime, [DateTimeKind]::Utc)
-    )
-
-    $epochUtc = $utcDateTimeOffset.ToUnixTimeSeconds()
-
-    return [pscustomobject]@{
-        Date                  = $localUnspecified.ToString('yyyy-MM-dd', $culture)
-        LocalTime             = $localUnspecified.ToString('HH:mm:ss', $culture)
-        DisplayTime           = $localUnspecified.ToString('h:mm tt', $culture)
-        Timezone              = $TimeZoneId
-        UtcOffset             = $utcOffset.ToString()
-        UtcDateTime           = $utcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", $culture)
-        DatetimeEpochUtc      = $epochUtc
-        IsAmbiguousLocalTime  = $isAmbiguous
-    }
-}
     function Convert-To12HourTime {
         param([string]$TimeText)
 
@@ -218,6 +218,89 @@ function Convert-LocalDateTimeToUtc {
             }
         }
     }
+
+    function Split-DynamicArgsWithTail {
+        [CmdletBinding()]
+        param(
+            [Parameter(Mandatory)]
+            [string]$Text,
+
+            [Parameter(Mandatory)]
+            [int]$TailCount
+        )
+
+        if ($TailCount -lt 1) {
+            throw "TailCount must be at least 1."
+        }
+
+        if ($null -eq $Text) {
+            throw "Text cannot be null."
+        }
+
+        $allArgs = @(Split-DynamicArgs $Text)
+
+        if ($allArgs.Count -lt $TailCount + 1) {
+            throw "Expected at least $($TailCount + 1) arguments, but got $($allArgs.Count)."
+        }
+
+        # Walk backward through the original raw text and find the commas that
+        # separate the final TailCount args, respecting quotes.
+        $inS = $false
+        $inD = $false
+        $splitIndexes = @()
+
+        for ($i = $Text.Length - 1; $i -ge 0; $i--) {
+            $ch = $Text[$i]
+
+            switch ($ch) {
+                "'" {
+                    if (-not $inD) {
+                        $inS = -not $inS
+                    }
+                }
+
+                '"' {
+                    if (-not $inS) {
+                        $inD = -not $inD
+                    }
+                }
+
+                ',' {
+                    if (-not $inS -and -not $inD) {
+                        $splitIndexes += $i
+
+                        if ($splitIndexes.Count -eq $TailCount) {
+                            break
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($splitIndexes.Count -lt $TailCount) {
+            throw "Could not find $TailCount trailing argument separator(s) in '$Text'."
+        }
+
+        # Last found comma boundary separates raw value from trailing control args.
+        $boundary = $splitIndexes[$TailCount-1]
+
+        $valueText = $Text.Substring(0, $boundary).Trim()
+        $tailText = $Text.Substring($boundary + 1).Trim()
+
+        $tailArgs = @(Split-DynamicArgs $tailText)
+
+        if ($tailArgs.Count -lt $TailCount) {
+            throw "Expected at least $TailCount trailing argument(s), but parsed $($tailArgs.Count): '$tailText'"
+        }
+        
+        return [pscustomobject]@{
+            ValueText = $valueText
+            TailArgs  = $tailArgs
+            AllArgs   = $allArgs
+            TailText  = $tailText
+        }
+    }
+
     function Split-DynamicArgs-previous {
         param([string]$Text)
         if ([string]::IsNullOrWhiteSpace($Text)) { return @() }
@@ -301,18 +384,14 @@ function Convert-LocalDateTimeToUtc {
 
         switch ($fn) {
             'replace' {
-                $matchValueIndex = $rawArgs.Count - 2
-                $replaceValueIndex = $rawArgs.Count - 1
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 2
 
-                $matchValue = $rawArgs[$matchValueIndex]
-                $replaceValue = $rawArgs[$replaceValueIndex]
+                $value = $parsed.ValueText
+                $matchValue = $parsed.TailArgs[0]
+                $replaceValue = $parsed.TailArgs[1]
 
-                # Everything before match/replace is the source value
-                $valueArgs = @($rawArgs[0..($rawArgs.Count - 3)])
-                $value = ($valueArgs -join ',')
-
-                # Replace matchValue with replaceValue
                 $finalValue = $value -replace [regex]::Escape($matchValue), $replaceValue
+
                 $opSignal.SetResult($finalValue)
                 return $opSignal
             }
@@ -372,39 +451,44 @@ function Convert-LocalDateTimeToUtc {
             }
 
             'toarray' {
-                if ($rawArgs.Count -lt 2) {
-                    throw "ToArray() requires two arguments. ($($rawArgs.Count) was supplied)"
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
+
+                if ($null -eq $parsed -or $parsed.TailArgs.Count -ne 1 -or [string]::IsNullOrEmpty($parsed.ValueText)) {
+                    throw "ToArray() requires a source value and one trailing delimiter argument."
                 }
 
-                $first = $rawArgs[0]
-                $second = $rawArgs[-1]
-                $result = $first -split ('\' + $second)
+                $value = $parsed.ValueText
+                $delimiter = $parsed.TailArgs[0]
+
+                if ([string]::IsNullOrEmpty($delimiter)) {
+                    throw "ToArray() delimiter cannot be empty."
+                }
+
+                $result = $value -split [regex]::Escape($delimiter)
 
                 $opSignal.SetResult($result)
                 return $opSignal
             }
 
             'substring' {
-                if ($rawArgs.Count -lt 1) {
-                    throw "substring() requires at least one argument (length). ($($rawArgs.Count) supplied)"
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
+
+                if ($null -eq $parsed -or $parsed.TailArgs.Count -ne 1) {
+                    throw "substring() requires a source value and one trailing length argument."
                 }
 
-                # Length comes from the LAST argument
-                $length = [int]$rawArgs[-1]
-
-                if ($null -eq $raw) {
-                    throw "substring() requires `$raw to be defined."
-                }
+                $value = $parsed.ValueText
+                $length = [int]$parsed.TailArgs[0]
 
                 if ($length -lt 0) {
                     throw "substring() length must be >= 0. ($length supplied)"
                 }
 
-                if ($length -gt $raw.Length) {
-                    $length = $raw.Length
+                if ($length -gt $value.Length) {
+                    $length = $value.Length
                 }
 
-                $result = $raw.Substring(0, $length)
+                $result = $value.Substring(0, $length)
 
                 $opSignal.SetResult($result)
                 return $opSignal
@@ -573,48 +657,69 @@ function Convert-LocalDateTimeToUtc {
             }
 
             'notequals' {
-                if ($rawArgs.Count -lt 2) {
-                    throw "notequals() requires at least two arguments."
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
+
+                if ($null -eq $parsed -or $parsed.TailArgs.Count -ne 1) {
+                    throw "notequals() requires a leading value and one trailing comparison argument."
                 }
 
-                $first = $rawArgs[0]
-                $result = $first -ne $rawArgs[($rawArgs.Count - 1)]
+                $first = $parsed.ValueText
+                $second = $parsed.TailArgs[0]
+
+                $result = $first -ne $second
 
                 $opSignal.SetResult($result)
                 return $opSignal
             }
 
             'equals' {
-                if ($rawArgs.Count -lt 2) {
-                    throw "equals() requires at least two arguments."
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
+
+                if ($null -eq $parsed -or $parsed.TailArgs.Count -ne 1) {
+                    throw "equals() requires a leading value and one trailing comparison argument."
                 }
 
-                $first = $rawArgs[0]
-                $result = $first -eq $rawArgs[($rawArgs.Count - 1)]
+                $first = $parsed.ValueText
+                $second = $parsed.TailArgs[0]
+
+                $result = $first -eq $second
 
                 $opSignal.SetResult($result)
                 return $opSignal
             }
 
             'notin' {
-                if ($rawArgs.Count -lt 2) {
-                    throw "notequals() requires at least two arguments."
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
+
+                $value = $parsed.ValueText
+                $blockedRaw = $parsed.TailArgs[0]
+
+                $blockedValues = $blockedRaw -split ',' | ForEach-Object {
+                    $_.Trim()
+                } | Where-Object {
+                    $_ -ne ''
                 }
 
-                $first = $rawArgs[0]
-                $result = $first -notin $rawArgs[1..($rawArgs.Count - 1)]
+                $result = $value -notin $blockedValues
 
                 $opSignal.SetResult($result)
                 return $opSignal
+
             }
 
             'in' {
-                if ($rawArgs.Count -lt 2) {
-                    throw "equals() requires at least two arguments."
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
+
+                $value = $parsed.ValueText
+                $allowedRaw = $parsed.TailArgs[0]
+
+                $allowedValues = $allowedRaw -split ',' | ForEach-Object {
+                    $_.Trim()
+                } | Where-Object {
+                    $_ -ne ''
                 }
 
-                $first = $rawArgs[0]
-                $result = $first -in $rawArgs[1..($rawArgs.Count - 1)]
+                $result = $value -in $allowedValues
 
                 $opSignal.SetResult($result)
                 return $opSignal
@@ -645,6 +750,18 @@ function Convert-LocalDateTimeToUtc {
 
             'isnotnull' {
                 $result = $null -ne $rawArgs
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'isnotnullorempty' {
+                $result = $rawArgs -eq "" -or $null -ne $rawArgs
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'isnullorempty' {
+                $result = $null -eq $rawArgs -or $rawArgs -eq ""
                 $opSignal.SetResult($result)
                 return $opSignal
             }
@@ -697,6 +814,21 @@ function Convert-LocalDateTimeToUtc {
         }
     }
     catch {
+
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
+
+                $value = $parsed.ValueText
+                $blockedRaw = $parsed.TailArgs[0]
+
+                $blockedValues = $blockedRaw -split ',' | ForEach-Object {
+                    $_.Trim()
+                } | Where-Object {
+                    $_ -ne ''
+                }
+
+                $result = $value -notin $blockedValues
+
+
         $opSignal.LogCritical("🔥 Exception during Resolve-DynamicPath ($Path): $_", $null, $_)
     }
 
