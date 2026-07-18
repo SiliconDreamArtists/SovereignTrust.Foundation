@@ -99,6 +99,19 @@ function Invoke-TokenMemory {
                 $dictionary = $controlSignal
                 break 
             }#>
+            'conduction' {
+                $dictionary = $Signal
+                break 
+            }
+
+            'adapters' {
+                $dictionarySignal = Resolve-PathFromDictionary -Dictionary $Signal  -Path "%.*.#.Adapters.*.#" | Select-Object -Last 1
+                if ($dictionarySignal.HasResult()) {
+                    $dictionary = $dictionarySignal.GetResult()
+                }
+                break 
+            }
+
             'generation' {
                 # Shortcut Path to items created by Memory Generation
                 $dictionarySignal = Resolve-PathFromDictionary -Dictionary $ItemSignal  -Path "*.#" | Select-Object -Last 1

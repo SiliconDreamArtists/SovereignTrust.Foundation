@@ -40,6 +40,7 @@ function Invoke-RestCondenserCore {
 
             # TODO: This should be done in ItemSignal instead of Config.Body
             $BodySignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Body" -Default $null | Select-Object -Last 1
+            $FormSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Form" -Default $null | Select-Object -Last 1
 
             $Url = $UriSignal.GetResult()
             # Strip Url from array if in an array.
@@ -50,6 +51,7 @@ function Invoke-RestCondenserCore {
             $headers = $HeadersSignal.HasResult() ? $HeadersSignal.GetResult() : $null
 
             $Body = $BodySignal.HasResult() ? $BodySignal.GetResult() : $null
+            $Form = $FormSignal.HasResult() ? $FormSignal.GetResult() : $null
             $Method = $MethodSignal.HasResult() ? $MethodSignal.GetResult() : $null
             if ($Body -and ($Body -isnot [string])) {
                 $Body = $Body | ConvertTo-Json -Depth 100
@@ -89,6 +91,22 @@ function Invoke-RestCondenserCore {
            }
 
                 $response = Invoke-RestMethod -Uri $FinalUrl -Method $Method -Headers $headers -Body $Body
+            }
+            elseif ($Form) {
+                $_form = @{}
+
+foreach ($property in $Form.PSObject.Properties) {
+    $name = $property.Name
+    $value = $property.Value
+
+    if (Test-Path $value -PathType Leaf) {
+        $_form[$name] = (Get-Item $value)
+    }
+    else {
+        $_form[$name] = $value
+    }
+}
+                $response = Invoke-RestMethod -Uri $FinalUrl -Method $Method -Headers $headers -Form $_form
             }
             else {
                 if (-not $Method) {

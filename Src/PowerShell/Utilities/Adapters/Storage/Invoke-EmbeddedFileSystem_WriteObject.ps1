@@ -28,6 +28,15 @@ function Invoke-EmbeddedFileSystem_WriteObject {
         {
             $Content = $Content | ConvertTo-Json -Depth 100
         }
+        elseif ($Content -is [object[]])
+        {
+            if ($Content.Count -eq 1) {
+                $Content = , $Content | ConvertTo-Json -Depth 100
+            }
+            else {
+                $Content = $Content | ConvertTo-Json -Depth 100
+            }
+        }
 
         # Write content (UTF8, no BOM by default in PS 7)
         #Set-Content -Path $fullPath -Value $Content -Encoding utf8 -Force

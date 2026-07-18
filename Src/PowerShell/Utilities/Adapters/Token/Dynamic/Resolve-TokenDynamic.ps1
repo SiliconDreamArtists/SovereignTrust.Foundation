@@ -383,6 +383,10 @@ function Resolve-TokenDynamic {
         $rawArgs = Split-DynamicArgs $raw
 
         switch ($fn) {
+            'removequotes' {
+                $result = $raw -replace '"', ''
+                $opSignal.SetResult($result) 
+            }
             'replace' {
                 $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 2
 
@@ -583,6 +587,7 @@ function Resolve-TokenDynamic {
             }
 
             'join' {
+                # This is not being used, it needs to be figured out if its necessary
                 # Joins a single array into a string
                 if ($rawArgs.Count -lt 2) {
                     throw "Join() requires at least two arguments: a JSON array and a delimiter. ($($rawArgs.Count) was supplied)"
@@ -651,6 +656,15 @@ function Resolve-TokenDynamic {
 
                 # Join all results with the delimiter
                 $result = $values -join $delimiter
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'not' {
+                $first = @($rawArgs)[0]
+
+                $result = $first.ToLower() -eq "false"
 
                 $opSignal.SetResult($result)
                 return $opSignal
@@ -814,21 +828,6 @@ function Resolve-TokenDynamic {
         }
     }
     catch {
-
-                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
-
-                $value = $parsed.ValueText
-                $blockedRaw = $parsed.TailArgs[0]
-
-                $blockedValues = $blockedRaw -split ',' | ForEach-Object {
-                    $_.Trim()
-                } | Where-Object {
-                    $_ -ne ''
-                }
-
-                $result = $value -notin $blockedValues
-
-
         $opSignal.LogCritical("🔥 Exception during Resolve-DynamicPath ($Path): $_", $null, $_)
     }
 

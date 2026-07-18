@@ -52,15 +52,6 @@ class MemoryCondenser {
                             $Check = ""
                         }
 
-                        $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
-                        if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
-
-                        $isEnabledResult = $IsEnabledSignal.GetResult().ToString().ToLower()
-
-                        if ($isEnabledResult -eq "false") {
-                            $step = $this.GetNextStep($step, $Plan, $ItemSignal, $ConductionSignal) 
-                            continue
-                        }
 
                         $StepResultSignal = $null
 
@@ -85,17 +76,16 @@ class MemoryCondenser {
                             $StepHydrateResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
                             if ($opSignal.MergeSignalAndVerifyFailure($StepHydrateResultSignal)) { return $opSignal }
                             $step = $StepHydrateResultSignal.GetResult()
+                        }
 
-                            #Check Enabled again after hydration in case the value was hydrated at runtime.
-                            $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
-                            if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
-                            if ($IsEnabledSignal.GetResult().ToString() -ne "false" -and $IsEnabledSignal.GetResult().ToString() -ne "true") {
-                                $a = ""
-                            }
-                            if ($IsEnabledSignal.GetResult().ToString() -eq "false") {
-                                $step = $this.GetNextStep($step, $Plan, $ItemSignal, $ConductionSignal)
-                                continue
-                            }
+                        $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
+                        if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
+
+                        $isEnabledResult = $IsEnabledSignal.GetResult().ToString().ToLower()
+
+                        if (-not $this.TestAllTrue($isEnabledResult)) {
+                            $step = $this.GetNextStep($step, $Plan, $ItemSignal, $ConductionSignal) 
+                            continue
                         }
 
                         $null = Add-PathToDictionary -Dictionary $step -Path "Phase" -Value $Plan
@@ -257,9 +247,8 @@ class MemoryCondenser {
             # Apply going to a specific step.
             if ($null -eq $step -and $null -eq $currentStep.Adapter -and $currentStep.Activity -eq "Goto") {
                 $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $currentStep -Path "IsEnabled" -Default $true | Select-Object -Last 1
-                $isEnabled = $IsEnabledSignal.GetResult().ToString() -eq "true"
 
-                if ($isEnabled) {
+                if ($this.TestAllTrue($IsEnabledSignal.GetResult().ToString())) {
                     $gotoName = $currentStep.Path # SetWeather_SelectSpecifiedTime_Exit
                     for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
                         if ($phaseSteps[$i].Name -eq $gotoName) {
@@ -313,5 +302,33 @@ class MemoryCondenser {
         }
 
         return $itemSignal
+    }
+
+    [bool] TestAllTrue([object]$Value) {
+        $values = @($Value)
+
+        if ($values.Count -eq 0) {
+            return $false
+        }
+
+        foreach ($item in $values) {
+            if ($null -eq $item) {
+                return $false
+            }
+
+            if ($item -is [bool]) {
+                if (-not $item) {
+                    return $false
+                }
+
+                continue
+            }
+
+            if ($item.ToString().Trim().ToLowerInvariant() -ne "true") {
+                return $false
+            }
+        }
+
+        return $true
     }
 }
