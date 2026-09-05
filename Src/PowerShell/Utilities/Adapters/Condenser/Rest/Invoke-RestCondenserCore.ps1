@@ -1,6 +1,8 @@
 function Invoke-RestCondenserCore {
     [CmdletBinding()]
     param (
+        [RestCondenser]$RestCondenser,
+
         [string]$Activity, 
         [string]$Slot,
         # Conduction Signal
@@ -37,6 +39,8 @@ function Invoke-RestCondenserCore {
             $UriSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Uri" | Select-Object -Last 1
             $BearerTokenSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.BearerToken" -Default $null | Select-Object -Last 1
             $MethodSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Method" -Default $null | Select-Object -Last 1
+            $ContentTypeSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.ContentType" -Default $null | Select-Object -Last 1
+            $InFileSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.InFile" -Default $null | Select-Object -Last 1
 
             # TODO: This should be done in ItemSignal instead of Config.Body
             $BodySignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Body" -Default $null | Select-Object -Last 1
@@ -53,15 +57,15 @@ function Invoke-RestCondenserCore {
             $Body = $BodySignal.HasResult() ? $BodySignal.GetResult() : $null
             $Form = $FormSignal.HasResult() ? $FormSignal.GetResult() : $null
             $Method = $MethodSignal.HasResult() ? $MethodSignal.GetResult() : $null
+            $ContentType = $ContentTypeSignal.HasResult() ? $ContentTypeSignal.GetResult() : $null
+            $InFile = $InFileSignal.HasResult() ? $InFileSignal.GetResult() : $null
             if ($Body -and ($Body -isnot [string])) {
                 $Body = $Body | ConvertTo-Json -Depth 100
             }
 
-            if ($headers -is [PSCustomObject])
-            {
+            if ($headers -is [PSCustomObject]) {
                 $_headers = @{}
-                foreach ($property in $headers.PSObject.Properties)
-                {
+                foreach ($property in $headers.PSObject.Properties) {
                     $_headers[$property.Name] = $property.Value
                 }
 
@@ -78,34 +82,45 @@ function Invoke-RestCondenserCore {
             }
 
             $sw.Start()
-            
-            if ($null -ne $Body) {
+            if ($Null -ne $InFile) {
+                if (-not $Method) {
+                    $Method = "Put"
+                }
+
+                Invoke-RestMethod `
+                    -Uri $FinalUrl `
+                    -Method $Method `
+                    -Headers $headers `
+                    -ContentType $ContentType `
+                    -InFile $InFile            
+            }
+            elseif ($null -ne $Body) {
                 if (-not $Method) {
                     $Method = "Post"
                 }
 
                 # TODO: Do Externally and pass in through config.
-            if ($Body) {
-                $headers["Content-Type"] = "application/json; charset=utf-8"
-                $headers["Accept"] = "application/json"
-           }
+                if ($Body) {
+                    $headers["Content-Type"] = "application/json; charset=utf-8"
+                    $headers["Accept"] = "application/json"
+                }
 
                 $response = Invoke-RestMethod -Uri $FinalUrl -Method $Method -Headers $headers -Body $Body
             }
             elseif ($Form) {
                 $_form = @{}
 
-foreach ($property in $Form.PSObject.Properties) {
-    $name = $property.Name
-    $value = $property.Value
+                foreach ($property in $Form.PSObject.Properties) {
+                    $name = $property.Name
+                    $value = $property.Value
 
-    if (Test-Path $value -PathType Leaf) {
-        $_form[$name] = (Get-Item $value)
-    }
-    else {
-        $_form[$name] = $value
-    }
-}
+                    if (Test-Path $value -PathType Leaf) {
+                        $_form[$name] = (Get-Item $value)
+                    }
+                    else {
+                        $_form[$name] = $value
+                    }
+                }
                 $response = Invoke-RestMethod -Uri $FinalUrl -Method $Method -Headers $headers -Form $_form
             }
             else {
@@ -139,6 +154,34 @@ foreach ($property in $Form.PSObject.Properties) {
             # Change this so that this sends the details back to the prior level in the $opSignal to alert it that a failure has happened and this is how you heal it. (ClearBearerToken)
             if ($message -like "*token is expired*" -or $message -like "*401 (Unauthorized)*" -or $message -like "*authenticate header*") {
                 #clearBearerToken = $true
+                $skipBearerTokenSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.SkipBearerToken" -Default $false | Select-Object -Last 1
+                $bearerTokenSignal = $skipBearerTokenSignal.GetResult() ? $null : $RestCondenser.ResolveBearerToken($Signal, $Plan, $true)
+                if ($bearerTokenSignal -and $bearerTokenSignal.HasResult()) {
+                    $null = Add-PathToDictionary -Dictionary $Plan -Path "Config.BearerToken" -Value $bearerTokenSignal.GetResult()
+                    $attempts = 0
+                }
+                else {
+                    $opSignal.LogCritical("Failed to refresh bearer token. Cannot retry request to '$FinalUrl'.", $null, $_)
+                    return $opSignal
+                }
+            }
+            else {
+                #Start-Sleep -Milliseconds 10000
+            }
+
+                        # Change this so that this sends the details back to the prior level in the $opSignal to alert it that a failure has happened and this is how you heal it. (ClearBearerToken)
+            if ($message -like "*No such host is known*") {
+                #clearBearerToken = $true
+                $skipBearerTokenSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.SkipBearerToken" -Default $false | Select-Object -Last 1
+                $bearerTokenSignal = $skipBearerTokenSignal.GetResult() ? $null : $RestCondenser.ResolveBearerToken($Signal, $Plan, $true)
+                if ($bearerTokenSignal -and $bearerTokenSignal.HasResult()) {
+                    $null = Add-PathToDictionary -Dictionary $Plan -Path "Config.BearerToken" -Value $bearerTokenSignal.GetResult()
+#                    $attempts = 0
+                }
+                else {
+                    $opSignal.LogCritical("Failed to refresh bearer token. Cannot retry request to '$FinalUrl'.", $null, $_)
+                    return $opSignal
+                }
             }
             else {
                 #Start-Sleep -Milliseconds 10000

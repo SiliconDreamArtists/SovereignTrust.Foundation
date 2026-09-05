@@ -81,7 +81,7 @@ class MemoryCondenser {
                         $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $step -Path "IsEnabled" -Default $true | Select-Object -Last 1
                         if ($opSignal.MergeSignalAndVerifyFailure($IsEnabledSignal)) { return $opSignal }
 
-                        $isEnabledResult = $IsEnabledSignal.GetResult().ToString().ToLower()
+                        $isEnabledResult = $IsEnabledSignal.GetResult()
 
                         if (-not $this.TestAllTrue($isEnabledResult)) {
                             $step = $this.GetNextStep($step, $Plan, $ItemSignal, $ConductionSignal) 
@@ -248,7 +248,7 @@ class MemoryCondenser {
             if ($null -eq $step -and $null -eq $currentStep.Adapter -and $currentStep.Activity -eq "Goto") {
                 $IsEnabledSignal = Resolve-PathFromDictionary -Dictionary $currentStep -Path "IsEnabled" -Default $true | Select-Object -Last 1
 
-                if ($this.TestAllTrue($IsEnabledSignal.GetResult().ToString())) {
+                if ($this.TestAllTrue($IsEnabledSignal.GetResult())) {
                     $gotoName = $currentStep.Path # SetWeather_SelectSpecifiedTime_Exit
                     for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
                         if ($phaseSteps[$i].Name -eq $gotoName) {
@@ -257,7 +257,19 @@ class MemoryCondenser {
                             break;
                         }
                     }
+
+                    # Try ends with if a direct match didn't work, this allows for a step name to be generated with an iteration suffix like _1, _2, etc.
+                    if ($null -eq $step) {
+                        for ($i = 0; $i -lt $phaseSteps.Count; $i++) {
+                            if ($phaseSteps[$i].Name -like "*$gotoName") {
+                                $skipSteps = $currentStep.Config.SkipSteps ?? 0
+                                $step = $phaseSteps[$i + $skipSteps]
+                                break;
+                            }
+                        }
+                    }
                 }
+
             }
 
             # Find current step and return the next one
@@ -304,7 +316,7 @@ class MemoryCondenser {
         return $itemSignal
     }
 
-    [bool] TestAllTrue([object]$Value) {
+    [bool] TestAllTrue($Value) {
         $values = @($Value)
 
         if ($values.Count -eq 0) {

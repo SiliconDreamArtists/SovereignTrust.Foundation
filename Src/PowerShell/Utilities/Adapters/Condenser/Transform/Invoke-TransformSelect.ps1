@@ -20,6 +20,14 @@ function Invoke-TransformSelect {
             return $Node.InnerText
         }
 
+        # If the node contains only text or CDATA, return its contents directly
+        if (
+            $Node.ChildNodes.Count -eq 1 -and
+            $Node.FirstChild.NodeType -in @('Text', 'CDATA')
+        ) {
+            return $Node.InnerText
+        }
+
         $hash = @{}
 
         # Attributes (optional but useful)

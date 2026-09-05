@@ -120,7 +120,7 @@ class PlanCondenser {
 
         if ($Activity) {
             switch ($Activity) {
-                "InteratePhase" {
+                "IteratePhase" {
                     $iterationArraySignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.IterationArray" | Select-Object -Last 1
                     $iterationNameSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.IterationName" -Default "Iteration" | Select-Object -Last 1
                     $iterationArray = $iterationArraySignal.GetResult()

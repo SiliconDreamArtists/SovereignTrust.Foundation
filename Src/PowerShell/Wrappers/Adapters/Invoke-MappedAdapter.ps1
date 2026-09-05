@@ -2,6 +2,7 @@ function Invoke-MappedAdapter {
     [CmdletBinding()]
     param (
         # Conductor / environment signal that contains adapters (mapped attachments)
+
         [Parameter(Mandatory = $false)]
         [Signal]$Signal,
 

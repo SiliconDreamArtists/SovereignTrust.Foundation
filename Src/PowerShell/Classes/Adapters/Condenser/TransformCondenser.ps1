@@ -36,7 +36,8 @@ class TransformCondenser {
         $opSignal = [Signal]::Start("TransformCondenser.Invoke") | Select-Object -Last 1
 
         # First Supported Activities -> Select, Merge, Project
-        $DefaultPath = "%.@"
+        $DefaultPathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.DefaultPath" -Default "%.@" -SignalLevel "Warning" | Select-Object -Last 1
+        $DefaultPath = $DefaultPathSignal.GetResult()
         if ($Activity) {
             switch ($Activity) {
 
@@ -53,7 +54,7 @@ class TransformCondenser {
                         {
                             $ContentPlan = [PSCustomObject]@{
                                 Path = $Plan.Path
-#                                HydrationPlan = "@"
+                                HydrationPlan = "@"
                             }
 
                             $SourceContentResultSignal = Invoke-MappedAdapter -Adapter "Token.Memory"  -Activity "Get" -Plan $ContentPlan -ItemSignal $ItemSignal -Signal $ConductionSignal | Select-Object -Last 1
@@ -67,6 +68,7 @@ class TransformCondenser {
                                 {
                                     $HydrationPlan = [PSCustomObject]@{
                                         Path = "%.@"
+                                        HydrationPlan = "@"
                                         HydrationStyle = "Deferred"
                                         Source = "TransformCondenser"
                                         Config = $Plan.Config
@@ -104,6 +106,8 @@ class TransformCondenser {
                     $sourceFormatSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Format" -Default ""  | Select-Object -Last 1
                     $SourceHtmlDecodeSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "HtmlDecode" -Default $true | Select-Object -Last 1
 
+                    $hydrateSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Hydrate" -Default $false | Select-Object -Last 1
+
                     if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal) -or $opSignal.MergeSignalAndVerifyFailure($sourcePathSignal) -or $opSignal.MergeSignalAndVerifyFailure($sourceFormatSignal) -or $opSignal.MergeSignalAndVerifyFailure($SourceHtmlDecodeSignal)) {
                         $opSignal.LogCritical("Failed to resolve content for Transform")
                         return $opSignal
@@ -116,6 +120,29 @@ class TransformCondenser {
                     if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
                         $opSignal.LogCritical("JSON formatting failed.")
                         return $opSignal
+                    }
+
+                    if ($hydrateSignal.GetResult())
+                    {
+                        $HydrationPlan = [PSCustomObject]@{
+                            Path = "%.@"
+                            HydrationPlan = "@"
+                            HydrationStyle = "Deferred"
+                            Source = "TransformCondenser"
+                            Config = $Plan.Config
+                        }
+
+                        #$null = Add-PathToDictionary -Dictionary $ContentPlan -Path "Config" -Value $node
+                        $HydrationSignal = [Signal]::Start("TransformCondenser.Invoke.Hydration") | Select-Object -Last 1
+                        $HydrationSignal.SetJacket($resultSignal)
+                        $HydrationSignal.SetPointer($ItemSignal.GetPointer())
+#                        $HydrationSignal.SetResult($node)
+                        
+                        # Perform Hydration
+                        $MappingResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
+
+                        
+                        $resultSignal.SetResult($MappingResultSignal.GetResult())
                     }
 
                     $opSignal.SetResult($resultSignal.GetResult())

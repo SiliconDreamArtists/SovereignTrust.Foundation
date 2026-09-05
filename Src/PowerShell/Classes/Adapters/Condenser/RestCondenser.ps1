@@ -50,7 +50,9 @@ class RestCondenser {
             Add-PathToDictionary -Dictionary $clonePlan -Path "Config.BearerToken" -Value $bearerTokenSignal.GetResult()
         }
 
-        $resultSignal = Invoke-RestCondenserCore -Signal $ConductionSignal -Plan $clonePlan -ItemSignal $ItemSignal -Activity $Activity | Select-Object -Last 1
+        # Passing RestCondenser is an anti-pattern but I'm taking a short cut to passing back the result to inform the adapter to retry the bearer token because I want to come up with a pattern using
+        # Signal with a recovery recommendation to inform the adapter to retry the bearer token. This is a temporary solution until I replace with a better pattern.
+        $resultSignal = Invoke-RestCondenserCore -RestCondenser $this -Signal $ConductionSignal -Plan $clonePlan -ItemSignal $ItemSignal -Activity $Activity | Select-Object -Last 1
         $opSignal.MergeSignal($resultSignal)
 
         # TODO: The result will now hold recommendations if there is a failure, such as to clear bearer token and try again
@@ -72,6 +74,13 @@ class RestCondenser {
     try {
         if (-not $Plan) {
             $opSignal.LogCritical("Plan is null.")
+            return $opSignal
+        }
+
+        $headersSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Headers" -SignalLevel "Warning" | Select-Object -Last 1
+        if ($opSignal.MergeSignalAndVerifyFailure(@($headersSignal))) { return $opSignal }
+        if ($headersSignal.HasResult()) {
+            $opSignal.SetResult($headersSignal.GetResult())
             return $opSignal
         }
 

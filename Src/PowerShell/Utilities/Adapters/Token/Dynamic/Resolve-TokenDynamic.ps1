@@ -383,6 +383,22 @@ function Resolve-TokenDynamic {
         $rawArgs = Split-DynamicArgs $raw
 
         switch ($fn) {
+            'getfileextension' {
+                if ($rawArgs.Count -ne 1) {
+                    throw "GetFileExtension() requires one argument. ($($rawArgs.Count) was supplied)"
+                }
+
+                $result = [System.IO.Path]::GetExtension([string]@($rawArgs)[0]).TrimStart('.')
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'GetInitials' {
+                $result = $raw -creplace '[^A-Z]', ''
+                $opSignal.SetResult($result)
+            }
+ 
             'removequotes' {
                 $result = $raw -replace '"', ''
                 $opSignal.SetResult($result) 
@@ -454,6 +470,25 @@ function Resolve-TokenDynamic {
                 return $opSignal
             }
 
+            'if' {
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 2
+
+                $value = $parsed.ValueText.ToLower() -eq "true"
+
+                if ($value) {
+                    $result = $parsed.TailArgs[0]
+                }
+                else {
+                    $result = $parsed.TailArgs[1]
+                    if ($result -eq 'null') {
+                        $result = $null
+                    }
+                }
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
             'toarray' {
                 $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
 
@@ -475,24 +510,51 @@ function Resolve-TokenDynamic {
             }
 
             'substring' {
-                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 2
 
-                if ($null -eq $parsed -or $parsed.TailArgs.Count -ne 1) {
-                    throw "substring() requires a source value and one trailing length argument."
+                if ($null -eq $parsed -or $parsed.TailArgs.Count -ne 2) {
+                    throw "substring() requires a source value, a position argument, and a trailing length argument."
                 }
 
-                $value = $parsed.ValueText
-                $length = [int]$parsed.TailArgs[0]
+                [string]$value = $parsed.ValueText
+                [string]$positionArgument = $parsed.TailArgs[0]
+                [int]$length = $parsed.TailArgs[1]
 
                 if ($length -lt 0) {
                     throw "substring() length must be >= 0. ($length supplied)"
                 }
 
-                if ($length -gt $value.Length) {
-                    $length = $value.Length
+                switch ($positionArgument.ToLowerInvariant()) {
+                    'first' {
+                        $startIndex = 0
+                    }
+
+                    'last' {
+                        $startIndex = [math]::Max(0, $value.Length - $length)
+                    }
+
+                    default {
+                        [int]$startIndex = 0
+
+                        if (-not [int]::TryParse($positionArgument, [ref]$startIndex)) {
+                            throw "substring() position must be 'first', 'last', or a numeric starting position. ('$positionArgument' supplied)"
+                        }
+
+                        if ($startIndex -lt 0) {
+                            throw "substring() starting position must be >= 0. ($startIndex supplied)"
+                        }
+
+                        if ($startIndex -gt $value.Length) {
+                            throw "substring() starting position cannot exceed the source length of $($value.Length). ($startIndex supplied)"
+                        }
+                    }
                 }
 
-                $result = $value.Substring(0, $length)
+                # Clamp the requested length to the number of available characters.
+                $availableLength = $value.Length - $startIndex
+                $actualLength = [math]::Min($length, $availableLength)
+
+                $result = $value.Substring($startIndex, $actualLength)
 
                 $opSignal.SetResult($result)
                 return $opSignal
@@ -635,17 +697,12 @@ function Resolve-TokenDynamic {
             }
 
             'joinarrays' {
-                # Joins a matrix of arrays
-                if ($rawArgs.Count -lt 2) {
-                    throw "ToArray() requires at least two arguments. ($($rawArgs.Count) was supplied)"
-                }
-
-                # Last item is the delimiter
-                $delimiter = $rawArgs[-1]
+                $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
+                $delimiter = $parsed.TailArgs[0]
 
                 # Everything before the delimiter is JSON
-                $json = ($rawArgs[0..($rawArgs.Count - 2)]) -join ','
-                $jsonObject = $json | ConvertFrom-Json -Depth 10
+                $json = $parsed.ValueText
+                 $jsonObject = $json | ConvertFrom-Json -Depth 10
 
                 $values = @()
 
@@ -656,6 +713,24 @@ function Resolve-TokenDynamic {
 
                 # Join all results with the delimiter
                 $result = $values -join $delimiter
+
+                $opSignal.SetResult($result)
+                return $opSignal
+            }
+
+            'filldigits' {
+                if ($rawArgs.Count -ne 2) {
+                    throw "filldigits() requires two arguments: number and digits. ($($rawArgs.Count) was supplied)"
+                }
+
+                $number = [int]@($rawArgs)[0]
+                $digits = [int]@($rawArgs)[1]
+
+                if ($digits -lt 1) {
+                    throw "filldigits() digits must be greater than 0. ($digits was supplied)"
+                }
+
+                $result = $number.ToString("D$digits")
 
                 $opSignal.SetResult($result)
                 return $opSignal
@@ -706,19 +781,45 @@ function Resolve-TokenDynamic {
                 $parsed = Split-DynamicArgsWithTail -Text $raw -TailCount 1
 
                 $value = $parsed.ValueText
-                $blockedRaw = $parsed.TailArgs[0]
+                $allowedRaw = $parsed.TailArgs[0]
 
-                $blockedValues = $blockedRaw -split ',' | ForEach-Object {
-                    $_.Trim()
-                } | Where-Object {
-                    $_ -ne ''
+                $allowedValues = @(
+                    $allowedRaw -split ',' | ForEach-Object {
+                        $_.Trim()
+                    } | Where-Object {
+                        $_ -ne ''
+                    }
+                )
+
+                # If the value is a JSON-style array string, convert it to an actual array.
+                if ($value -is [string]) {
+                    $trimmedValue = $value.Trim()
+
+                    if ($trimmedValue.StartsWith('[') -and $trimmedValue.EndsWith(']')) {
+                        try {
+                            $value = @(ConvertFrom-Json -InputObject $trimmedValue)
+                        }
+                        catch {
+                            throw "in() received an invalid array value: $value"
+                        }
+                    }
+                    else {
+                        $value = @($value)
+                    }
+                }
+                else {
+                    $value = @($value)
                 }
 
-                $result = $value -notin $blockedValues
+                # True when any allowed value exists in the resolved value array.
+                $result = @(
+                    $allowedValues | Where-Object {
+                        $_ -in $value
+                    }
+                ).Count -eq 0
 
                 $opSignal.SetResult($result)
                 return $opSignal
-
             }
 
             'in' {
@@ -727,13 +828,40 @@ function Resolve-TokenDynamic {
                 $value = $parsed.ValueText
                 $allowedRaw = $parsed.TailArgs[0]
 
-                $allowedValues = $allowedRaw -split ',' | ForEach-Object {
-                    $_.Trim()
-                } | Where-Object {
-                    $_ -ne ''
+                $allowedValues = @(
+                    $allowedRaw -split ',' | ForEach-Object {
+                        $_.Trim()
+                    } | Where-Object {
+                        $_ -ne ''
+                    }
+                )
+
+                # If the value is a JSON-style array string, convert it to an actual array.
+                if ($value -is [string]) {
+                    $trimmedValue = $value.Trim()
+
+                    if ($trimmedValue.StartsWith('[') -and $trimmedValue.EndsWith(']')) {
+                        try {
+                            $value = @(ConvertFrom-Json -InputObject $trimmedValue)
+                        }
+                        catch {
+                            throw "in() received an invalid array value: $value"
+                        }
+                    }
+                    else {
+                        $value = @($value)
+                    }
+                }
+                else {
+                    $value = @($value)
                 }
 
-                $result = $value -in $allowedValues
+                # True when any allowed value exists in the resolved value array.
+                $result = @(
+                    $allowedValues | Where-Object {
+                        $_ -in $value
+                    }
+                ).Count -gt 0
 
                 $opSignal.SetResult($result)
                 return $opSignal
