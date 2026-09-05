@@ -1,3 +1,4 @@
+using module SignalGraph
 # =============================================================================
 # 📍 Invoke-ConduitCondenser (Declarative Graph Builder + Injector)
 #  License: MIT License • Copyright (c) 2025 Silicon Dream Artists / BDDB
@@ -114,13 +115,7 @@ function Invoke-ProcessConduitCondenser {
             $myvalues = @($using:SourceData.Grid.Values)
             $values = $using:values
             $item = $values[$_]
-
-            . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\SignalEntry.ps1"
-            . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\Signal.ps1"
-            . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\Graph.ps1"
-
-
-            . "$PSScriptRoot\..\..\..\SovereignTrust.Foundation\Src\PowerShell\Classes\Adapters\Telemetry\SignalTelemeter.ps1"
+. "$PSScriptRoot\..\..\..\SovereignTrust.Foundation\Src\PowerShell\Classes\Adapters\Telemetry\SignalTelemeter.ps1"
             . "$PSScriptRoot\..\..\..\SovereignTrust.Foundation\Src\PowerShell\Classes\Adapters\Telemetry\ConsoleLogger.ps1"
             $isnull = ($item -eq $null)
             Import-Module ../SovereignTrust.Foundation/Src/PowerShell/SovereignTrust.Foundation.psd1 -Force 

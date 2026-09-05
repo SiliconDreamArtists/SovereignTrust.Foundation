@@ -1,21 +1,9 @@
-$sgModuleName = 'SignalGraph'
-
-if (-not (Get-Module -Name $sgModuleName)) {
-    $sgPath = Join-Path $PSScriptRoot "../../../SignalGraph/Src/PowerShell/SignalGraph.psd1"
-    Import-Module (Resolve-Path $sgPath).ProviderPath -Force
-}
-
-$abc = Get-Module -Name $sgModuleName
+using module SignalGraph
     # Import shared functions for Map Condensers
 
     $mapSharedPath = Join-Path $PSScriptRoot "Utilities/Adapters/Condenser/Map/MapCondenser.Shared.psm1"
     Import-Module (Resolve-Path $mapSharedPath).ProviderPath -Force
-
-    . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\SignalEntry.ps1"
-    . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\Signal.ps1"
-    . "$PSScriptRoot\..\..\..\SignalGraph\Src\PowerShell\Classes\Graph.ps1"
-
-    function Start-SignalWrapper(
+function Start-SignalWrapper(
          [string]$Name,
         [object]$ReversePointer = $null
    ) {
