@@ -93,6 +93,33 @@ class FormatCondenser {
                     break
                 }
 
+                "Text" {
+                    $contentSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $DefaultPath | Select-Object -Last 1
+                    if ($opSignal.MergeSignalAndVerifyFailure($contentSignal)) {
+                        $opSignal.LogCritical("Failed to resolve content at path: $DefaultPath")
+                        return $opSignal
+                    }
+
+                    $content = $contentSignal.GetResult()
+                    switch ($content.GetType().FullName)
+                    {
+                        'System.Xml.XmlDocument' {
+                            $content = $content.OuterXml
+                            break
+                        }
+                        'System.Management.Automation.PSCustomObject' {
+                            $content = ($content | ConvertTo-Json -Depth 100 -Compress)
+                            break
+                        }
+                        default {
+                            break
+                        }
+                    }
+
+                    $opSignal.SetResult($content)
+                    break
+                }
+
                 default {
                     $opSignal.LogWarning("Unsupported Activity: $Activity")
                     break

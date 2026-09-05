@@ -36,7 +36,8 @@ class TransformCondenser {
         $opSignal = [Signal]::Start("TransformCondenser.Invoke") | Select-Object -Last 1
 
         # First Supported Activities -> Select, Merge, Project
-        $DefaultPath = "%.@"
+        $DefaultPathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.DefaultPath" -Default "%.@" -SignalLevel "Warning" | Select-Object -Last 1
+        $DefaultPath = $DefaultPathSignal.GetResult()
         if ($Activity) {
             switch ($Activity) {
 
@@ -53,7 +54,7 @@ class TransformCondenser {
                         {
                             $ContentPlan = [PSCustomObject]@{
                                 Path = $Plan.Path
-#                                HydrationPlan = "@"
+                                HydrationPlan = "@"
                             }
 
                             $SourceContentResultSignal = Invoke-MappedAdapter -Adapter "Token.Memory"  -Activity "Get" -Plan $ContentPlan -ItemSignal $ItemSignal -Signal $ConductionSignal | Select-Object -Last 1
@@ -68,6 +69,9 @@ class TransformCondenser {
                                     $HydrationPlan = [PSCustomObject]@{
                                         Path = "%.@"
                                         HydrationPlan = "@"
+                                        HydrationStyle = "Deferred"
+                                        Source = "TransformCondenser"
+                                        Config = $Plan.Config
                                     }
 
                                     #$null = Add-PathToDictionary -Dictionary $ContentPlan -Path "Config" -Value $node
@@ -102,6 +106,8 @@ class TransformCondenser {
                     $sourceFormatSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Format" -Default ""  | Select-Object -Last 1
                     $SourceHtmlDecodeSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "HtmlDecode" -Default $true | Select-Object -Last 1
 
+                    $hydrateSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Hydrate" -Default $false | Select-Object -Last 1
+
                     if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal) -or $opSignal.MergeSignalAndVerifyFailure($sourcePathSignal) -or $opSignal.MergeSignalAndVerifyFailure($sourceFormatSignal) -or $opSignal.MergeSignalAndVerifyFailure($SourceHtmlDecodeSignal)) {
                         $opSignal.LogCritical("Failed to resolve content for Transform")
                         return $opSignal
@@ -116,6 +122,29 @@ class TransformCondenser {
                         return $opSignal
                     }
 
+                    if ($hydrateSignal.GetResult())
+                    {
+                        $HydrationPlan = [PSCustomObject]@{
+                            Path = "%.@"
+                            HydrationPlan = "@"
+                            HydrationStyle = "Deferred"
+                            Source = "TransformCondenser"
+                            Config = $Plan.Config
+                        }
+
+                        #$null = Add-PathToDictionary -Dictionary $ContentPlan -Path "Config" -Value $node
+                        $HydrationSignal = [Signal]::Start("TransformCondenser.Invoke.Hydration") | Select-Object -Last 1
+                        $HydrationSignal.SetJacket($resultSignal)
+                        $HydrationSignal.SetPointer($ItemSignal.GetPointer())
+#                        $HydrationSignal.SetResult($node)
+                        
+                        # Perform Hydration
+                        $MappingResultSignal = Invoke-CondenserAdapter -Slot "Hydration" -Plan $HydrationPlan -Signal $ConductionSignal -ItemSignal $HydrationSignal | Select-Object -Last 1
+
+                        
+                        $resultSignal.SetResult($MappingResultSignal.GetResult())
+                    }
+
                     $opSignal.SetResult($resultSignal.GetResult())
                     break
                 }
@@ -123,29 +152,20 @@ class TransformCondenser {
                 # Injects using a path to an xml or json object.
                 "Inject" {
                     $sourceSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Content" | Select-Object -Last 1
-                    $addResult = Add-PathToDictionary -Dictionary $ItemSignal -Path $Plan.Path -Value $sourceSignal.GetResult() | Select-Object -Last 1
+                    $null = Add-PathToDictionary -Dictionary $ItemSignal -AddStyle "Append" -Path $Plan.Path -Value $sourceSignal.GetResult() | Select-Object -Last 1
+                    break
+                }
 
-<#
-                    $pathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetPath" | Select-Object -Last 1
-                    $formatSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetFormat" | Select-Object -Last 1
-                    $htmlEncodeSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "TargetHtmlEncode" -Default $false | Select-Object -Last 1
+                # Clone using a path to an xml or json object.
+                "Clone" {
+                    $pathSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Path" | Select-Object -Last 1
 
-                    if ($opSignal.MergeSignalAndVerifyFailure($sourceSignal) -or $opSignal.MergeSignalAndVerifyFailure($pathSignal) -or $opSignal.MergeSignalAndVerifyFailure($formatSignal) -or $opSignal.MergeSignalAndVerifyFailure($htmlEncodeSignal)) {
-                        $opSignal.LogCritical("Failed to resolve content for Transform")
-                        return $opSignal
-                    }
+                    $path = $pathSignal.GetResult()
 
-                    $source = $sourceSignal.GetResult($true)
-
-                    # Invoke-FormatJson should receive the JSON text (or object) directly, not via -Path unless it truly expects a file path
-                    $resultSignal = Invoke-TransformInject -Target $source -Source $source -Path $pathSignal.GetResult() -Format $formatSignal.GetResult() -HtmlEncode $htmlEncodeSignal.GetResult() | Select-Object -Last 1
-                    if ($opSignal.MergeSignalAndVerifyFailure($resultSignal)) {
-                        $opSignal.LogCritical("JSON formatting failed.")
-                        return $opSignal
-                    }
-
-                    #>
-#                    $opSignal.SetResult($resultSignal.GetResult())
+                    $sourceSignal = Resolve-PathFromDictionary -Dictionary $ItemSignal -Path $path | Select-Object -Last 1
+                    $source = $sourceSignal.GetResult() | ConvertTo-Json -Depth 10 | ConvertFrom-Json -Depth 10
+                    
+                    $opSignal.SetResult($source)
                     break
                 }
 

@@ -52,6 +52,7 @@ function Invoke-ST {
         $ConductionPlanMapping = $mergeSignal.GetResult()
 
         $DisabledMapping = [PSCustomObject]@{
+            Name              = "Bytes Me"
             IsEnabled = $false
         }
 

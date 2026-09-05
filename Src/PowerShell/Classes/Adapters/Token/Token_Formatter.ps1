@@ -34,25 +34,26 @@ class Token_Formatter {
     }
 
     [Signal] Invoke([string]$Slot, [string]$Activity, $ConductionSignal, $Plan, $ItemSignal) {
-    $opSignal = [Signal]::Start("Token_Formatter.Invoke") | Select-Object -Last 1
+        $opSignal = [Signal]::Start("Token_Formatter.Invoke") | Select-Object -Last 1
 
-    try {
+        try {
             $Path = $Plan.Path
-        $resultSignal = Invoke-TokenFormatter -Conductor $this.Conductor -Path $Path -Plan $Plan | Select-Object -Last 1
-        $opSignal.MergeSignal($resultSignal)
+            $resultSignal = Invoke-TokenFormatter -Conductor $this.Conductor -Path $Path -Plan $Plan | Select-Object -Last 1
+            $opSignal.MergeSignal($resultSignal)
 
-        if ($resultSignal.Success()) {
-            $opSignal.SetResult($resultSignal.GetResult())
-            $opSignal.LogInformation("✅ Token formatter path '$Path' resolved successfully.")
-        } else {
-            $opSignal.LogWarning("Token formatter path '$Path' failed to resolve.")
+            if ($resultSignal.Success()) {
+                $opSignal.SetResult($resultSignal.GetResult())
+                $opSignal.LogInformation("✅ Token formatter path '$Path' resolved successfully.")
+            }
+            else {
+                $opSignal.LogWarning("Token formatter path '$Path' failed to resolve.")
+            }
         }
-    }
-    catch {
-        $opSignal.LogCritical("🔥 Exception in Token_Formatter.Invoke: $($_.Exception.Message)", $null, $_)
-    }
+        catch {
+            $opSignal.LogCritical("🔥 Exception in Token_Formatter.Invoke: $($_.Exception.Message)", $null, $_)
+        }
 
-    return $opSignal
-}
+        return $opSignal
+    }
 
 }

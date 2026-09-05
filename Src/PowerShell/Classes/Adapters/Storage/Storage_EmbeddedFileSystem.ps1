@@ -102,9 +102,10 @@ class Storage_EmbeddedFileSystem {
         try {
             # ░▒▓█ RESOLVE ADDRESSES FROM %.@.Addresses █▓▒░
             $addressSignal = Resolve-PathFromDictionary -Dictionary $this -Path '$.%.@.Addresses' | Select-Object -Last 1
+            $signalLevelSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path 'Config.SignalLevel' -Default "Critical" | Select-Object -Last 1
             if ($opSignal.MergeSignalAndVerifyFailure(@($addressSignal))) {
                 return $opSignal.LogCritical("Could not resolve Jacket.Addresses path.")
-            }
+            }`
 
             $callSignal = $null
             switch ($activity) {
@@ -112,8 +113,35 @@ class Storage_EmbeddedFileSystem {
                     $callSignal = Invoke-EmbeddedFileSystem_ReadObject `
                         -Signal $this.Signal `
                         -VirtualPath $virtualPath `
+                        -SignalLevel $signalLevelSignal.GetResult() `
                         -Addresses @($addressSignal.GetResult()) |
                     Select-Object -Last 1
+
+                    # TODO: Move to Storage Adapter so it works across implementations. 5-17-26
+                    if ($callSignal.Failure()) {
+                        $contentSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.Content" -SignalLevel "Warning" | Select-Object -Last 1
+                        if ($contentSignal.HasResult()) {
+                            $content = $contentSignal.GetResult()
+
+                            $saveIfNewSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config.SaveIfNew" -Default $false -SignalLevel "Warning" | Select-Object -Last 1
+                            if ($saveIfNewSignal.GetResult()) {
+                                $clonePlan = (Resolve-ClonePlan -Plan $Plan | Select-Object -Last 1).GetResult()
+                                $null = Add-PathToDictionary -Dictionary $clonePlan -Path "Config.Content" -Value $content
+                                $writeResultSignal = $this.Invoke($Slot, "Write", $ConductionSignal, $clonePlan, $ItemSignal)
+                                if ($opSignal.MergeSignalAndVerifyFailure($writeResultSignal)) {
+                                    return $opSignal
+                                }
+                            }
+
+                            if ($content -is [PSCustomObject]) {
+                                $content = $content | ConvertTo-Json -Depth 100
+                            }
+
+                            $callSignal.LogRecovery("Default Content Override")
+                            $callSignal.SetResult($content)
+                        }    
+                    }
+
                     break
                 }
 
@@ -136,7 +164,7 @@ class Storage_EmbeddedFileSystem {
                 }
             }
 
-            if ($opSignal.MergeSignalAndVerifySuccess($callSignal)) {
+            if ($opSignal.MergeSignalAndVerifySuccess($callSignal) -and $callSignal.HasResult()) {
                 $opSignal.SetResult($callSignal.GetResult())
                 $opSignal.LogInformation("Successfully read object from virtual path: $virtualPath")   
             }

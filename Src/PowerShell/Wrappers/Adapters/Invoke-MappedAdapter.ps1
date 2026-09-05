@@ -2,6 +2,7 @@ function Invoke-MappedAdapter {
     [CmdletBinding()]
     param (
         # Conductor / environment signal that contains adapters (mapped attachments)
+
         [Parameter(Mandatory = $false)]
         [Signal]$Signal,
 
@@ -29,7 +30,7 @@ function Invoke-MappedAdapter {
 
         #Write-Host "abc"
     # ░▒▓█ SIGNAL START █▓▒░
-    $opSignal = [Signal]::Start("Invoke-StorageAdapter") | Select-Object -Last 1
+    $opSignal = [Signal]::Start("Invoke-StorageAdapter", $Signal) | Select-Object -Last 1
         #Write-Host "def"
 
     try {

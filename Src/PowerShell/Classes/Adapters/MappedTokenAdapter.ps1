@@ -37,10 +37,16 @@ class MappedTokenAdapter {
 
     [Signal] RegisterAdapter([object]$AdapterInstance, [string]$Key = "StorageService") {
         $opSignal = [Signal]::Start("RegisterMappedAdapter:$Key") | Select-Object -Last 1
-        $adapterSignal = [Signal]::Start("Adapter:$Key") | Select-Object -Last 1
-        $adapterSignal.SetResult($AdapterInstance)
+        if ($AdapterInstance -isnot [Signal]) {
+            $adapterSignal = [Signal]::Start("Adapter:$Key") | Select-Object -Last 1
+            $adapterSignal.SetResult($AdapterInstance)
+        }
+        else {
+            $adapterSignal = $AdapterInstance
+        }
 
-        $graph = $this.Signal.GetResult()
+        $AddMappedAdapterSignal = Add-PathToDictionary -Dictionary $AdapterInstance -Path "MappedAdapter" -Value $this | Select-Object -Last 1
+        $graph = $this.Signal.GetPointer()
         $registerSignal = $graph.RegisterSignal($Key, $adapterSignal)
         $opSignal.MergeSignal($registerSignal)
 

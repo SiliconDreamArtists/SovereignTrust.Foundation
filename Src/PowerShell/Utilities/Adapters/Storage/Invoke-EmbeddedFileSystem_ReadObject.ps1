@@ -3,6 +3,7 @@ function Invoke-EmbeddedFileSystem_ReadObject {
         [Signal]$Signal,
         [Parameter(Mandatory)][string]$VirtualPath,
         [Parameter()][string]$PathSuffix,
+        [string]$SignalLevel = "Critical",
         [Parameter()][object]$Addresses
     )
 
@@ -26,7 +27,7 @@ function Invoke-EmbeddedFileSystem_ReadObject {
             }
         }
 
-        $opSignal.LogCritical("File '$VirtualPath' not found in any address.")
+        $opSignal.LogMessage($SignalLevel, "File '$VirtualPath' not found in any address.")
     }
     catch {
         $opSignal.LogCritical("🔥 Exception during Invoke-ReadVirtualFileFromAddresses: $($_.Exception.Message)", $null, $_)

@@ -70,17 +70,17 @@ function Resolve-TokenForProperty {
             if ($HydrationStyle -eq "Deferred") {
                 # Version to get items when they have [] inside the text.
                 $RegexPattern = "(?s)\[(.*?)\|\]"
+
+                $matches = [regex]::Matches($propertyValue, $RegexPattern)
             }
-
-            $matches = [regex]::Matches($propertyValue, $RegexPattern)
         }
 
-        if ($matches.Count -gt 100) {
-
-            $matches = $matches |
-            ForEach-Object { $_.Value } |
-            Select-Object -Unique
-        }
+        #        if ($matches.Count -gt 100) {
+        #
+        #            $matches = $matches |
+        #            ForEach-Object { $_.Value } |
+        #            Select-Object -Unique
+        #        }
                 
         foreach ($match in $matches) {
             $matchText = $match.Value.Trim()
@@ -112,17 +112,22 @@ function Resolve-TokenForProperty {
                     $RegexPattern = "(?s)$RegexPattern"
                 }
 
-#                $clonePlan = $Plan | ConvertTo-Json | ConvertFrom-Json
-#                $clonePlan.Path = $key
+                if ($key -like "*ECode*" )
+                {
+                    $a = ""
+                }
+                <#
+
+                $TokenPlan = (Resolve-ClonePlan -Plan $Plan | Select-Object -Last 1).GetResult()
+                $null = Add-PathToDictionary -Dictionary $TokenPlan -Path "Path" -Value $Key
+#>
 
                 $TokenPlan = [PSCustomObject]@{
-                    Path = $Key
-
+                    Path = $key
                 }
 
                 $configSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "Config" -SignalLevel "Information" | Select-Object -Last 1
-                if ($configSignal.HasResult())
-                {
+                if ($configSignal.HasResult()) {
                     $null = Add-PathToDictionary -Dictionary $TokenPlan -Path "Config" -Value $configSignal.GetResult()
                 }
 
@@ -143,15 +148,13 @@ function Resolve-TokenForProperty {
                 $replacement = $lookupSignal.GetResult()
 
                 # When a replacement value is a json object, etc, we can't do a replacement and must assume the object is ready to be returned.
-                if (($replacement -is [PSCustomObject])) {
-                    $propertyValue = $replacement
-                }
-                elseif ($replacement -is [bool])
-                {
-                    $propertyValue = $replacement
-                }
-                elseif (($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]]))
-                {
+#                if (($replacement -is [PSCustomObject])) {
+#                    $propertyValue = $replacement
+#                }
+           #     elseif ($replacement -is [bool]) {
+           #         $propertyValue = $replacement
+           #     }
+                if (($replacement -is [array] -and (-not ($replacement -is [string]))) -and (-not $replacement -is [string[]])) {
                     $propertyValue = $replacement
                 }
                 else {
@@ -173,21 +176,56 @@ function Resolve-TokenForProperty {
                     
                     $oldValue = $propertyValue
 
-                    if ($replacement -is [string[]])
-                    {
-                        $replacement = (@($replacement) | ForEach-Object { "`"$_`"" }) -join ", "
-                    }
-
-                    if ($replacement -is [datetime])
-                    {
-                        $replacement = $replacement.ToUniversalTime().ToString("o")
-                    }
-
                     try {
-                        $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
+                        # Test the $propertyValue to see if the current value is being set into a string, if it's going into a blank entry, simply replace instead of doing the regex replacement.
+                        $propertyValueTest = $innerRegex.Replace($propertyValue, "")
+                        if ($propertyValueTest -eq "") {
+                            $propertyValue = $replacement
+                        }
+                        else {
+                            # Massage $replacement into a string if it's being integrated into an existing value.
+                            if (($replacement -is [PSCustomObject])) {
+                                $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
+                            }
+
+                            if (($replacement -is [ordered])) {
+                                $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
+                            }
+
+                            elseif ($replacement -is [string[]]) {
+                                $replacement = (@($replacement) | ForEach-Object { "`"$_`"" }) -join ", "
+                            }
+
+                            # Handles an array of arrays, like the ELineage.
+                            elseif ($replacement -is [object[]] -and
+                                    $replacement.Count -gt 0 -and
+                                    ($replacement | ForEach-Object { $_ -is [object[]] })) {
+
+                                # We have an array of arrays
+                                $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
+                            }
+<#
+                            # Handles an array of arrays, like the ELineage.
+                            elseif ($replacement -is [object[]] -and
+                                    $replacement.Count -gt 0) {
+
+                                # We have an array of arrays
+                                $replacement = $replacement | ConvertTo-Json -Depth 100 -Compress
+                            }
+#>
+                            elseif ($replacement -is [datetime]) {
+                                $replacement = $replacement.ToUniversalTime().ToString("o")
+                            }
+
+                            elseif ($replacement -is [bool]) {
+                                $replacement = $replacement.ToString()
+                            }
+
+                            $propertyValue = $innerRegex.Replace($propertyValue, $replacement)
+                        }
                     }
                     catch {
-                        $a = ""
+                        $a = $_
                     }
 
                     if ($propertyValue -ne $oldValue) {

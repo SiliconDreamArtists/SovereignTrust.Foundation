@@ -31,7 +31,7 @@ function Invoke-ApplyHydrationCondenser {
     $opSignal.SetResult($false)
 
     try {
-        $hydrationPlanSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "HydrationPlan" | Select-Object -Last 1
+        $hydrationPlanSignal = Resolve-PathFromDictionary -Dictionary $Plan -Path "HydrationPlan" -Default "^" | Select-Object -Last 1
         if (-not $opSignal.MergeSignalAndVerifySuccess(@($hydrationPlanSignal))) {
             $opSignal.LogInformation("ℹ️ No HydrationPlan specified, skipping hydration.")
             return $Signal
@@ -53,7 +53,6 @@ function Invoke-ApplyHydrationCondenser {
                 default {
                     if ($TokenDispatch.ContainsKey([string]$step)) {
                         $stepSignal = & Invoke-CondenserAdapter -Slot $TokenDispatch[[string]$step] -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal | Select-Object -Last 1
-                        #$stepSignal = & $TokenDispatch[[string]$step] -Signal $Signal -Plan $Plan -ItemSignal $ItemSignal -HydrationStyle $HydrationStyle | Select-Object -Last 1
                     } else {
                         $opSignal.LogWarning("Unknown hydration step: $step")
                         continue
